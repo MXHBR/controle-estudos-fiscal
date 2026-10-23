@@ -1,479 +1,62 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Auditor Fiscal - Controle de Estudos</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            850: '#131e32',
-                            900: '#0f172a',
-                            950: '#080d1a'
-                        }
-                    }
-                }
-            }
+// LER DADOS DO SUPABASE
+async carregarDadosDaNuvem() {
+    try {
+        this.syncStatus = '⏳ Carregando...';
+        const { data, error } = await supabaseClient
+            .from('dados_usuario')
+            .select('conteudo')
+            .eq('id', 'dados_auditor')
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.conteudo) {
+            const payload = typeof data.conteudo === 'string' 
+                ? JSON.parse(data.conteudo) 
+                : data.conteudo;
+
+            if (payload.lembreteFixado !== undefined) this.lembreteFixado = payload.lembreteFixado;
+            if (payload.materias) this.materias = payload.materias;
+            if (payload.topicosPorMateria) this.topicosPorMateria = payload.topicosPorMateria;
+            if (payload.questoesRegistro) this.questoesRegistro = payload.questoesRegistro;
+            if (payload.cronogramaSemanas) this.cronogramaSemanas = payload.cronogramaSemanas;
+        } else {
+            // Se não existir o registro no banco, cria o inicial
+            await this.salvarTudoNaNuvem();
         }
-    </script>
-    <!-- Alpine.js Plugins & Core -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-    </style>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col" x-data="appData()">
+        this.syncStatus = '☁️ Nuvem Sincronizada';
+    } catch (err) {
+        console.error('Erro ao buscar dados no Supabase:', err);
+        this.syncStatus = '❌ Erro ao Sincronizar';
+    }
+},
 
-    <!-- HEADER -->
-    <header class="bg-slate-800/95 border-b border-slate-700/80 sticky top-0 z-50 backdrop-blur-md shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/20 shrink-0">
-                    <i data-lucide="graduation-cap" class="w-7 h-7"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-extrabold tracking-tight text-white">Painel do Auditor Fiscal</h1>
-                        <span x-text="syncStatus" :class="{
-                            'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': syncStatus.includes('Salvo') || syncStatus.includes('Nuvem'),
-                            'bg-amber-500/20 text-amber-300 border-amber-500/40': syncStatus.includes('Salvando') || syncStatus.includes('Carregando'),
-                            'bg-rose-500/20 text-rose-300 border-rose-500/40': syncStatus.includes('Erro')
-                        }" class="text-[10px] px-2.5 py-0.5 rounded-full border font-semibold"></span>
-                    </div>
-                    <p class="text-xs text-slate-400">Controle de Teoria, Questões & Desempenho</p>
-                </div>
-            </div>
+// GRAVAR DADOS NO SUPABASE (Com conversão segura contra Proxies do Alpine)
+async salvarTudoNaNuvem() {
+    try {
+        this.syncStatus = '⏳ Guardando...';
 
-            <!-- Botões de Backup & Abas -->
-            <div class="flex flex-wrap items-center gap-2">
-                <div class="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-700/60 mr-2">
-                    <button @click="exportarBackup()" class="px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition flex items-center gap-1" title="Baixar Backup dos Dados">
-                        <i data-lucide="download" class="w-3.5 h-3.5 text-blue-400"></i> Backup
-                    </button>
-                    <label class="px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition flex items-center gap-1 cursor-pointer" title="Restaurar Backup de arquivo">
-                        <i data-lucide="upload" class="w-3.5 h-3.5 text-amber-400"></i> Restaurar
-                        <input type="file" @change="importarBackup($event)" accept=".json" class="hidden">
-                    </label>
-                </div>
+        // JSON.parse(JSON.stringify(...)) remove todas as travas e proxies do Alpine.js
+        const payloadSeguro = JSON.parse(JSON.stringify({
+            lembreteFixado: this.lembreteFixado,
+            materias: this.materias,
+            topicosPorMateria: this.topicosPorMateria,
+            questoesRegistro: this.questoesRegistro,
+            cronogramaSemanas: this.cronogramaSemanas
+        }));
 
-                <nav class="flex flex-wrap gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-700/80">
-                    <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Dashboard
-                    </button>
-                    <button @click="activeTab = 'materias'" :class="activeTab === 'materias' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Matérias
-                    </button>
-                    <button @click="activeTab = 'questoes'" :class="activeTab === 'questoes' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Questões
-                    </button>
-                    <button @click="activeTab = 'gargalos'" :class="activeTab === 'gargalos' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Gargalos
-                    </button>
-                </nav>
-            </div>
-        </div>
-    </header>
+        const { error } = await supabaseClient
+            .from('dados_usuario')
+            .upsert({
+                id: 'dados_auditor',
+                conteudo: payloadSeguro,
+                atualizado_em: new Date().toISOString()
+            });
 
-    <!-- MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
-
-        <!-- DASHBOARD -->
-        <section x-show="activeTab === 'dashboard'" class="space-y-6">
-            <!-- Lembretes -->
-            <div class="bg-slate-800 border border-slate-700/80 p-4 rounded-2xl shadow-sm space-y-2">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
-                        <i data-lucide="sticky-note" class="w-4 h-4"></i> Anotações / Metas da Semana
-                    </h3>
-                    <span class="text-[10px] text-slate-400">Salvo automaticamente</span>
-                </div>
-                <textarea x-model="lembreteFixado" @input.debounce.500ms="salvarTudo()" rows="2" placeholder="Sua meta ou recado importante..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500/60 resize-y font-medium"></textarea>
-            </div>
-
-            <!-- Cards Resumo -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-slate-800 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Questões</p>
-                    <h3 class="text-2xl font-black mt-1 text-white" x-text="stats.totalQuestao"></h3>
-                </div>
-                <div class="bg-slate-800 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Acertos / Erros</p>
-                    <h3 class="text-2xl font-black mt-1 text-emerald-400"><span x-text="stats.totalAcertos"></span> / <span class="text-rose-400" x-text="stats.totalErros"></span></h3>
-                </div>
-                <div class="bg-slate-800 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aproveitamento Médio</p>
-                    <h3 class="text-2xl font-black mt-1 text-blue-400" x-text="stats.mediaAproveitamento + '%'"></h3>
-                </div>
-                <div class="bg-slate-800 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Disciplinas Ativas</p>
-                    <h3 class="text-2xl font-black mt-1 text-purple-400" x-text="materias.length"></h3>
-                </div>
-            </div>
-
-            <!-- Progresso Geral nas Matérias -->
-            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
-                <h3 class="text-base font-bold flex items-center gap-2 text-white">
-                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Progresso nos Conteúdos
-                </h3>
-                <div class="space-y-3">
-                    <template x-for="mat in materias" :key="mat.nome">
-                        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3.5 cursor-pointer hover:border-slate-500 transition" @click="matExpandidaDashboard = (matExpandidaDashboard === mat.nome ? null : mat.nome)">
-                            <div class="flex justify-between items-center text-sm mb-2">
-                                <span class="font-bold text-slate-200 flex items-center gap-2">
-                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaDashboard === mat.nome ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
-                                    <span x-text="mat.nome"></span>
-                                </span>
-                                <span class="font-extrabold text-xs" :class="obterCorStatusProgresso(calcularProgressoMateria(mat.nome)).text" x-text="calcularProgressoMateria(mat.nome) + '%'"></span>
-                            </div>
-                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                                <div class="h-2 rounded-full transition-all duration-500" :class="obterCorStatusProgresso(calcularProgressoMateria(mat.nome)).bg" :style="'width: ' + calcularProgressoMateria(mat.nome) + '%'"></div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </section>
-
-        <!-- MATÉRIAS & ASSUNTOS -->
-        <section x-show="activeTab === 'materias'" class="space-y-6">
-            <!-- Cadastrar Matéria -->
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
-                <div>
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
-                        <i data-lucide="book-plus" class="w-5 h-5 text-blue-400"></i> Disciplinas
-                    </h3>
-                    <p class="text-xs text-slate-400">Adicione novas matérias para organizar seus assuntos.</p>
-                </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <input type="text" x-model="nuevaMateria" placeholder="Ex: DIREITO TRIBUTÁRIO" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 flex-grow sm:w-64 font-semibold uppercase">
-                    <button @click="adicionarMateria()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition shrink-0">Cadastrar</button>
-                </div>
-            </div>
-
-            <!-- Gerenciar Tópicos -->
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm space-y-5">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700/80 pb-4">
-                    <div class="w-full md:w-80 flex items-center gap-2">
-                        <div class="flex-grow">
-                            <label class="block text-xs font-bold text-slate-400 mb-1">Selecione a Matéria:</label>
-                            <select x-model="selectedMat" class="w-full bg-slate-900 border border-slate-700 text-white font-bold rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                                <template x-for="mat in materias" :key="mat.nome">
-                                    <option :value="mat.nome" x-text="mat.nome"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Formulário Cadastro de Tópico -->
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
-                    <div class="sm:col-span-6">
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Nome do Assunto:</label>
-                        <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Anterioridade..." class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 w-full">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Tipo:</label>
-                        <select x-model="novoTopicoTipo" class="w-full bg-slate-900 border border-slate-700 text-white text-xs font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
-                            <option value="topico">Tópico Principal</option>
-                            <option value="subtopico">Subtópico</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-3">
-                        <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition w-full">Adicionar Assunto</button>
-                    </div>
-                </div>
-
-                <!-- Lista de Tópicos -->
-                <div class="space-y-2">
-                    <template x-for="(topico, index) in (topicosPorMateria[selectedMat] || [])" :key="index">
-                        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-700/60 flex items-center justify-between gap-3" :class="topico.tipo === 'subtopico' ? 'ml-6 border-l-4 border-l-purple-500' : 'border-l-4 border-l-blue-500'">
-                            <div class="flex items-center gap-2 flex-grow">
-                                <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-xs font-bold">↳</span>
-                                <span class="font-semibold text-sm text-slate-100" x-text="formatarTextoCaps(topico.conteudo, topico.tipo)"></span>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <select :value="topico.status" @change="atualizarStatusTopico(selectedMat, index, $event.target.value)" class="bg-slate-800 text-xs font-bold rounded-lg border border-slate-700 px-2 py-1 text-slate-200">
-                                    <option value="ESTUDAR">Estudando</option>
-                                    <option value="CONCLUÍDO">Concluído</option>
-                                </select>
-                                <button @click="removerTopico(selectedMat, index)" class="p-1.5 hover:bg-rose-500/20 text-rose-400 rounded-lg transition" title="Excluir">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </section>
-
-        <!-- QUESTÕES -->
-        <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm space-y-4">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Bateria de Questões
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Data:</label>
-                        <input type="date" x-model="novaQuestao.data" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Matéria:</label>
-                        <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <template x-for="mat in materias" :key="mat.nome">
-                                <option :value="mat.nome" x-text="mat.nome"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Total Questões:</label>
-                        <input type="number" x-model.number="novaQuestao.qtd" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Acertos:</label>
-                        <input type="number" x-model.number="novaQuestao.acertos" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                    </div>
-                </div>
-                <div class="flex justify-end">
-                    <button @click="adicionarQuestao()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition">Salvar Registro</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- GARGALOS -->
-        <section x-show="activeTab === 'gargalos'" class="space-y-6">
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Pontos de Atenção & Gargalos
-                </h3>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- SCRIPT PRINCIPAL & PERSISTÊNCIA DUP-SAFE -->
-    <script>
-        const STORAGE_KEY = 'auditor_fiscal_app_data_v1';
-        const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
-        let supabaseClient = null;
-        try {
-            if (window.supabase) {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            }
-        } catch(e) { console.warn("Supabase desativado. Rodando localmente."); }
-
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('appData', () => ({
-                activeTab: 'dashboard',
-                syncStatus: '⚡ Localmente Salvo',
-                lembreteFixado: 'Persistência local ativada com sucesso!',
-                matExpandidaDashboard: null,
-                selectedMat: 'D. TRIBUTÁRIO',
-                nuevaMateria: '',
-                novoTopicoTexto: '',
-                novoTopicoTipo: 'topico',
-
-                materias: [
-                    { nome: 'D. TRIBUTÁRIO' },
-                    { nome: 'AUDITORIA' },
-                    { nome: 'CONTABILIDADE GERAL' },
-                    { nome: 'TECNOLOGIA DA INFORMAÇÃO' }
-                ],
-
-                topicosPorMateria: {
-                    'D. TRIBUTÁRIO': [
-                        { conteudo: 'SISTEMA TRIBUTÁRIO NACIONAL', status: 'CONCLUÍDO', tipo: 'topico' },
-                        { conteudo: 'Princípio da anterioridade', status: 'ESTUDAR', tipo: 'subtopico' }
-                    ]
-                },
-
-                novaQuestao: { data: new Date().toISOString().split('T')[0], materia: 'D. TRIBUTÁRIO', qtd: 10, acertos: 8 },
-                questoesRegistro: [],
-
-                init() {
-                    this.carregarTudoLocal();
-                    this.tentarSincronizarNuvem();
-                    this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
-                },
-
-                // SALVAMENTO DUPLO E SEGURO (LocalFirst)
-                salvarTudo() {
-                    this.syncStatus = '⏳ Salvando...';
-                    const payload = {
-                        lembreteFixado: this.lembreteFixado,
-                        materias: this.materias,
-                        topicosPorMateria: this.topicosPorMateria,
-                        questoesRegistro: this.questoesRegistro
-                    };
-
-                    // 1. Grava no Navegador (Garantia Absoluta)
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-                    this.syncStatus = '⚡ Salvo no Navegador';
-
-                    // 2. Tenta salvar no Supabase sem travar
-                    if (supabaseClient) {
-                        supabaseClient.from('dados_usuario').upsert({
-                            id: 'dados_auditor',
-                            conteudo: payload,
-                            atualizado_em: new Date()
-                        }).then(({ error }) => {
-                            if (!error) this.syncStatus = '☁️ Sincronizado na Nuvem';
-                        }).catch(() => {});
-                    }
-                },
-
-                carregarTudoLocal() {
-                    const localData = localStorage.getItem(STORAGE_KEY);
-                    if (localData) {
-                        try {
-                            const payload = JSON.parse(localData);
-                            if (payload.lembreteFixado !== undefined) this.lembreteFixado = payload.lembreteFixado;
-                            if (payload.materias) this.materias = payload.materias;
-                            if (payload.topicosPorMateria) this.topicosPorMateria = payload.topicosPorMateria;
-                            if (payload.questoesRegistro) this.questoesRegistro = payload.questoesRegistro;
-                        } catch (e) { console.error("Erro ao carregar do localStorage", e); }
-                    }
-                },
-
-                async tentarSincronizarNuvem() {
-                    if (!supabaseClient) return;
-                    try {
-                        const { data } = await supabaseClient.from('dados_usuario').select('*').eq('id', 'dados_auditor');
-                        if (data && data.length > 0 && data[0].conteudo) {
-                            // Se o local estiver vazio, pega da nuvem
-                            if (!localStorage.getItem(STORAGE_KEY)) {
-                                const payload = data[0].conteudo;
-                                this.lembreteFixado = payload.lembreteFixado || this.lembreteFixado;
-                                if (payload.materias) this.materias = payload.materias;
-                                if (payload.topicosPorMateria) this.topicosPorMateria = payload.topicosPorMateria;
-                                if (payload.questoesRegistro) this.questoesRegistro = payload.questoesRegistro;
-                                this.salvarTudo();
-                            }
-                        }
-                    } catch (e) {}
-                },
-
-                // EXPORTAR / IMPORTAR BACKUP EM JSON
-                exportarBackup() {
-                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(localStorage.getItem(STORAGE_KEY) || '{}');
-                    const downloadAnchor = document.createElement('a');
-                    downloadAnchor.setAttribute("href", dataStr);
-                    downloadAnchor.setAttribute("download", `backup_estudos_auditor_${new Date().toISOString().split('T')[0]}.json`);
-                    document.body.appendChild(downloadAnchor);
-                    downloadAnchor.click();
-                    downloadAnchor.remove();
-                },
-
-                importarBackup(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const payload = JSON.parse(e.target.result);
-                            if (payload.materias && payload.topicosPorMateria) {
-                                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-                                location.reload();
-                            } else {
-                                alert("Arquivo de backup inválido.");
-                            }
-                        } catch(err) { alert("Erro ao carregar o arquivo."); }
-                    };
-                    reader.readAsText(file);
-                },
-
-                formatarTextoCaps(texto, tipo) {
-                    if (!texto) return '';
-                    if (tipo === 'subtopico') {
-                        return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
-                    }
-                    return texto.toUpperCase();
-                },
-
-                adicionarMateria() {
-                    let nome = this.nuevaMateria.trim().toUpperCase();
-                    if (nome && !this.materias.some(m => m.nome === nome)) {
-                        this.materias.push({ nome: nome });
-                        this.topicosPorMateria[nome] = [];
-                        this.selectedMat = nome;
-                        this.nuevaMateria = '';
-                        this.salvarTudo();
-                    }
-                },
-
-                adicionarTopico() {
-                    let texto = this.novoTopicoTexto.trim();
-                    if (texto) {
-                        if (!this.topicosPorMateria[this.selectedMat]) this.topicosPorMateria[this.selectedMat] = [];
-                        this.topicosPorMateria[this.selectedMat].push({
-                            conteudo: texto,
-                            status: 'ESTUDAR',
-                            tipo: this.novoTopicoTipo
-                        });
-                        this.novoTopicoTexto = '';
-                        this.salvarTudo();
-                    }
-                },
-
-                removerTopico(mat, index) {
-                    if (this.topicosPorMateria[mat]) {
-                        this.topicosPorMateria[mat].splice(index, 1);
-                        this.salvarTudo();
-                    }
-                },
-
-                atualizarStatusTopico(mat, index, novoStatus) {
-                    if (this.topicosPorMateria[mat] && this.topicosPorMateria[mat][index]) {
-                        this.topicosPorMateria[mat][index].status = novoStatus;
-                        this.salvarTudo();
-                    }
-                },
-
-                adicionarQuestao() {
-                    this.questoesRegistro.unshift({
-                        id: Date.now(),
-                        data: this.novaQuestao.data,
-                        materia: this.novaQuestao.materia,
-                        qtd: Number(this.novaQuestao.qtd) || 0,
-                        acertos: Number(this.novaQuestao.acertos) || 0
-                    });
-                    this.salvarTudo();
-                },
-
-                calcularProgressoMateria(matName) {
-                    let topicos = this.topicosPorMateria[matName] || [];
-                    if (topicos.length === 0) return 0;
-                    let concluidos = topicos.filter(t => t.status === 'CONCLUÍDO').length;
-                    return Math.round((concluidos / topicos.length) * 100);
-                },
-
-                obterCorStatusProgresso(pct) {
-                    if (pct < 50) return { bg: 'bg-rose-500', text: 'text-rose-400' };
-                    if (pct <= 74) return { bg: 'bg-amber-500', text: 'text-amber-400' };
-                    return { bg: 'bg-emerald-500', text: 'text-emerald-400' };
-                },
-
-                get stats() {
-                    let totalQ = this.questoesRegistro.reduce((a, b) => a + (Number(b.qtd) || 0), 0);
-                    let totalA = this.questoesRegistro.reduce((a, b) => a + (Number(b.acertos) || 0), 0);
-                    let totalE = totalQ - totalA;
-                    let media = totalQ > 0 ? ((totalA / totalQ) * 100).toFixed(1) : 0;
-                    return { totalQuestao: totalQ, totalAcertos: totalA, totalErros: totalE, mediaAproveitamento: media };
-                }
-            }));
-        });
-    </script>
-</body>
-</html>
+        if (error) throw error;
+        this.syncStatus = '☁️ Nuvem Sincronizada';
+    } catch (err) {
+        console.error('Erro ao gravar no Supabase:', err);
+        this.syncStatus = '❌ Erro ao Sincronizar';
+    }
+}
