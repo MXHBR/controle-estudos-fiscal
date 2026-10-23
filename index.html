@@ -142,11 +142,10 @@
                                     <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaDashboard === mat.nome ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
                                     <span x-text="mat.nome"></span>
                                 </span>
-                                <!-- Porcentagem com a mesma cor da barra -->
                                 <span class="font-bold" :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).text" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
                             </div>
                             
-                            <!-- Barra de Progresso com Cores Dinâmicas (Vermelho, Laranja, Verde) -->
+                            <!-- Barra de Progresso com Cores Dinâmicas -->
                             <div class="w-full bg-slate-700/60 h-2.5 rounded-full overflow-hidden">
                                 <div class="h-2.5 rounded-full transition-all duration-500" 
                                      :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).bg"
@@ -157,8 +156,16 @@
                                 <template x-for="topico in (topicosPorMateria[mat.nome] || [])">
                                     <div class="flex justify-between items-center text-xs p-2.5 rounded-lg border"
                                          :class="topico.tipo === 'subtopico' ? 'bg-slate-900/80 border-purple-500/30 ml-4' : 'bg-slate-800/80 border-slate-700/40'">
-                                        <span class="text-slate-300 flex items-center gap-1.5">
-                                            <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-[10px]">↳</span>
+                                        <span class="text-slate-300 flex items-center gap-2">
+                                            <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-[10px] font-bold">↳</span>
+                                            <!-- Tag de Prioridade no Dashboard -->
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold border"
+                                                  :class="{
+                                                      'bg-rose-500/10 text-rose-400 border-rose-500/30': topico.prioridade === 'alta',
+                                                      'bg-amber-500/10 text-amber-400 border-amber-500/30': topico.prioridade === 'media',
+                                                      'bg-slate-700/50 text-slate-300 border-slate-600': !topico.prioridade || topico.prioridade === 'baixa'
+                                                  }"
+                                                  x-text="topico.prioridade === 'alta' ? '🔥 Alta' : (topico.prioridade === 'media' ? '⚖️ Média' : '🔹 Baixa')"></span>
                                             <span x-text="topico.conteudo"></span>
                                         </span>
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
@@ -219,20 +226,30 @@
                     </div>
                 </div>
 
-                <!-- Formulário Único -->
-                <div x-show="modoCadastroTopico === 'unico'" class="flex flex-col sm:flex-row gap-2 items-end">
-                    <div class="flex-grow w-full">
+                <!-- Formulário Único com Prioridade -->
+                <div x-show="modoCadastroTopico === 'unico'" class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                    <div class="sm:col-span-6">
                         <label class="block text-xs font-medium text-slate-400 mb-1">Novo Assunto / Tópico</label>
                         <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Legalidade..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full">
                     </div>
-                    <div class="w-full sm:w-48">
+                    <div class="sm:col-span-3">
                         <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
                         <select x-model="novoTopicoTipo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <option value="topico">Tópico Principal</option>
+                            <option value="topico">Principal</option>
                             <option value="subtopico">Subtópico</option>
                         </select>
                     </div>
-                    <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0 w-full sm:w-auto">Adicionar</button>
+                    <div class="sm:col-span-3">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Prioridade</label>
+                        <select x-model="novoTopicoPrioridade" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="alta">🔥 Alta Frequência</option>
+                            <option value="media">⚖️ Média Frequência</option>
+                            <option value="baixa">🔹 Baixa Frequência</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-12 flex justify-end pt-1">
+                        <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition w-full sm:w-auto">Adicionar Assunto</button>
+                    </div>
                 </div>
 
                 <!-- Inclusão em massa com separador por Ponto Final '.' -->
@@ -253,8 +270,9 @@
                         <thead>
                             <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
                                 <th class="p-4">Tópico / Conteúdo</th>
-                                <th class="p-4 w-40">Status</th>
-                                <th class="p-4 w-36 text-center">Tipo</th>
+                                <th class="p-4 w-36">Prioridade</th>
+                                <th class="p-4 w-36">Status</th>
+                                <th class="p-4 w-32 text-center">Tipo</th>
                                 <th class="p-4 w-32 text-center">Ações</th>
                             </tr>
                         </thead>
@@ -276,6 +294,18 @@
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                             </button>
                                         </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <!-- Badge / Alternador de Prioridade -->
+                                        <span @click="togglePrioridadeTopico(selectedMat, index)" 
+                                              class="px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer border inline-block transition hover:opacity-80"
+                                              :class="{
+                                                  'bg-rose-500/10 text-rose-400 border-rose-500/30': topico.prioridade === 'alta',
+                                                  'bg-amber-500/10 text-amber-400 border-amber-500/30': topico.prioridade === 'media',
+                                                  'bg-slate-700/40 text-slate-300 border-slate-600': !topico.prioridade || topico.prioridade === 'baixa'
+                                              }"
+                                              x-text="topico.prioridade === 'alta' ? '🔥 Alta' : (topico.prioridade === 'media' ? '⚖️ Média' : '🔹 Baixa')"
+                                              title="Clique para alternar prioridade"></span>
                                     </td>
                                     <td class="p-4">
                                         <span class="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer"
@@ -614,11 +644,12 @@
                 modoCadastroTopico: 'unico',
                 novoTopicoTexto: '',
                 novoTopicoTipo: 'topico',
+                novoTopicoPrioridade: 'alta',
                 textoTopicosMassa: '',
                 topicosPorMateria: {
                     'D. TRIBUTÁRIO': [
-                        { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO', tipo: 'topico' },
-                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO', tipo: 'subtopico' }
+                        { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO', tipo: 'topico', prioridade: 'alta' },
+                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO', tipo: 'subtopico', prioridade: 'alta' }
                     ]
                 },
 
@@ -735,7 +766,7 @@
                         this.topicosPorMateria[this.selectedMat] = [];
                     }
                     lista.forEach(item => {
-                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR', tipo: 'topico' });
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR', tipo: 'topico', prioridade: 'alta' });
                     });
                     this.textoTopicosMassa = '';
                     this.salvarTudoNaNuvem();
@@ -789,6 +820,19 @@
                     this.salvarTudoNaNuvem();
                 },
 
+                togglePrioridadeTopico(mat, index) {
+                    if(!this.topicosPorMateria[mat]) return;
+                    let t = this.topicosPorMateria[mat][index];
+                    if(!t.prioridade || t.prioridade === 'baixa') {
+                        t.prioridade = 'alta';
+                    } else if(t.prioridade === 'alta') {
+                        t.prioridade = 'media';
+                    } else {
+                        t.prioridade = 'baixa';
+                    }
+                    this.salvarTudoNaNuvem();
+                },
+
                 adicionarMateria() {
                     let nome = this.nuevaMateria.trim().toUpperCase();
                     if(nome && !this.materias.some(m => m.nome === nome)) {
@@ -824,10 +868,12 @@
                         this.topicosPorMateria[this.selectedMat].push({ 
                             conteudo: texto, 
                             status: 'ESTUDAR', 
-                            tipo: this.novoTopicoTipo || 'topico' 
+                            tipo: this.novoTopicoTipo || 'topico',
+                            prioridade: this.novoTopicoPrioridade || 'alta'
                         });
                         this.novoTopicoTexto = '';
                         this.novoTopicoTipo = 'topico';
+                        this.novoTopicoPrioridade = 'alta';
                         this.salvarTudoNaNuvem();
                     }
                 },
