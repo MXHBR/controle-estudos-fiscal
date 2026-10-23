@@ -17,12 +17,13 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col" x-data="appData()" x-init="init()">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col" x-data="appData()">
 
     <!-- HEADER -->
     <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
+                <!-- REQUISITO 7: Retornar ao ícone anterior de Capelo -->
                 <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/30">
                     <i data-lucide="graduation-cap" class="w-7 h-7"></i>
                 </div>
@@ -143,11 +144,11 @@
                                     <div class="flex justify-between items-center text-xs bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/40">
                                         <span class="text-slate-300" x-text="topico.conteudo"></span>
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                            :class="{
-                                                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
-                                                'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
-                                                'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
-                                            }" x-text="topico.status"></span>
+                                              :class="{
+                                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
+                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
+                                                  'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
+                                              }" x-text="topico.status"></span>
                                     </div>
                                 </template>
                             </div>
@@ -209,7 +210,7 @@
                     <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Adicionar</button>
                 </div>
 
-                <!-- Inclusão em massa com separador por Ponto Final '.' -->
+                <!-- REQUISITO 5: Inclusão em massa com separador por Ponto Final '.' -->
                 <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
@@ -273,13 +274,14 @@
 
         <!-- TAB: QUESTÕES & REGISTRO -->
         <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <!-- Formulário de Registro -->
+            <!-- REQUISITO 3: Formulário com campos flexíveis de Matéria e/ou Assunto -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
+                        <!-- REQUISITO 1: Formato de Data DD/MM/AA -->
                         <label class="block text-xs font-medium text-slate-400 mb-1">Data (DD/MM/AA)</label>
                         <input type="text" x-model="novaQuestao.data" placeholder="23/10/26" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
@@ -288,6 +290,7 @@
                         <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
+                        <!-- REQUISITO 3: Matéria opcional ou selecionável -->
                         <label class="block text-xs font-medium text-slate-400 mb-1">Matéria (Opcional se houver assunto)</label>
                         <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                             <option value="">-- Sem Matéria Específica --</option>
@@ -297,6 +300,7 @@
                         </select>
                     </div>
                     <div>
+                        <!-- REQUISITO 3: Assunto opcional ou digitável -->
                         <label class="block text-xs font-medium text-slate-400 mb-1">Assunto (Opcional se houver matéria)</label>
                         <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
@@ -318,7 +322,7 @@
                 </div>
             </div>
 
-            <!-- Histórico Agrupado por Data & Matéria -->
+            <!-- REQUISITO 2 e 4: Exibição Agrupada por Data -> Matéria -> Assuntos com Edição Inline -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -350,6 +354,7 @@
                             <div class="space-y-2">
                                 <template x-for="(questoesDoAssunto, matName) in materiasNaData" :key="matName">
                                     <div class="bg-slate-800/90 border border-slate-700/60 rounded-xl overflow-hidden">
+                                        <!-- Clique na matéria para exibir assuntos -->
                                         <div class="p-3.5 cursor-pointer flex justify-between items-center hover:bg-slate-700/40 transition" @click="toggleDataMateriaExpandida(dataKey + '_' + matName)">
                                             <div class="flex items-center gap-2 font-bold text-blue-400 text-sm">
                                                 <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="isDataMateriaExpandida(dataKey + '_' + matName) ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
@@ -382,6 +387,7 @@
                                                         <template x-for="q in questoesDoAssunto" :key="q.id">
                                                             <tr class="hover:bg-slate-800/40">
                                                                 <td class="py-2 text-slate-400" x-text="q.semana"></td>
+                                                                <!-- REQUISITO 4: Edição do Assunto na própria tabela -->
                                                                 <td class="py-2 text-slate-200">
                                                                     <div x-show="questaoEditandoId !== q.id" class="font-semibold text-slate-200" x-text="q.assunto || 'Geral'"></div>
                                                                     <div x-show="questaoEditandoId === q.id" class="flex gap-1.5">
@@ -393,13 +399,13 @@
                                                                 </td>
                                                                 <td class="py-2 text-center text-slate-300" x-text="q.qtd"></td>
                                                                 <td class="py-2 text-center text-emerald-400 font-medium" x-text="q.acertos"></td>
-                                                                <td class="py-2 text-center text-blue-400 font-bold" x-text="(q.qtd > 0 ? Math.round((q.acertos / q.qtd) * 100) : 0) + '%'"></td>
-                                                                <td class="py-2 text-amber-400 italic" x-text="q.gargalo || '-'"></td>
-                                                                <td class="py-2 text-center flex justify-center gap-1.5">
-                                                                    <button @click="iniciarEdicaoAssuntoQuestao(q.id, q.assunto)" class="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition" title="Editar Assunto">
+                                                                <td class="py-2 text-center font-bold" :class="(q.acertos/q.qtd) >= 0.8 ? 'text-emerald-400' : 'text-rose-400'" x-text="q.qtd > 0 ? ((q.acertos / q.qtd) * 100).toFixed(1) + '%' : '0%'"></td>
+                                                                <td class="py-2 text-rose-300 italic" x-text="q.gargalo || '-'"></td>
+                                                                <td class="py-2 text-center flex justify-center gap-1">
+                                                                    <button @click="iniciarEdicaoAssuntoQuestao(q.id, q.assunto)" class="p-1 text-slate-400 hover:text-white rounded" title="Editar Assunto">
                                                                         <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                                                     </button>
-                                                                    <button @click="removerQuestao(q.id)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded transition" title="Excluir Registro">
+                                                                    <button @click="removerQuestaoPorId(q.id)" class="p-1 text-rose-400 hover:bg-rose-500/10 rounded" title="Excluir">
                                                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                                                     </button>
                                                                 </td>
@@ -414,324 +420,427 @@
                             </div>
                         </div>
                     </template>
+                    <template x-if="Object.keys(questoesAgrupadasPorDataEMateria).length === 0">
+                        <p class="text-center text-slate-500 text-sm py-6">Nenhum registro de questão encontrado para este período.</p>
+                    </template>
                 </div>
             </div>
         </section>
 
-        <!-- TAB: GARGALOS -->
+        <!-- TAB: GARGALOS POR DISCIPLINA (REQUISITO 6: Grid de 3 Colunas + Ocultos ao Clicar) -->
         <section x-show="activeTab === 'gargalos'" class="space-y-6">
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm">
                 <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos & Pontos Fracos
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos por Matéria
                 </h3>
-                <p class="text-xs text-slate-400">Lista consolidada de todas as anotações de dificuldades identificadas durante a resolução de questões.</p>
-                
-                <div class="space-y-3">
-                    <template x-for="q in gargalosLista" :key="q.id">
-                        <div class="bg-slate-900/60 border border-amber-500/30 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2 text-xs text-amber-400 font-semibold">
-                                    <span x-text="q.materia"></span> &bull; <span x-text="q.assunto"></span> (<span x-text="q.data"></span>)
-                                </div>
-                                <p class="text-sm text-slate-200 font-medium" x-text="q.gargalo"></p>
-                            </div>
-                            <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 shrink-0">
-                                Desempenho: <strong class="text-rose-400" x-text="q.acertos + '/' + q.qtd + ' (' + (q.qtd > 0 ? Math.round((q.acertos / q.qtd)*100) : 0) + '%)'"></strong>
-                            </div>
-                        </div>
-                    </template>
-                    <div x-show="gargalosLista.length === 0" class="text-center py-10 text-slate-500 text-sm">
-                        Nenhum gargalo registrado até o momento. Continue resolvendo questões!
-                    </div>
-                </div>
+                <p class="text-xs text-slate-400 mt-1">Clique na disciplina para expandir os gargalos anotados.</p>
             </div>
+
+            <!-- Grid de até 3 colunas por fileira -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <template x-for="(gargalosDaMat, matName) in gargalosAgrupadosPorMateria" :key="matName">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3 self-start">
+                        <!-- Cabeçalho Clicável da Matéria -->
+                        <div class="flex justify-between items-center cursor-pointer border-b border-slate-700 pb-3" @click="toggleGargaloMatExpandida(matName)">
+                            <h4 class="font-bold text-blue-400 text-sm flex items-center gap-2">
+                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="gargaloMatExpandida === matName ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
+                                <span x-text="matName"></span>
+                            </h4>
+                            <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-semibold" x-text="gargalosDaMat.length"></span>
+                        </div>
+
+                        <!-- Ocultos por padrão: exibidos somente ao clicar -->
+                        <div x-show="gargaloMatExpandida === matName" x-collapse class="space-y-2.5 pt-1">
+                            <template x-for="g in gargalosDaMat" :key="g.id">
+                                <div class="flex items-start gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-0.5 w-3.5 h-3.5 text-emerald-600 bg-slate-800 border-slate-600 rounded cursor-pointer">
+                                    <div class="flex-grow space-y-1">
+                                        <div class="flex justify-between text-[11px]">
+                                            <span class="font-semibold text-slate-300" x-text="g.assunto || 'Geral'"></span>
+                                            <span class="text-slate-500 font-mono" x-text="qDataFormatada(g.data)"></span>
+                                        </div>
+                                        <p class="text-xs transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <template x-if="Object.keys(gargalosAgrupadosPorMateria).length === 0">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center text-slate-500">
+                    Nenhum gargalo registrado até o momento.
+                </div>
+            </template>
         </section>
 
         <!-- TAB: CRONOGRAMA -->
         <section x-show="activeTab === 'cronograma'" class="space-y-6">
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> Cronograma de Estudos & Metas
-                </h3>
-                <p class="text-xs text-slate-400">Planejamento estratégico e controle de ciclos semanais para o concurso de Auditor Fiscal.</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-slate-900/60 border border-slate-700 p-4 rounded-xl space-y-2">
-                        <span class="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">Ciclo 1</span>
-                        <h4 class="font-bold text-sm text-slate-200">Foco em Direito Tributário & Legislação</h4>
-                        <p class="text-xs text-slate-400">Aprofundamento em obrigações tributárias, responsabilidade tributária e ISS municipal.</p>
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-400"></i> <span x-text="cicloEmEdicaoIndex !== null ? 'Editar Ciclo do Cronograma' : 'Criar Novo Ciclo no Cronograma'"></span>
+                    </h3>
+                    <button x-show="cicloEmEdicaoIndex !== null" @click="cancelarEdicaoCiclo()" class="text-xs text-rose-400 hover:underline">Cancelar Edição</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Nome da Semana / Ciclo</label>
+                        <input type="text" x-model="novoCiclo.semana" placeholder="Ex: SEMANA 5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                    <div class="bg-slate-900/60 border border-slate-700 p-4 rounded-xl space-y-2">
-                        <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">Ciclo 2</span>
-                        <h4 class="font-bold text-sm text-slate-200">Contabilidade Geral & Avançada</h4>
-                        <p class="text-xs text-slate-400">Estruturação de balanços patrimoniais, DRE e equivalência patrimonial.</p>
-                    </div>
-                    <div class="bg-slate-900/60 border border-slate-700 p-4 rounded-xl space-y-2">
-                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">Ciclo 3</span>
-                        <h4 class="font-bold text-sm text-slate-200">Auditoria Fiscal & TI</h4>
-                        <p class="text-xs text-slate-400">Revisão de papéis de trabalho, testes substantivos e análise de dados.</p>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matérias / Tópicos (separados por vírgula)</label>
+                        <div class="flex gap-2">
+                            <input type="text" x-model="novoCiclo.materiasTexto" placeholder="Ex: Direito Tributário, Auditoria, TI" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <button @click="salvarCiclo()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shrink-0" x-text="cicloEmEdicaoIndex !== null ? 'Atualizar' : 'Adicionar'"></button>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="(sem, index) in cronogramaSemanas" :key="index">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                                <h4 class="font-bold text-blue-400" x-text="sem.semana"></h4>
+                                <div class="flex items-center gap-1">
+                                    <button @click="carregarCicloParaEdicao(index)" class="p-1 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition" title="Editar Ciclo">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </button>
+                                    <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <ul class="space-y-2 text-sm text-slate-300">
+                                <template x-for="m in sem.materias">
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i>
+                                        <span x-text="m"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </template>
             </div>
         </section>
 
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-800 border-t border-slate-700 py-6 mt-12 text-center text-xs text-slate-400">
-        Painel de Controle de Estudos &bull; Foco na Aprovação de Auditor Fiscal
+    <footer class="bg-slate-800 border-t border-slate-700 py-6 mt-12 text-center text-sm text-slate-400">
+        <p>Sistema de Controle de Estudos — Foco ISS Caruaru & Concursos Fiscais 2026</p>
     </footer>
 
-    <!-- ALPINE & APP LOGIC -->
+    <!-- SCRIPT DE DADOS E LÓGICA -->
     <script>
-        function appData() {
-            return {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('appData', () => ({
                 activeTab: 'dashboard',
-                lembreteFixado: localStorage.getItem('lembrete_fixado') || '',
-                materias: JSON.parse(localStorage.getItem('materias_fiscal')) || [
-                    { nome: 'Direito Tributário' },
-                    { nome: 'Legislação Tributária Municipal' },
-                    { nome: 'Contabilidade Geral e Avançada' },
-                    { nome: 'Auditoria Fiscal e Tributária' }
+                lembreteFixado: localStorage.getItem('fisc_lembrete') || 'Coloque aqui seu objetivo diário!',
+                matExpandidaDashboard: null,
+                dataMateriaExpandidaMap: {},
+                gargaloMatExpandida: null,
+
+                filtroDiasQuestoes: '0',
+
+                // Edição de Tópicos e Questões
+                topicoEditandoIndex: null,
+                topicoTextoEmEdicao: '',
+                questaoEditandoId: null,
+                questaoTextoAssuntoEdicao: '',
+
+                // Matérias
+                materias: JSON.parse(localStorage.getItem('fisc_materias')) || [
+                    { nome: 'D. TRIBUTÁRIO' },
+                    { nome: 'AUDITORIA' },
+                    { nome: 'CONTABILIDADE GERAL' },
+                    { nome: 'CONTABILIDADE PÚBLICA' },
+                    { nome: 'TECNOLOGIA DA INFORMAÇÃO' },
+                    { nome: 'FINANÇAS PÚBLICAS' },
+                    { nome: 'DIREITO CONSTITUCIONAL' },
+                    { nome: 'DIREITO ADMINISTRATIVO' },
+                    { nome: 'PORTUGUÊS' },
+                    { nome: 'RLM' },
+                    { nome: 'DIREITO FINANCEIRO' },
+                    { nome: 'ESTATÍSTICA' }
                 ],
-                topicosPorMateria: JSON.parse(localStorage.getItem('topicos_fiscal')) || {
-                    'Direito Tributário': [
-                        { conteudo: 'Princípios Constitucionais Tributários', status: 'CONCLUÍDO' },
-                        { conteudo: 'Limitações ao Poder de Tributar', status: 'ESTUDANDO' },
-                        { conteudo: 'Obrigação tributária principal e acessória', status: 'ESTUDAR' }
-                    ],
-                    'Legislação Tributária Municipal': [
-                        { conteudo: 'ISSQN: Fato Gerador e Base de Cálculo', status: 'ESTUDAR' }
-                    ],
-                    'Contabilidade Geral e Avançada': [
-                        { conteudo: 'Balanço Patrimonial e DRE', status: 'ESTUDAR' }
-                    ],
-                    'Auditoria Fiscal e Tributária': [
-                        { conteudo: 'Técnicas de Auditoria de Balanço', status: 'ESTUDAR' }
-                    ]
-                },
-                questoes: JSON.parse(localStorage.getItem('questoes_fiscal')) || [
-                    { id: 1, data: '23/10/26', semana: 'SEMANA 1', materia: 'Direito Tributário', assunto: 'Princípios', qtd: 20, acertos: 16, gargalo: 'Dificuldade em imunidade musical' }
-                ],
-                selectedMat: 'Direito Tributário',
                 nuevaMateria: '',
+
+                // Tópicos
+                selectedMat: 'D. TRIBUTÁRIO',
                 modoCadastroTopico: 'unico',
                 novoTopicoTexto: '',
                 textoTopicosMassa: '',
-                topicoEditandoIndex: null,
-                topicoTextoEmEdicao: '',
-                matExpandidaDashboard: null,
-                filtroDiasQuestoes: '0',
-                novaQuestao: { data: '23/10/26', semana: 'SEMANA 1', materia: 'Direito Tributário', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
-                dataMateriaExpandidas: {},
-                questaoEditandoId: null,
-                questaoTextoAssuntoEdicao: '',
-                
+                topicosPorMateria: JSON.parse(localStorage.getItem('fisc_topicos')) || {
+                    'D. TRIBUTÁRIO': [
+                        { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO' },
+                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO' }
+                    ]
+                },
+
+                // REQUISITO 1: Data em formato padrão DD/MM/AA
+                novaQuestao: { data: '23/10/26', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
+                questoesRegistro: JSON.parse(localStorage.getItem('fisc_questoes')) || [
+                    { id: 1, semana: 'SEMANA 1', data: '23/10/26', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Anterioridade Nonagesimal', resolvido: false }
+                ],
+
+                // Cronograma
+                novoCiclo: { semana: '', materiasTexto: '' },
+                cicloEmEdicaoIndex: null,
+                cronogramaSemanas: JSON.parse(localStorage.getItem('fisc_cronograma')) || [
+                    { semana: 'SEMANA 1', materias: ['Direito Tributário', 'Direito Constitucional', 'Contabilidade Pública'] }
+                ],
+
                 init() {
-                    this.$watch('lembreteFixado', val => localStorage.setItem('lembrete_fixado', val));
-                    this.$watch('materias', val => localStorage.setItem('materias_fiscal', JSON.stringify(val)), {deep: true});
-                    this.$watch('topicosPorMateria', val => localStorage.setItem('topicos_fiscal', JSON.stringify(val)), {deep: true});
-                    this.$watch('questoes', val => localStorage.setItem('questoes_fiscal', JSON.stringify(val)), {deep: true});
-                    
-                    setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 100);
+                    this.$watch('lembreteFixado', val => localStorage.setItem('fisc_lembrete', val));
+                    this.$watch('materias', val => localStorage.setItem('fisc_materias', JSON.stringify(val)));
+                    this.$watch('topicosPorMateria', val => localStorage.setItem('fisc_topicos', JSON.stringify(val)));
+                    this.$watch('questoesRegistro', val => localStorage.setItem('fisc_questoes', JSON.stringify(val)));
+                    this.$watch('cronogramaSemanas', val => localStorage.setItem('fisc_cronograma', JSON.stringify(val)));
+
+                    this.$nextTick(() => { lucide.createIcons(); });
                 },
-                
-                get stats() {
-                    let totalQ = this.questoes.reduce((acc, q) => acc + (q.qtd || 0), 0);
-                    let totalA = this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
-                    let totalE = totalQ - totalA;
-                    let media = totalQ > 0 ? Math.round((totalA / totalQ) * 100) : 0;
-                    return { totalQuestao: totalQ, totalAcertos: totalA, totalErros: totalE, mediaAproveitamento: media };
+
+                qDataFormatada(val) {
+                    if(!val) return '23/10/26';
+                    return val.includes('/') ? val : val;
                 },
-                
-                calcularProgressoMatéria(matNome) {
-                    let topicos = this.topicosPorMateria[matNome] || [];
-                    if (topicos.length === 0) return 0;
-                    let concluidos = topicos.filter(t => t.status === 'CONCLUÍDO').length;
-                    let estudando = topicos.filter(t => t.status === 'ESTUDANDO').length;
-                    let progressoTotal = (concluidos * 100 + estudando * 50) / topicos.length;
-                    return Math.round(progressoTotal);
-                },
-                
-                adicionarMateria() {
-                    if(!this.nuevaMateria.trim()) return;
-                    let nome = this.nuevaMateria.trim();
-                    if(!this.materias.some(m => m.nome === nome)) {
-                        this.materias.push({ nome: nome });
-                        if(!this.topicosPorMateria[nome]) this.topicosPorMateria[nome] = [];
-                        this.selectedMat = nome;
-                    }
-                    this.nuevaMateria = '';
-                    setTimeout(() => lucide.createIcons(), 50);
-                },
-                
-                editarNomeMateria(nomeAntigo) {
-                    let novoNome = prompt('Digite o novo nome para a matéria:', nomeAntigo);
-                    if(!novoNome || !novoNome.trim() || novoNome === nomeAntigo) return;
-                    novoNome = novoNome.trim();
-                    
-                    let mat = this.materias.find(m => m.nome === nomeAntigo);
-                    if(mat) mat.nome = novoNome;
-                    
-                    if(this.topicosPorMateria[nomeAntigo]) {
-                        this.topicosPorMateria[novoNome] = this.topicosPorMateria[nomeAntigo];
-                        delete this.topicosPorMateria[nomeAntigo];
-                    }
-                    
-                    this.questoes.forEach(q => {
-                        if(q.materia === nomeAntigo) q.materia = novoNome;
-                    });
-                    
-                    this.selectedMat = novoNome;
-                },
-                
-                adicionarTopico() {
-                    if(!this.novoTopicoTexto.trim()) return;
-                    if(!this.topicosPorMateria[this.selectedMat]) this.topicosPorMateria[this.selectedMat] = [];
-                    this.topicosPorMateria[this.selectedMat].push({
-                        conteudo: this.novoTopicoTexto.trim(),
-                        status: 'ESTUDAR'
-                    });
-                    this.novoTopicoTexto = '';
-                    setTimeout(() => lucide.createIcons(), 50);
-                },
-                
+
+                // REQUISITO 5: Cadastro em massa separado por Ponto Final '.'
                 adicionarTopicosEmMassaPontoFinal() {
                     if(!this.textoTopicosMassa.trim()) return;
-                    let texto = this.textoTopicosMassa.trim();
-                    let partes = texto.split(/\.\s+/);
-                    if(!this.topicosPorMateria[this.selectedMat]) this.topicosPorMateria[this.selectedMat] = [];
-                    
-                    partes.forEach(parte => {
-                        let limpo = parte.replace(/^\d+[\.\-\)]\s*/, '').trim();
-                        if(limpo) {
-                            this.topicosPorMateria[this.selectedMat].push({
-                                conteudo: limpo,
-                                status: 'ESTUDAR'
-                            });
-                        }
+                    let lista = this.textoTopicosMassa.split('.').map(item => item.trim()).filter(item => item !== '');
+                    if(!this.topicosPorMateria[this.selectedMat]) {
+                        this.topicosPorMateria[this.selectedMat] = [];
+                    }
+                    lista.forEach(item => {
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR' });
                     });
                     this.textoTopicosMassa = '';
-                    setTimeout(() => lucide.createIcons(), 50);
                 },
-                
+
+                // REQUISITO 4: Métodos para editar o assunto de questões diretamente
+                iniciarEdicaoAssuntoQuestao(id, assuntoAtual) {
+                    this.questaoEditandoId = id;
+                    this.questaoTextoAssuntoEdicao = assuntoAtual || '';
+                },
+
+                salvarEdicaoAssuntoQuestao(id) {
+                    let q = this.questoesRegistro.find(item => item.id === id);
+                    if(q) {
+                        q.assunto = this.questaoTextoAssuntoEdicao.trim();
+                    }
+                    this.questaoEditandoId = null;
+                    this.questaoTextoAssuntoEdicao = '';
+                },
+
+                // Controle de Expansão na Aba Questões (Data -> Matéria)
+                toggleDataMateriaExpandida(key) {
+                    this.dataMateriaExpandidaMap[key] = !this.dataMateriaExpandidaMap[key];
+                },
+
+                isDataMateriaExpandida(key) {
+                    return !!this.dataMateriaExpandidaMap[key];
+                },
+
+                toggleGargaloMatExpandida(mat) {
+                    this.gargaloMatExpandida = (this.gargaloMatExpandida === mat ? null : mat);
+                },
+
+                iniciarEdicaoTopico(index, textoAtual) {
+                    this.topicoEditandoIndex = index;
+                    this.topicoTextoEmEdicao = textoAtual;
+                },
+
+                salvarEdicaoTopico(mat, index) {
+                    if(this.topicoTextoEmEdicao.trim() !== '') {
+                        this.topicosPorMateria[mat][index].conteudo = this.topicoTextoEmEdicao.trim();
+                    }
+                    this.topicoEditandoIndex = null;
+                    this.topicoTextoEmEdicao = '';
+                },
+
+                adicionarMateria() {
+                    let nome = this.nuevaMateria.trim().toUpperCase();
+                    if(nome && !this.materias.some(m => m.nome === nome)) {
+                        this.materias.push({ nome: nome });
+                        this.topicosPorMateria[nome] = [];
+                        this.selectedMat = nome;
+                        this.nuevaMateria = '';
+                    }
+                },
+
+                editarNomeMateria(nomeAntigo) {
+                    let novoNome = prompt('Editar nome da matéria:', nomeAntigo);
+                    if(novoNome && novoNome.trim() !== '' && novoNome !== nomeAntigo) {
+                        novoNome = novoNome.trim().toUpperCase();
+                        let idx = this.materias.findIndex(m => m.nome === nomeAntigo);
+                        if(idx !== -1) {
+                            this.materias[idx].nome = novoNome;
+                            this.topicosPorMateria[novoNome] = this.topicosPorMateria[nomeAntigo] || [];
+                            delete this.topicosPorMateria[nomeAntigo];
+                            this.selectedMat = novoNome;
+                        }
+                    }
+                },
+
+                adicionarTopico() {
+                    let texto = this.novoTopicoTexto.trim();
+                    if(texto) {
+                        if(!this.topicosPorMateria[this.selectedMat]) {
+                            this.topicosPorMateria[this.selectedMat] = [];
+                        }
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: texto, status: 'ESTUDAR' });
+                        this.novoTopicoTexto = '';
+                    }
+                },
+
+                removerTopico(mat, index) {
+                    if(this.topicosPorMateria[mat]) {
+                        this.topicosPorMateria[mat].splice(index, 1);
+                    }
+                },
+
                 toggleStatus(mat, index) {
+                    if(!this.topicosPorMateria[mat]) return;
                     let t = this.topicosPorMateria[mat][index];
                     if(t.status === 'ESTUDAR') t.status = 'ESTUDANDO';
                     else if(t.status === 'ESTUDANDO') t.status = 'CONCLUÍDO';
                     else t.status = 'ESTUDAR';
                 },
-                
-                removerTopico(mat, index) {
-                    if(confirm('Deseja excluir este tópico?')) {
-                        this.topicosPorMateria[mat].splice(index, 1);
-                    }
-                },
-                
-                iniciarEdicaoTopico(index, conteudo) {
-                    this.topicoEditandoIndex = index;
-                    this.topicoTextoEmEdicao = conteudo;
-                },
-                
-                salvarEdicaoTopico(mat, index) {
-                    if(this.topicoTextoEmEdicao.trim()) {
-                        this.topicosPorMateria[mat][index].conteudo = this.topicoTextoEmEdicao.trim();
-                    }
-                    this.topicoEditandoIndex = null;
-                },
-                
+
+                // REQUISITO 3: Permite registrar por Matéria, por Assunto, ou por ambos
                 adicionarQuestao() {
-                    if(!this.novaQuestao.data) return;
-                    let q = {
+                    if(!this.novaQuestao.materia && !this.novaQuestao.assunto) {
+                        alert('Preencha ao menos a Matéria ou o Assunto.');
+                        return;
+                    }
+                    this.questoesRegistro.unshift({
                         id: Date.now(),
-                        data: this.novaQuestao.data,
-                        semana: this.novaQuestao.semana || 'GERAL',
-                        materia: this.novaQuestao.materia || 'Outros / Sem Matéria',
+                        semana: this.novaQuestao.semana,
+                        data: this.novaQuestao.data || '23/10/26',
+                        materia: this.novaQuestao.materia || 'Geral',
                         assunto: this.novaQuestao.assunto || 'Geral',
                         qtd: Number(this.novaQuestao.qtd) || 0,
                         acertos: Number(this.novaQuestao.acertos) || 0,
-                        gargalo: this.novaQuestao.gargalo || ''
-                    };
-                    this.questoes.unshift(q);
+                        gargalo: this.novaQuestao.gargalo,
+                        timestamp: Date.now(),
+                        resolvido: false
+                    });
                     this.novaQuestao.assunto = '';
                     this.novaQuestao.gargalo = '';
-                    setTimeout(() => lucide.createIcons(), 50);
                 },
-                
-                removerQuestao(id) {
-                    if(confirm('Excluir este registro de questões?')) {
-                        this.questoes = this.questoes.filter(q => q.id !== id);
+
+                removerQuestaoPorId(id) {
+                    let idx = this.questoesRegistro.findIndex(q => q.id === id);
+                    if(idx !== -1) this.questoesRegistro.splice(idx, 1);
+                },
+
+                toggleGargaloResolvido(id) {
+                    let item = this.questoesRegistro.find(q => q.id === id);
+                    if(item) item.resolvido = !item.resolvido;
+                },
+
+                salvarCiclo() {
+                    let sem = this.novoCiclo.semana.trim().toUpperCase();
+                    let mats = this.novoCiclo.materiasTexto.split(',').map(m => m.trim()).filter(m => m);
+                    if(!sem || mats.length === 0) return;
+
+                    if(this.cicloEmEdicaoIndex !== null) {
+                        this.cronogramaSemanas[this.cicloEmEdicaoIndex] = { semana: sem, materias: mats };
+                        this.cicloEmEdicaoIndex = null;
+                    } else {
+                        this.cronogramaSemanas.push({ semana: sem, materias: mats });
                     }
+                    this.novoCiclo.semana = '';
+                    this.novoCiclo.materiasTexto = '';
                 },
-                
-                iniciarEdicaoAssuntoQuestao(id, assunto) {
-                    this.questaoEditandoId = id;
-                    this.questaoTextoAssuntoEdicao = assunto;
+
+                carregarCicloParaEdicao(index) {
+                    let c = this.cronogramaSemanas[index];
+                    this.novoCiclo.semana = c.semana;
+                    this.novoCiclo.materiasTexto = c.materias.join(', ');
+                    this.cicloEmEdicaoIndex = index;
                 },
-                
-                salvarEdicaoAssuntoQuestao(id) {
-                    let q = this.questoes.find(item => item.id === id);
-                    if(q && this.questaoTextoAssuntoEdicao.trim()) {
-                        q.assunto = this.questaoTextoAssuntoEdicao.trim();
-                    }
-                    this.questaoEditandoId = null;
+
+                cancelarEdicaoCiclo() {
+                    this.cicloEmEdicaoIndex = null;
+                    this.novoCiclo.semana = '';
+                    this.novoCiclo.materiasTexto = '';
                 },
-                
-                toggleDataMateriaExpandida(key) {
-                    this.dataMateriaExpandidas[key] = !this.dataMateriaExpandidas[key];
+
+                removerCiclo(index) {
+                    this.cronogramaSemanas.splice(index, 1);
                 },
-                
-                isDataMateriaExpandida(key) {
-                    return !!this.dataMateriaExpandidas[key];
+
+                calcularProgressoMatéria(matName) {
+                    let topicos = this.topicosPorMateria[matName] || [];
+                    if(topicos.length === 0) return 0;
+                    let concluidos = topicos.filter(t => t.status === 'CONCLUÍDO').length;
+                    return Math.round((concluidos / topicos.length) * 100);
                 },
-                
-                somarQtdMat(arr) {
-                    return arr.reduce((acc, q) => acc + (q.qtd || 0), 0);
-                },
-                
-                somarAcertosMat(arr) {
-                    return arr.reduce((acc, q) => acc + (q.acertos || 0), 0);
-                },
-                
-                calcularPorcentagemMat(arr) {
-                    let qTotal = this.somarQtdMat(arr);
-                    let aTotal = this.somarAcertosMat(arr);
-                    return qTotal > 0 ? Math.round((aTotal / qTotal) * 100) : 0;
-                },
-                
+
+                // REQUISITO 2: Agrupamento em 3 Níveis: Data -> Matéria -> Questões/Assuntos
                 get questoesAgrupadasPorDataEMateria() {
-                    let lista = this.questoes;
-                    if(this.filtroDiasQuestoes !== '0') {
-                        let dias = parseInt(this.filtroDiasQuestoes);
-                        let hoje = new Date();
-                        lista = lista.filter(q => {
-                            let partes = q.data.split('/');
-                            if(partes.length === 3) {
-                                let d = new Date(2000 + parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                                let diffTime = Math.abs(hoje - d);
-                                let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                return diffDays <= dias;
-                            }
-                            return true;
-                        });
-                    }
-                    
+                    let dias = Number(this.filtroDiasQuestoes);
+                    let limiteTimestamp = dias > 0 ? Date.now() - (dias * 24 * 60 * 60 * 1000) : 0;
+
+                    let listaFiltrada = this.questoesRegistro.filter(q => {
+                        if(dias === 0) return true;
+                        let ts = q.timestamp || Date.now();
+                        return ts >= limiteTimestamp;
+                    });
+
+                    let porData = {};
+                    listaFiltrada.forEach(q => {
+                        let dKey = q.data || 'Sem Data';
+                        let mKey = q.materia || 'Geral';
+
+                        if(!porData[dKey]) porData[dKey] = {};
+                        if(!porData[dKey][mKey]) porData[dKey][mKey] = [];
+                        porData[dKey][mKey].push(q);
+                    });
+                    return porData;
+                },
+
+                somarQtdMat(lista) { return lista.reduce((a, b) => a + (Number(b.qtd)||0), 0); },
+                somarAcertosMat(lista) { return lista.reduce((a, b) => a + (Number(b.acertos)||0), 0); },
+                calcularPorcentagemMat(lista) {
+                    let q = this.somarQtdMat(lista);
+                    let a = this.somarAcertosMat(lista);
+                    return q > 0 ? ((a / q) * 100).toFixed(1) : 0;
+                },
+
+                get gargalosAgrupadosPorMateria() {
                     let agrupado = {};
-                    lista.forEach(q => {
-                        let data = q.data || 'Sem Data';
-                        let mat = q.materia || 'Sem Matéria';
-                        if(!agrupado[data]) agrupado[data] = {};
-                        if(!agrupado[data][mat]) agrupado[data][mat] = [];
-                        agrupado[data][mat].push(q);
+                    this.questoesRegistro.forEach(q => {
+                        if(q.gargalo && q.gargalo.trim() !== '') {
+                            let matKey = q.materia || 'Geral';
+                            if(!agrupado[matKey]) agrupado[matKey] = [];
+                            agrupado[matKey].push(q);
+                        }
                     });
                     return agrupado;
                 },
-                
-                get gargalosLista() {
-                    return this.questoes.filter(q => q.gargalo && q.gargalo.trim() !== '');
+
+                get stats() {
+                    let totalQ = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.qtd) || 0), 0);
+                    let totalA = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.acertos) || 0), 0);
+                    let totalE = totalQ - totalA;
+                    let media = totalQ > 0 ? ((totalA / totalQ) * 100).toFixed(1) : 0;
+                    return {
+                        totalQuestao: totalQ,
+                        totalAcertos: totalA,
+                        totalErros: totalE,
+                        mediaAproveitamento: media
+                    };
                 }
-            }
-        }
+            }));
+        });
+        document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { lucide.createIcons(); }, 100); });
     </script>
 </body>
 </html>
