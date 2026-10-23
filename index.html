@@ -98,7 +98,7 @@
       <!-- Footer Info -->
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v2.5</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.0</span>
       </div>
     </aside>
 
@@ -150,7 +150,7 @@
             <!-- Overall Progress -->
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm space-y-2">
               <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400">Progresso Geral</span>
+                <span class="text-xs font-medium text-slate-400">Progresso Geral (Concluído)</span>
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
               </div>
               <div class="flex items-baseline space-x-2">
@@ -250,7 +250,7 @@
                       <span class="font-bold text-slate-200" x-text="mat.nome"></span>
                     </div>
                     <div class="flex items-center space-x-3">
-                      <span class="text-slate-400 font-mono" x-text="`${calcMateriaCompleted(mat)}/${mat.topicos.length} tópicos`"></span>
+                      <span class="text-slate-400 font-mono" x-text="`${calcMateriaCompleted(mat)}/${mat.topicos.length} concluídos`"></span>
                       <span class="font-bold px-2 py-0.5 rounded text-[11px]"
                             :class="getProgressBarText(calcMateriaPercent(mat))"
                             x-text="calcMateriaPercent(mat) + '%'"></span>
@@ -268,14 +268,24 @@
             </div>
           </div>
 
-          <!-- NOVO REQUISITO: Performance de Questões por Matéria -->
+          <!-- Performance de Questões por Matéria -->
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
                 <i data-lucide="target" class="w-4 h-4 text-sky-400"></i>
                 <span>Desempenho em Questões por Matéria</span>
               </h3>
-              <span class="text-xs text-slate-500 font-mono" x-text="`${calcTotalQuestions()} questões resolvidas no total`"></span>
+              
+              <!-- Global Period Filter Option -->
+              <div class="flex items-center space-x-2 text-xs">
+                <span class="text-slate-400">Período:</span>
+                <select x-model="questoesPeriodFilter" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
+                  <option value="total">Período Total</option>
+                  <option value="30">Últimos 30 dias</option>
+                  <option value="15">Últimos 15 dias</option>
+                  <option value="7">Últimos 7 dias</option>
+                </select>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -325,17 +335,17 @@
 
         </div>
 
-        <!-- ==================== TAB 2: MATÉRIAS (MAIN FEATURE) ==================== -->
+        <!-- ==================== TAB 2: MATÉRIAS ==================== -->
         <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
           
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
-              <p class="text-slate-400 text-sm">Organize seu edital. Subtópicos são ocultados por padrão sob os tópicos pai.</p>
+              <p class="text-slate-400 text-sm">Organize seu edital. Tópicos principais ficam em MAIÚSCULO e Subtópicos em Primeira maiúscula.</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-              <button @click="showMateriaModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+              <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 <span>Nova Matéria</span>
               </button>
@@ -365,7 +375,13 @@
                   <div class="flex items-center space-x-3">
                     <span class="w-4 h-4 rounded-full" :style="`background-color: ${getSelectedMateria().cor}`"></span>
                     <h3 class="text-lg font-bold text-slate-100" x-text="getSelectedMateria().nome"></h3>
-                    <button @click="deleteMateria(getSelectedMateria().id)" class="text-slate-500 hover:text-rose-400 transition" title="Excluir Matéria">
+                    
+                    <!-- Edit Subject Action -->
+                    <button @click="openEditMateriaModal(getSelectedMateria())" class="text-slate-500 hover:text-indigo-400 transition p-1" title="Editar Nome da Matéria">
+                      <i data-lucide="edit-2" class="w-4 h-4"></i>
+                    </button>
+                    <!-- Delete Subject Action -->
+                    <button @click="deleteMateria(getSelectedMateria().id)" class="text-slate-500 hover:text-rose-400 transition p-1" title="Excluir Matéria">
                       <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                   </div>
@@ -388,11 +404,11 @@
                 <div class="space-y-2">
                   <div class="flex items-center justify-between">
                     <label class="text-xs font-semibold text-slate-300">Adicionar Tópicos ao Edital</label>
-                    <span class="text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa de múltiplos tópicos!</span>
+                    <span class="text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa!</span>
                   </div>
                   <div class="flex gap-2">
                     <input type="text" x-model="newTopicText" @keydown.enter="addTopicToSelectedMateria()"
-                      placeholder="Ex: 1. Direito Tributário. 1.1 Vigência da Lei. 1.2 Aplicação."
+                      placeholder="Ex: 1. DIREITO TRIBUTÁRIO. 1.1 Vigência da Lei. 1.2 Aplicação."
                       class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
                     <button @click="addTopicToSelectedMateria()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
                       <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -420,23 +436,25 @@
                       
                       <!-- PARENT TOPIC ITEM -->
                       <template x-if="group.parent">
-                        <div class="p-3.5 flex items-center justify-between hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
+                        <div class="p-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
                           
                           <!-- Left: Expand Toggle + Topic Name + Priority -->
-                          <div class="flex items-center space-x-3 flex-1 min-w-0 pr-4">
+                          <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <!-- Toggle Collapse Button -->
                             <button @click="group.parent.expandido = !group.parent.expandido; saveToSupabase()"
                               class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0">
                               <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
                             </button>
 
-                            <!-- Checkbox Completed -->
-                            <input type="checkbox" :checked="group.parent.concluido" @change="toggleTopicStatus(group.parent.id)"
-                              class="w-4 h-4 rounded border-slate-700 text-indigo-600 focus:ring-0 bg-slate-950 cursor-pointer">
+                            <!-- Status Selector (Estudar, Estudando, Concluído) -->
+                            <button @click="cycleStatus(group.parent)" class="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-md border transition flex items-center space-x-1"
+                              :class="getStatusBadgeClass(group.parent.status)">
+                              <span x-text="getStatusLabel(group.parent.status)"></span>
+                            </button>
 
-                            <!-- Title -->
-                            <span :class="group.parent.concluido ? 'line-through text-slate-500' : 'text-slate-200 font-medium'"
-                                  class="text-xs truncate cursor-pointer"
+                            <!-- Title (Uppercase for parent topic) -->
+                            <span class="text-xs font-bold truncate cursor-pointer tracking-wide"
+                                  :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'"
                                   @click="group.parent.expandido = !group.parent.expandido; saveToSupabase()"
                                   x-text="group.parent.nome"></span>
 
@@ -447,13 +465,17 @@
                             </button>
                             
                             <!-- Subtopic Count Badge -->
-                            <span x-show="group.children.length > 0" class="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded font-mono">
+                            <span x-show="group.children.length > 0" class="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded font-mono hidden md:inline-block">
                               <span x-text="group.children.length"></span> subtópicos
                             </span>
                           </div>
 
-                          <!-- Right Actions -->
-                          <div class="flex items-center space-x-2 shrink-0">
+                          <!-- Right Actions (Edit, Indent, Delete) -->
+                          <div class="flex items-center space-x-2 shrink-0 ml-auto">
+                            <!-- Edit Topic Name -->
+                            <button @click="openEditTopicModal(group.parent)" title="Editar Assunto" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
                             <!-- Indent/Type Toggle (Parent <-> Sub) -->
                             <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-500 hover:text-indigo-400 p-1 transition">
                               <i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i>
@@ -471,15 +493,19 @@
                       <template x-if="group.parent">
                         <div x-show="group.parent.expandido" x-collapse class="bg-slate-950/60 border-t border-b border-slate-800/40 divide-y divide-slate-800/30">
                           <template x-for="child in group.children" :key="child.id">
-                            <div class="py-2.5 pl-12 pr-4 flex items-center justify-between hover:bg-slate-800/30 transition">
+                            <div class="py-2.5 pl-8 sm:pl-12 pr-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-slate-800/30 transition">
                               
-                              <div class="flex items-center space-x-3 flex-1 min-w-0 pr-4">
+                              <div class="flex items-center space-x-3 flex-1 min-w-0">
                                 <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
                                 
-                                <input type="checkbox" :checked="child.concluido" @change="toggleTopicStatus(child.id)"
-                                  class="w-3.5 h-3.5 rounded border-slate-700 text-indigo-600 focus:ring-0 bg-slate-950 cursor-pointer">
+                                <!-- Status Selector for Subtopic -->
+                                <button @click="cycleStatus(child)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition"
+                                  :class="getStatusBadgeClass(child.status)">
+                                  <span x-text="getStatusLabel(child.status)"></span>
+                                </button>
 
-                                <span :class="child.concluido ? 'line-through text-slate-500' : 'text-slate-300'"
+                                <!-- Title (Sentence Case for subtopics) -->
+                                <span :class="child.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'"
                                       class="text-xs truncate" x-text="child.nome"></span>
 
                                 <!-- Priority Tag -->
@@ -489,7 +515,11 @@
                                 </button>
                               </div>
 
-                              <div class="flex items-center space-x-2 shrink-0">
+                              <div class="flex items-center space-x-2 shrink-0 ml-auto">
+                                <!-- Edit Subtopic Name -->
+                                <button @click="openEditTopicModal(child)" title="Editar Subtópico" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                                  <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                </button>
                                 <!-- Indent/Type Toggle (Sub -> Parent) -->
                                 <button @click="toggleTopicType(child.id)" title="Transformar em Tópico Principal" class="text-slate-500 hover:text-indigo-400 p-1 transition">
                                   <i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i>
@@ -504,20 +534,27 @@
                         </div>
                       </template>
 
-                      <!-- ORPHAN SUBTOPICS (If subtopics appear before any parent topic) -->
+                      <!-- ORPHAN SUBTOPICS -->
                       <template x-if="!group.parent && group.children.length > 0">
                         <div class="divide-y divide-slate-800/40 bg-slate-950/40">
                           <template x-for="orphan in group.children" :key="orphan.id">
                             <div class="py-2.5 px-4 flex items-center justify-between hover:bg-slate-800/30 transition">
                               <div class="flex items-center space-x-3 flex-1 min-w-0 pr-4">
-                                <span class="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20">Sem Pai</span>
-                                <input type="checkbox" :checked="orphan.concluido" @change="toggleTopicStatus(orphan.id)"
-                                  class="w-3.5 h-3.5 rounded border-slate-700 text-indigo-600 focus:ring-0 bg-slate-950 cursor-pointer">
-                                <span :class="orphan.concluido ? 'line-through text-slate-500' : 'text-slate-300'"
+                                <span class="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20 shrink-0">Sem Pai</span>
+                                
+                                <button @click="cycleStatus(orphan)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition"
+                                  :class="getStatusBadgeClass(orphan.status)">
+                                  <span x-text="getStatusLabel(orphan.status)"></span>
+                                </button>
+
+                                <span :class="orphan.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'"
                                       class="text-xs truncate" x-text="orphan.nome"></span>
                               </div>
                               <div class="flex items-center space-x-2 shrink-0">
-                                <button @click="toggleTopicType(orphan.id)" title="Promover a Pai" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                                <button @click="openEditTopicModal(orphan)" title="Editar Assunto" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                                  <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button @click="toggleTopicType(orphan.id)" title="Promover a Tópico Pai" class="text-slate-500 hover:text-indigo-400 p-1 transition">
                                   <i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i>
                                 </button>
                                 <button @click="deleteTopic(orphan.id)" title="Excluir" class="text-slate-500 hover:text-rose-400 p-1 transition">
@@ -551,46 +588,69 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Questões e Performance</h2>
-              <p class="text-slate-400 text-sm">Monitore sua taxa de acerto e anote os motivos de erros.</p>
+              <p class="text-slate-400 text-sm">Monitore sua taxa de acerto por período e registre a data exata das baterias.</p>
             </div>
-            <button @click="showQuestaoModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+            <button @click="openAddQuestaoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>Novo Treino de Questões</span>
             </button>
           </div>
 
           <!-- Questions Table / History -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-            <div class="p-4 bg-slate-850 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
-              <span class="text-xs font-bold text-slate-200">Histórico de Baterias</span>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm space-y-4 p-4">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Histórico de Baterias (Ordenado por Data)</span>
               
-              <!-- Filter by Subject -->
-              <div class="flex items-center space-x-2">
-                <span class="text-xs text-slate-400">Filtrar Matéria:</span>
-                <select x-model="questoesFilterMateria" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
-                  <option value="todas">Todas as Matérias</option>
-                  <template x-for="m in materias" :key="m.id">
-                    <option :value="m.nome" x-text="m.nome"></option>
-                  </template>
-                </select>
+              <div class="flex flex-wrap items-center gap-3">
+                <!-- Filter by Time Period -->
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-slate-400">Exibir Período:</span>
+                  <select x-model="questoesPeriodFilter" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+                    <option value="total">Período Total</option>
+                    <option value="30">Últimos 30 dias</option>
+                    <option value="15">Últimos 15 dias</option>
+                    <option value="7">Últimos 7 dias</option>
+                  </select>
+                </div>
+
+                <!-- Filter by Subject -->
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-slate-400">Matéria:</span>
+                  <select x-model="questoesFilterMateria" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+                    <option value="todas">Todas as Matérias</option>
+                    <template x-for="m in materias" :key="m.id">
+                      <option :value="m.nome" x-text="m.nome"></option>
+                    </template>
+                  </select>
+                </div>
               </div>
             </div>
 
+            <!-- List of Questions -->
             <div class="divide-y divide-slate-800/80">
               <template x-for="q in getFilteredQuestoes()" :key="q.id">
-                <div class="p-4 hover:bg-slate-850/40 transition space-y-2">
+                <div class="py-3 px-2 hover:bg-slate-850/40 transition space-y-2 rounded-lg">
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center space-x-2">
+                      <!-- Date Badge -->
+                      <span class="text-xs font-mono font-semibold bg-slate-800 text-indigo-400 px-2 py-0.5 rounded border border-slate-700" x-text="formatDate(q.data)"></span>
                       <span class="text-xs font-bold text-slate-200" x-text="q.materia"></span>
                       <span class="text-slate-600">•</span>
                       <span class="text-xs text-slate-400" x-text="q.assunto || 'Geral'"></span>
                     </div>
+
                     <div class="flex items-center space-x-3 text-xs">
-                      <span class="text-slate-400" x-text="formatDate(q.data)"></span>
-                      <span class="font-bold px-2 py-0.5 rounded"
+                      <span class="font-bold px-2.5 py-0.5 rounded"
                             :class="getProgressBarText(calcQuestaoPercent(q))"
                             x-text="`${q.acertos}/${q.total} (${calcQuestaoPercent(q)}%)`"></span>
-                      <button @click="deleteQuestao(q.id)" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                      
+                      <!-- Edit Question Record -->
+                      <button @click="openEditQuestaoModal(q)" class="text-slate-500 hover:text-indigo-400 p-1 transition" title="Editar Registro">
+                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <!-- Delete Question Record -->
+                      <button @click="deleteQuestao(q.id)" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Excluir Registro">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                       </button>
                     </div>
@@ -598,7 +658,7 @@
 
                   <!-- Bottleneck / Note Text -->
                   <template x-if="q.anotacao">
-                    <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 text-xs text-amber-300/90 flex items-start space-x-2">
+                    <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-2 text-xs text-amber-300/90 flex items-start space-x-2">
                       <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
                       <span x-text="q.anotacao"></span>
                     </div>
@@ -607,7 +667,7 @@
               </template>
 
               <div x-show="getFilteredQuestoes().length === 0" class="p-8 text-center text-slate-500 text-xs">
-                Nenhum registro de questões encontrado.
+                Nenhum registro de questões encontrado para os filtros selecionados.
               </div>
             </div>
           </div>
@@ -705,10 +765,10 @@
 
   <!-- ==================== MODALS ==================== -->
 
-  <!-- Modal: Nova Matéria -->
+  <!-- Modal: Nova / Editar Matéria -->
   <div x-show="showMateriaModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
-      <h3 class="font-bold text-slate-100 text-base">Nova Matéria</h3>
+      <h3 class="font-bold text-slate-100 text-base" x-text="editingMateriaId ? 'Editar Matéria' : 'Nova Matéria'"></h3>
       <div class="space-y-3">
         <div>
           <label class="text-xs text-slate-400 block mb-1">Nome da Disciplina</label>
@@ -721,16 +781,38 @@
       </div>
       <div class="flex justify-end space-x-2 pt-2">
         <button @click="showMateriaModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
-        <button @click="saveNewMateria()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
+        <button @click="saveMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Novo Treino Questões -->
+  <!-- Modal: Editar Assunto / Tópico -->
+  <div x-show="showEditTopicModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Editar Nome do Assunto</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Descrição do Tópico / Subtópico</label>
+          <input type="text" x-model="modalTopicText" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">A caixa alta/baixa é aplicada automaticamente com base no tipo (Tópico ou Subtópico).</p>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showEditTopicModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveEditedTopic()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adicionar / Editar Registro de Questões -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
-      <h3 class="font-bold text-slate-100 text-base">Registrar Questões</h3>
+      <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Treino de Questões' : 'Registrar Treino de Questões'"></h3>
       <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Data da Bateria</label>
+          <input type="date" x-model="modalQuestaoData" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
         <div>
           <label class="text-xs text-slate-400 block mb-1">Matéria</label>
           <select x-model="modalQuestaoMateria" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -754,13 +836,13 @@
           </div>
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalos</label>
-          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Motivo dos erros..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+          <label class="text-xs text-slate-400 block mb-1">Anotações / Motivo dos Erros</label>
+          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Descreva os pontos em que errou..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
       </div>
       <div class="flex justify-end space-x-2 pt-2">
         <button @click="showQuestaoModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
-        <button @click="saveNewQuestao()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Registrar</button>
+        <button @click="saveQuestaoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
       </div>
     </div>
   </div>
@@ -821,6 +903,19 @@
       console.warn("Supabase init error:", e);
     }
 
+    // String formatting utilities for Topics/Subtopics
+    function formatTextCase(str, isSubtopic) {
+      if (!str) return '';
+      if (isSubtopic) {
+        // Sentence case: Only first letter uppercase, rest lowercase
+        const clean = str.trim();
+        return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+      } else {
+        // Uppercase: Entire string uppercase
+        return str.toUpperCase();
+      }
+    }
+
     function appData() {
       return {
         activeTab: 'materias',
@@ -843,11 +938,11 @@
             nome: 'Direito Tributário',
             cor: '#3b82f6',
             topicos: [
-              { id: 't1', nome: '1. Sistema Tributário Nacional', eSubtopico: false, concluido: true, prioridade: 'alta', expandido: false },
-              { id: 't2', nome: '1.1 Princípios Constitucionais Tributários', eSubtopico: true, concluido: true, prioridade: 'alta', expandido: false },
-              { id: 't3', nome: '1.2 Imunidades Tributárias', eSubtopico: true, concluido: false, prioridade: 'alta', expandido: false },
-              { id: 't4', nome: '2. Obrigação Tributária', eSubtopico: false, concluido: false, prioridade: 'media', expandido: false },
-              { id: 't5', nome: '2.1 Fato Gerador e Sujeito Passivo', eSubtopico: true, concluido: false, prioridade: 'media', expandido: false }
+              { id: 't1', nome: '1. SISTEMA TRIBUTÁRIO NACIONAL', eSubtopico: false, status: 'concluido', prioridade: 'alta', expandido: true },
+              { id: 't2', nome: '1.1 Princípios constitucionais tributários', eSubtopico: true, status: 'concluido', prioridade: 'alta', expandido: false },
+              { id: 't3', nome: '1.2 Imunidades tributárias', eSubtopico: true, status: 'estudando', prioridade: 'alta', expandido: false },
+              { id: 't4', nome: '2. OBRIGAÇÃO TRIBUTÁRIA', eSubtopico: false, status: 'estudar', prioridade: 'media', expandido: false },
+              { id: 't5', nome: '2.1 Fato gerador e sujeito passivo', eSubtopico: true, status: 'estudar', prioridade: 'media', expandido: false }
             ]
           },
           {
@@ -855,8 +950,8 @@
             nome: 'Auditoria Fiscal',
             cor: '#10b981',
             topicos: [
-              { id: 't6', nome: '1. Normas de Auditoria', eSubtopico: false, concluido: false, prioridade: 'alta', expandido: false },
-              { id: 't7', nome: '1.1 Planejamento e Risco', eSubtopico: true, concluido: false, prioridade: 'alta', expandido: false }
+              { id: 't6', nome: '1. NORMAS DE AUDITORIA', eSubtopico: false, status: 'estudando', prioridade: 'alta', expandido: true },
+              { id: 't7', nome: '1.1 Planejamento e risco', eSubtopico: true, status: 'estudar', prioridade: 'alta', expandido: false }
             ]
           }
         ],
@@ -869,9 +964,18 @@
         ],
 
         questoes: [
-          { id: 'q1', materia: 'Direito Tributário', assunto: 'Imunidades', total: 20, acertos: 16, anotacao: 'Atenção com imunidade recíproca em empresas públicas prestadoras de serviço público.', data: new Date().toISOString() }
+          { 
+            id: 'q1', 
+            materia: 'Direito Tributário', 
+            assunto: 'Imunidades', 
+            total: 20, 
+            acertos: 16, 
+            anotacao: 'Atenção com imunidade recíproca em empresas públicas prestadoras de serviço público.', 
+            data: new Date().toISOString().split('T')[0] 
+          }
         ],
         questoesFilterMateria: 'todas',
+        questoesPeriodFilter: 'total', // 'total', '30', '15', '7'
 
         gargalos: [
           { id: 'g1', materia: 'Auditoria Fiscal', titulo: 'Amostragem Estatística (MUS vs Clássica)', descricao: 'Dificuldade nos cálculos do tamanho da amostra.', resolvido: false }
@@ -890,10 +994,17 @@
 
         // Modals Logic & Models
         showMateriaModal: false,
+        editingMateriaId: null,
         modalMateriaNome: '',
         modalMateriaCor: '#6366f1',
 
+        showEditTopicModal: false,
+        editingTopicObj: null,
+        modalTopicText: '',
+
         showQuestaoModal: false,
+        editingQuestaoId: null,
+        modalQuestaoData: new Date().toISOString().split('T')[0],
         modalQuestaoMateria: '',
         modalQuestaoAssunto: '',
         modalQuestaoTotal: 10,
@@ -935,7 +1046,18 @@
 
             if (data && data.conteudo) {
               const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
-              if (loaded.materias) this.materias = loaded.materias;
+              if (loaded.materias) {
+                // Ensure backward compatibility with status field
+                this.materias = loaded.materias.map(m => {
+                  m.topicos = (m.topicos || []).map(t => {
+                    if (!t.status) {
+                      t.status = t.concluido ? 'concluido' : 'estudar';
+                    }
+                    return t;
+                  });
+                  return m;
+                });
+              }
               if (loaded.questoes) this.questoes = loaded.questoes;
               if (loaded.gargalos) this.gargalos = loaded.gargalos;
               if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
@@ -981,7 +1103,6 @@
           return this.materias.find(m => m.id === this.selectedMateriaId) || this.materias[0];
         },
 
-        // Groups topics into Parents and their respective Subtopics (Hierarchy)
         getGroupedTopics(materia) {
           if (!materia || !materia.topicos) return [];
           const groups = [];
@@ -989,15 +1110,12 @@
 
           materia.topicos.forEach(t => {
             if (!t.eSubtopico) {
-              // Main Parent Topic
               currentGroup = { parent: t, children: [] };
               groups.push(currentGroup);
             } else {
-              // Subtopic belongs to immediate preceding parent topic
               if (currentGroup) {
                 currentGroup.children.push(t);
               } else {
-                // Orphan subtopic (no parent before it)
                 groups.push({ parent: null, children: [t] });
               }
             }
@@ -1025,13 +1143,14 @@
           const rawItems = this.newTopicText.split('.').map(s => s.trim()).filter(Boolean);
 
           rawItems.forEach(item => {
-            // Check if item looks like subtopic (e.g., 1.1 or ends with indented feel)
             const isSub = /^\d+\.\d+/.test(item);
+            const formattedName = formatTextCase(item, isSub);
+            
             mat.topicos.push({
               id: 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-              nome: item,
+              nome: formattedName,
               eSubtopico: isSub,
-              concluido: false,
+              status: 'estudar',
               prioridade: 'media',
               expandido: false
             });
@@ -1041,13 +1160,30 @@
           this.saveToSupabase();
         },
 
-        toggleTopicStatus(topicId) {
-          const mat = this.getSelectedMateria();
-          if (!mat) return;
-          const t = mat.topicos.find(item => item.id === topicId);
-          if (t) {
-            t.concluido = !t.concluido;
-            this.saveToSupabase();
+        // Status 3 Options: Estudar -> Estudando -> Concluido
+        cycleStatus(topic) {
+          const states = ['estudar', 'estudando', 'concluido'];
+          const currentIdx = states.indexOf(topic.status || 'estudar');
+          const nextIdx = (currentIdx + 1) % states.length;
+          topic.status = states[nextIdx];
+          this.saveToSupabase();
+        },
+
+        getStatusLabel(status) {
+          switch(status) {
+            case 'estudar': return '⚪ Estudar';
+            case 'estudando': return '🟡 Estudando';
+            case 'concluido': return '🟢 Concluído';
+            default: return '⚪ Estudar';
+          }
+        },
+
+        getStatusBadgeClass(status) {
+          switch(status) {
+            case 'estudar': return 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750';
+            case 'estudando': return 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20';
+            case 'concluido': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20';
+            default: return 'bg-slate-800 text-slate-300 border-slate-700';
           }
         },
 
@@ -1057,6 +1193,8 @@
           const t = mat.topicos.find(item => item.id === topicId);
           if (t) {
             t.eSubtopico = !t.eSubtopico;
+            // Format casing dynamically when toggled between topic and subtopic
+            t.nome = formatTextCase(t.nome, t.eSubtopico);
             this.saveToSupabase();
           }
         },
@@ -1078,10 +1216,10 @@
 
         getPriorityLabel(priority) {
           switch(priority) {
-            case 'alta': return '🔥 Alta Frequência';
-            case 'media': return '⚖️ Média Frequência';
-            case 'baixa': return '🔹 Baixa Frequência';
-            default: return '⚖️ Média Frequência';
+            case 'alta': return '🔥 Alta';
+            case 'media': return '⚖️ Média';
+            case 'baixa': return '🔹 Baixa';
+            default: return '⚖️ Média';
           }
         },
 
@@ -1094,19 +1232,66 @@
           }
         },
 
-        // ==================== MATÉRIAS CRUD ====================
-        saveNewMateria() {
-          if (!this.modalMateriaNome.trim()) return;
-          const newMat = {
-            id: 'mat_' + Date.now(),
-            nome: this.modalMateriaNome.trim(),
-            cor: this.modalMateriaCor || '#6366f1',
-            topicos: []
-          };
-          this.materias.push(newMat);
-          this.selectedMateriaId = newMat.id;
+        // Edit Topic Name Modal
+        openEditTopicModal(topic) {
+          this.editingTopicObj = topic;
+          this.modalTopicText = topic.nome;
+          this.showEditTopicModal = true;
+        },
+
+        saveEditedTopic() {
+          if (!this.editingTopicObj || !this.modalTopicText.trim()) return;
+          this.editingTopicObj.nome = formatTextCase(this.modalTopicText.trim(), this.editingTopicObj.eSubtopico);
+          this.showEditTopicModal = false;
+          this.editingTopicObj = null;
+          this.saveToSupabase();
+        },
+
+        // ==================== MATÉRIAS CRUD & EDIT ====================
+        openAddMateriaModal() {
+          this.editingMateriaId = null;
           this.modalMateriaNome = '';
+          this.modalMateriaCor = '#6366f1';
+          this.showMateriaModal = true;
+        },
+
+        openEditMateriaModal(materia) {
+          this.editingMateriaId = materia.id;
+          this.modalMateriaNome = materia.nome;
+          this.modalMateriaCor = materia.cor || '#6366f1';
+          this.showMateriaModal = true;
+        },
+
+        saveMateriaModal() {
+          if (!this.modalMateriaNome.trim()) return;
+          
+          if (this.editingMateriaId) {
+            // Edit existing materia
+            const mat = this.materias.find(m => m.id === this.editingMateriaId);
+            if (mat) {
+              const oldName = mat.nome;
+              mat.nome = this.modalMateriaNome.trim();
+              mat.cor = this.modalMateriaCor;
+              
+              // Update questions assigned to old name
+              this.questoes.forEach(q => {
+                if (q.materia === oldName) q.materia = mat.nome;
+              });
+            }
+          } else {
+            // Create new materia
+            const newMat = {
+              id: 'mat_' + Date.now(),
+              nome: this.modalMateriaNome.trim(),
+              cor: this.modalMateriaCor || '#6366f1',
+              topicos: []
+            };
+            this.materias.push(newMat);
+            this.selectedMateriaId = newMat.id;
+          }
+
           this.showMateriaModal = false;
+          this.editingMateriaId = null;
           this.saveToSupabase();
         },
 
@@ -1119,7 +1304,7 @@
         // ==================== METRICS & CALCULATIONS ====================
         calcMateriaCompleted(mat) {
           if (!mat || !mat.topicos) return 0;
-          return mat.topicos.filter(t => t.concluido).length;
+          return mat.topicos.filter(t => t.status === 'concluido').length;
         },
 
         calcMateriaPercent(mat) {
@@ -1142,12 +1327,29 @@
           return Math.round((this.countCompletedTopics() / total) * 100);
         },
 
+        // Get questions filtered by time period (total, 30, 15, 7 days)
+        getQuestionsByPeriod() {
+          if (this.questoesPeriodFilter === 'total') return this.questoes;
+          
+          const now = new Date();
+          const days = parseInt(this.questoesPeriodFilter, 10);
+          const limitDate = new Date();
+          limitDate.setDate(now.getDate() - days);
+
+          return this.questoes.filter(q => {
+            const qDate = new Date(q.data);
+            return qDate >= limitDate;
+          });
+        },
+
         calcTotalQuestions() {
-          return this.questoes.reduce((acc, q) => acc + (q.total || 0), 0);
+          const list = this.getQuestionsByPeriod();
+          return list.reduce((acc, q) => acc + (q.total || 0), 0);
         },
 
         calcTotalRights() {
-          return this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const list = this.getQuestionsByPeriod();
+          return list.reduce((acc, q) => acc + (q.acertos || 0), 0);
         },
 
         calcOverallAccuracy() {
@@ -1160,7 +1362,6 @@
           return this.gargalos.filter(g => !g.resolvido).length;
         },
 
-        // Dynamic Progress Color Logic
         getProgressBarBg(percentage) {
           if (percentage < 50) return 'bg-rose-500';
           if (percentage < 75) return 'bg-amber-500';
@@ -1173,9 +1374,9 @@
           return 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
         },
 
-        // Helper calculations for Questions per Subject in Dashboard
         calcMateriaQuestionsStats(materiaNome) {
-          const list = this.questoes.filter(q => q.materia === materiaNome);
+          const periodList = this.getQuestionsByPeriod();
+          const list = periodList.filter(q => q.materia === materiaNome);
           const total = list.reduce((acc, q) => acc + (q.total || 0), 0);
           const acertos = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
           const erros = total - acertos;
@@ -1195,21 +1396,58 @@
           return 'bg-rose-500';
         },
 
-        // ==================== QUESTÕES & GARGALOS CRUD ====================
-        saveNewQuestao() {
-          if (!this.modalQuestaoMateria) return;
-          this.questoes.unshift({
-            id: 'q_' + Date.now(),
-            materia: this.modalQuestaoMateria,
-            assunto: this.modalQuestaoAssunto,
-            total: Number(this.modalQuestaoTotal) || 0,
-            acertos: Number(this.modalQuestaoAcertos) || 0,
-            anotacao: this.modalQuestaoAnotacao,
-            data: new Date().toISOString()
-          });
-          this.showQuestaoModal = false;
+        // ==================== QUESTÕES CRUD & EDIT ====================
+        openAddQuestaoModal() {
+          this.editingQuestaoId = null;
+          this.modalQuestaoData = new Date().toISOString().split('T')[0];
+          this.modalQuestaoMateria = this.materias[0] ? this.materias[0].nome : '';
           this.modalQuestaoAssunto = '';
+          this.modalQuestaoTotal = 10;
+          this.modalQuestaoAcertos = 8;
           this.modalQuestaoAnotacao = '';
+          this.showQuestaoModal = true;
+        },
+
+        openEditQuestaoModal(q) {
+          this.editingQuestaoId = q.id;
+          this.modalQuestaoData = q.data || new Date().toISOString().split('T')[0];
+          this.modalQuestaoMateria = q.materia;
+          this.modalQuestaoAssunto = q.assunto;
+          this.modalQuestaoTotal = q.total;
+          this.modalQuestaoAcertos = q.acertos;
+          this.modalQuestaoAnotacao = q.anotacao || '';
+          this.showQuestaoModal = true;
+        },
+
+        saveQuestaoModal() {
+          if (!this.modalQuestaoMateria) return;
+          
+          if (this.editingQuestaoId) {
+            // Edit existing question record
+            const q = this.questoes.find(item => item.id === this.editingQuestaoId);
+            if (q) {
+              q.data = this.modalQuestaoData;
+              q.materia = this.modalQuestaoMateria;
+              q.assunto = this.modalQuestaoAssunto;
+              q.total = Number(this.modalQuestaoTotal) || 0;
+              q.acertos = Number(this.modalQuestaoAcertos) || 0;
+              q.anotacao = this.modalQuestaoAnotacao;
+            }
+          } else {
+            // Add new question record
+            this.questoes.push({
+              id: 'q_' + Date.now(),
+              materia: this.modalQuestaoMateria,
+              assunto: this.modalQuestaoAssunto,
+              total: Number(this.modalQuestaoTotal) || 0,
+              acertos: Number(this.modalQuestaoAcertos) || 0,
+              anotacao: this.modalQuestaoAnotacao,
+              data: this.modalQuestaoData || new Date().toISOString().split('T')[0]
+            });
+          }
+
+          this.showQuestaoModal = false;
+          this.editingQuestaoId = null;
           this.saveToSupabase();
         },
 
@@ -1218,9 +1456,16 @@
           this.saveToSupabase();
         },
 
+        // Filter & Sort Questions by Date (Newest to Oldest)
         getFilteredQuestoes() {
-          if (this.questoesFilterMateria === 'todas') return this.questoes;
-          return this.questoes.filter(q => q.materia === this.questoesFilterMateria);
+          let list = this.getQuestionsByPeriod();
+
+          if (this.questoesFilterMateria !== 'todas') {
+            list = list.filter(q => q.materia === this.questoesFilterMateria);
+          }
+
+          // Sort by date descending (Newest first)
+          return list.sort((a, b) => new Date(b.data) - new Date(a.data));
         },
 
         calcQuestaoPercent(q) {
@@ -1228,6 +1473,7 @@
           return Math.round((q.acertos / q.total) * 100);
         },
 
+        // ==================== GARGALOS CRUD ====================
         saveNewGargalo() {
           if (!this.modalGargaloMateria || !this.modalGargaloTitulo) return;
           this.gargalos.unshift({
@@ -1284,9 +1530,14 @@
           this.saveToSupabase();
         },
 
-        formatDate(isoStr) {
-          if (!isoStr) return '';
-          const d = new Date(isoStr);
+        formatDate(dateStr) {
+          if (!dateStr) return '';
+          // Avoid timezone offset shift
+          const parts = dateStr.split('-');
+          if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+          const d = new Date(dateStr);
           return d.toLocaleDateString('pt-BR');
         }
       }
