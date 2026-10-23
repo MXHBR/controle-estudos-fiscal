@@ -6,20 +6,6 @@
     <title>Painel de Controle de Estudos - Auditor Fiscal</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'fundo': '#E5E200',      // #E5E200 (Bege / Off-white claro)
-                        'card': '#083C51',       // #083C51 (Azul-petróleo escuro)
-                        'ouro': '#A28F6A',       // #A28F6A (Dourado / Caqui)
-                        'azul-medio': '#3F708C', // #3F708C (Azul-médio)
-                    }
-                }
-            }
-        }
-    </script>
     <!-- Alpine.js Collapse Plugin -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <!-- Alpine.js -->
@@ -29,17 +15,17 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-fundo text-slate-900 min-h-screen flex flex-col" x-data="appData()">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col" x-data="appData()">
 
     <!-- HEADER -->
-    <header class="bg-card border-b border-azul-medio/40 sticky top-0 z-50 shadow-lg">
+    <header class="bg-slate-800/90 border-b border-slate-700/70 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-ouro p-2.5 rounded-xl text-card shadow-md">
+                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/20">
                     <i data-lucide="graduation-cap" class="w-7 h-7"></i>
                 </div>
                 <div>
@@ -47,29 +33,29 @@
                         <h1 class="text-xl font-bold tracking-tight text-white">Painel do Auditor Fiscal</h1>
                         <!-- Indicador de Status Supabase -->
                         <span x-text="syncStatus" :class="{
-                            'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': syncStatus === '☁️ Nuvem Sincronizada',
-                            'bg-amber-500/20 text-amber-300 border-amber-500/40': syncStatus === '⏳ Guardando...',
-                            'bg-rose-500/20 text-rose-300 border-rose-500/40': syncStatus === '❌ Erro ao Sincronizar'
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': syncStatus === '☁️ Nuvem Sincronizada',
+                            'bg-amber-500/10 text-amber-400 border-amber-500/20': syncStatus === '⏳ Guardando...',
+                            'bg-rose-500/10 text-rose-400 border-rose-500/20': syncStatus === '❌ Erro ao Sincronizar'
                         }" class="text-[10px] px-2.5 py-0.5 rounded-full border font-semibold"></span>
                     </div>
-                    <p class="text-xs text-ouro font-medium">Controle Avançado de Estudos & Desempenho</p>
+                    <p class="text-xs text-slate-400">Controle Avançado de Estudos & Desempenho</p>
                 </div>
             </div>
             <!-- Navegação por Abas -->
-            <nav class="flex flex-wrap gap-1.5 bg-slate-950/40 p-1.5 rounded-xl border border-azul-medio/40">
-                <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-ouro text-card shadow-md font-bold' : 'text-slate-200 hover:text-white hover:bg-azul-medio/30'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
+            <nav class="flex flex-wrap gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/80">
+                <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
                 </button>
-                <button @click="activeTab = 'materias'" :class="activeTab === 'materias' ? 'bg-ouro text-card shadow-md font-bold' : 'text-slate-200 hover:text-white hover:bg-azul-medio/30'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
+                <button @click="activeTab = 'materias'" :class="activeTab === 'materias' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="book-open" class="w-4 h-4"></i> Matérias
                 </button>
-                <button @click="activeTab = 'questoes'" :class="activeTab === 'questoes' ? 'bg-ouro text-card shadow-md font-bold' : 'text-slate-200 hover:text-white hover:bg-azul-medio/30'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
+                <button @click="activeTab = 'questoes'" :class="activeTab === 'questoes' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="check-square" class="w-4 h-4"></i> Questões
                 </button>
-                <button @click="activeTab = 'gargalos'" :class="activeTab === 'gargalos' ? 'bg-ouro text-card shadow-md font-bold' : 'text-slate-200 hover:text-white hover:bg-azul-medio/30'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
+                <button @click="activeTab = 'gargalos'" :class="activeTab === 'gargalos' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="alert-triangle" class="w-4 h-4"></i> Gargalos
                 </button>
-                <button @click="activeTab = 'cronograma'" :class="activeTab === 'cronograma' ? 'bg-ouro text-card shadow-md font-bold' : 'text-slate-200 hover:text-white hover:bg-azul-medio/30'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
+                <button @click="activeTab = 'cronograma'" :class="activeTab === 'cronograma' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="calendar" class="w-4 h-4"></i> Cronograma
                 </button>
             </nav>
@@ -82,104 +68,104 @@
         <!-- TAB: DASHBOARD -->
         <section x-show="activeTab === 'dashboard'" class="space-y-6">
             <!-- Quadro de Lembretes Fixos -->
-            <div class="bg-card border border-azul-medio/40 p-5 rounded-2xl shadow-md space-y-2">
+            <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm space-y-2">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-ouro flex items-center gap-2">
-                        <i data-lucide="sticky-note" class="w-4 h-4 text-ouro"></i> Lembretes & Anotações Fixas
+                    <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
+                        <i data-lucide="sticky-note" class="w-4 h-4"></i> Lembretes & Anotações Fixas
                     </h3>
-                    <span class="text-[10px] text-slate-300">Sincronizado via Supabase</span>
+                    <span class="text-[10px] text-slate-400">Sincronizado via Supabase</span>
                 </div>
-                <textarea x-model="lembreteFixado" @change="salvarTudoNaNuvem()" rows="3" placeholder="Digite aqui metas gerais, avisos ou lembretes rápidos para visualizar assim que abrir o site..." class="w-full bg-slate-950/60 border border-azul-medio/50 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-ouro resize-y font-medium"></textarea>
+                <textarea x-model="lembreteFixado" @change="salvarTudoNaNuvem()" rows="3" placeholder="Digite aqui metas gerais, avisos ou lembretes rápidos para visualizar assim que abrir o site..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500/60 resize-y"></textarea>
             </div>
 
             <!-- Cards de Métricas -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-card border border-azul-medio/40 p-5 rounded-2xl shadow-md">
+                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-xs font-bold text-ouro uppercase tracking-wider">Total de Questões</p>
-                            <h3 class="text-2xl font-extrabold mt-1 text-white" x-text="stats.totalQuestao"></h3>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Questões</p>
+                            <h3 class="text-2xl font-bold mt-1 text-white" x-text="stats.totalQuestao"></h3>
                         </div>
-                        <div class="p-3 bg-azul-medio/20 text-ouro rounded-xl border border-azul-medio/40">
+                        <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
                             <i data-lucide="file-text" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-card border border-azul-medio/40 p-5 rounded-2xl shadow-md">
+                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-xs font-bold text-ouro uppercase tracking-wider">Acertos / Erros</p>
-                            <h3 class="text-2xl font-extrabold mt-1 text-emerald-400"><span x-text="stats.totalAcertos"></span> / <span class="text-rose-400" x-text="stats.totalErros"></span></h3>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Acertos / Erros</p>
+                            <h3 class="text-2xl font-bold mt-1 text-emerald-400"><span x-text="stats.totalAcertos"></span> / <span class="text-rose-400" x-text="stats.totalErros"></span></h3>
                         </div>
-                        <div class="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
                             <i data-lucide="award" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-card border border-azul-medio/40 p-5 rounded-2xl shadow-md">
+                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-xs font-bold text-ouro uppercase tracking-wider">Aproveitamento Médio</p>
-                            <h3 class="text-2xl font-extrabold mt-1 text-sky-300" x-text="stats.mediaAproveitamento + '%'"></h3>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aproveitamento Médio</p>
+                            <h3 class="text-2xl font-bold mt-1 text-blue-400" x-text="stats.mediaAproveitamento + '%'"></h3>
                         </div>
-                        <div class="p-3 bg-sky-500/20 text-sky-300 rounded-xl border border-sky-500/30">
+                        <div class="p-3 bg-sky-500/10 text-sky-400 rounded-xl">
                             <i data-lucide="trending-up" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-card border border-azul-medio/40 p-5 rounded-2xl shadow-md">
+                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-xs font-bold text-ouro uppercase tracking-wider">Disciplinas Cadastradas</p>
-                            <h3 class="text-2xl font-extrabold mt-1 text-purple-300" x-text="materias.length"></h3>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Disciplinas Cadastradas</p>
+                            <h3 class="text-2xl font-bold mt-1 text-purple-400" x-text="materias.length"></h3>
                         </div>
-                        <div class="p-3 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30">
+                        <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
                             <i data-lucide="book-open" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Progresso Geral com expansão de assuntos e Cor Dinâmica -->
-            <div class="bg-card border border-azul-medio/40 rounded-2xl p-6 shadow-md space-y-4">
+            <!-- Progresso Geral com expansão de assuntos e Barra Dinâmica -->
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-ouro"></i> Progresso no Conteúdo Programático
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Progresso no Conteúdo Programático
                     </h3>
-                    <p class="text-xs text-slate-300 font-medium">Clique na matéria para expandir os assuntos</p>
+                    <p class="text-xs text-slate-400">Clique na matéria para expandir os assuntos</p>
                 </div>
                 <div class="space-y-3">
                     <template x-for="mat in materias" :key="mat.nome">
-                        <div class="bg-slate-950/50 border border-azul-medio/30 rounded-xl p-4 cursor-pointer hover:border-ouro transition" @click="matExpandidaDashboard = (matExpandidaDashboard === mat.nome ? null : mat.nome)">
+                        <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 cursor-pointer hover:border-slate-500 transition" @click="matExpandidaDashboard = (matExpandidaDashboard === mat.nome ? null : mat.nome)">
                             <div class="flex justify-between items-center text-sm mb-2">
-                                <span class="font-bold text-slate-100 flex items-center gap-2">
-                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaDashboard === mat.nome ? 'rotate-90 text-ouro' : 'text-slate-400'"></i>
+                                <span class="font-semibold text-slate-200 flex items-center gap-2">
+                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaDashboard === mat.nome ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
                                     <span x-text="mat.nome"></span>
                                 </span>
                                 <!-- Porcentagem com a mesma cor da barra -->
-                                <span class="font-extrabold" :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).text" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
+                                <span class="font-bold" :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).text" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
                             </div>
                             
-                            <!-- Barra de Progresso com Cores Dinâmicas -->
-                            <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-azul-medio/40">
-                                <div class="h-3 rounded-full transition-all duration-500" 
+                            <!-- Barra de Progresso com Cores Dinâmicas (Vermelho, Laranja, Verde) -->
+                            <div class="w-full bg-slate-700/60 h-2.5 rounded-full overflow-hidden">
+                                <div class="h-2.5 rounded-full transition-all duration-500" 
                                      :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).bg"
                                      :style="'width: ' + calcularProgressoMatéria(mat.nome) + '%'"></div>
                             </div>
 
-                            <div x-show="matExpandidaDashboard === mat.nome" x-collapse class="mt-4 pt-3 border-t border-azul-medio/30 space-y-2">
+                            <div x-show="matExpandidaDashboard === mat.nome" x-collapse class="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
                                 <template x-for="topico in (topicosPorMateria[mat.nome] || [])">
                                     <div class="flex justify-between items-center text-xs p-2.5 rounded-lg border"
-                                         :class="topico.tipo === 'subtopico' ? 'bg-purple-950/20 border-purple-500/30 ml-4' : 'bg-slate-900 border-azul-medio/30'">
-                                        <span class="text-slate-200 font-medium flex items-center gap-1.5">
-                                            <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-[10px] font-bold">↳</span>
+                                         :class="topico.tipo === 'subtopico' ? 'bg-slate-900/80 border-purple-500/30 ml-4' : 'bg-slate-800/80 border-slate-700/40'">
+                                        <span class="text-slate-300 flex items-center gap-1.5">
+                                            <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-[10px]">↳</span>
                                             <span x-text="topico.conteudo"></span>
                                         </span>
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                               :class="{
-                                                  'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': topico.status === 'CONCLUÍDO',
-                                                  'bg-amber-500/20 text-amber-300 border border-amber-500/40': topico.status === 'ESTUDANDO',
-                                                  'bg-slate-800 text-slate-300 border border-slate-700': topico.status === 'ESTUDAR'
+                                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
+                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
+                                                  'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
                                               }" x-text="topico.status"></span>
                                     </div>
                                 </template>
@@ -193,41 +179,41 @@
         <!-- TAB: MATÉRIAS & TÓPICOS -->
         <section x-show="activeTab === 'materias'" class="space-y-6">
             <!-- Adicionar Matéria -->
-            <div class="bg-card p-5 rounded-2xl border border-azul-medio/40 shadow-md flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="book-plus" class="w-5 h-5 text-ouro"></i> Gerenciar Disciplinas
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="book-plus" class="w-5 h-5 text-blue-400"></i> Gerenciar Disciplinas
                     </h3>
-                    <p class="text-xs text-slate-300">Cadastre novas matérias ou renomeie as existentes.</p>
+                    <p class="text-xs text-slate-400">Cadastre novas matérias ou renomeie as existentes.</p>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
-                    <input type="text" x-model="nuevaMateria" placeholder="Nome da Matéria..." class="bg-slate-950 border border-azul-medio/50 rounded-xl px-4 py-2 text-sm text-slate-100 font-medium focus:outline-none focus:border-ouro flex-grow sm:w-64">
-                    <button @click="adicionarMateria()" class="bg-ouro hover:bg-ouro/80 text-card px-4 py-2 rounded-xl text-sm font-bold transition shrink-0">Cadastrar</button>
+                    <input type="text" x-model="nuevaMateria" placeholder="Nome da Matéria..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 flex-grow sm:w-64">
+                    <button @click="adicionarMateria()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shrink-0">Cadastrar</button>
                 </div>
             </div>
 
             <!-- Gerenciar Tópicos -->
-            <div class="bg-card p-6 rounded-2xl border border-azul-medio/40 shadow-md space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/80 shadow-sm space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="w-full md:w-72 flex items-center gap-2">
                         <div class="flex-grow">
-                            <label class="block text-xs font-bold text-ouro mb-1">Selecionar Matéria</label>
-                            <select x-model="selectedMat" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-semibold rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-ouro">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Selecionar Matéria</label>
+                            <select x-model="selectedMat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                                 <template x-for="mat in materias" :key="mat.nome">
                                     <option :value="mat.nome" x-text="mat.nome"></option>
                                 </template>
                             </select>
                         </div>
-                        <button @click="editarNomeMateria(selectedMat)" class="mt-5 p-2.5 bg-azul-medio/30 hover:bg-azul-medio/50 text-slate-100 rounded-xl transition border border-azul-medio/40" title="Editar nome desta matéria">
+                        <button @click="editarNomeMateria(selectedMat)" class="mt-5 p-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition" title="Editar nome desta matéria">
                             <i data-lucide="pencil" class="w-4 h-4"></i>
                         </button>
                     </div>
 
                     <div class="flex gap-2">
-                        <button @click="modoCadastroTopico = 'unico'" :class="modoCadastroTopico === 'unico' ? 'bg-ouro text-card font-bold' : 'bg-slate-950 text-slate-300 hover:bg-azul-medio/30'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                        <button @click="modoCadastroTopico = 'unico'" :class="modoCadastroTopico === 'unico' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
                             Item Único
                         </button>
-                        <button @click="modoCadastroTopico = 'massa'" :class="modoCadastroTopico === 'massa' ? 'bg-ouro text-card font-bold' : 'bg-slate-950 text-slate-300 hover:bg-azul-medio/30'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                        <button @click="modoCadastroTopico = 'massa'" :class="modoCadastroTopico === 'massa' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
                             Colem vários (Em Massa)
                         </button>
                     </div>
@@ -236,88 +222,88 @@
                 <!-- Formulário Único -->
                 <div x-show="modoCadastroTopico === 'unico'" class="flex flex-col sm:flex-row gap-2 items-end">
                     <div class="flex-grow w-full">
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Novo Assunto / Tópico</label>
-                        <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Legalidade..." class="bg-slate-950 border border-azul-medio/50 rounded-xl px-4 py-2 text-sm text-slate-100 font-medium focus:outline-none focus:border-ouro w-full">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Novo Assunto / Tópico</label>
+                        <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Legalidade..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full">
                     </div>
                     <div class="w-full sm:w-48">
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Tipo</label>
-                        <select x-model="novoTopicoTipo" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
+                        <select x-model="novoTopicoTipo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                             <option value="topico">Tópico Principal</option>
                             <option value="subtopico">Subtópico</option>
                         </select>
                     </div>
-                    <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-bold transition h-[38px] shrink-0 w-full sm:w-auto">Adicionar</button>
+                    <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0 w-full sm:w-auto">Adicionar</button>
                 </div>
 
                 <!-- Inclusão em massa com separador por Ponto Final '.' -->
-                <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-azul-medio/40">
+                <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
                         <textarea x-model="textoTopicosMassa" rows="4" placeholder="Exemplo:
-1. Princípios Constitucionais. 2. Limitações ao Poder de Tributar. 3. Crédito Tributário." class="w-full bg-slate-900 border border-azul-medio/50 text-slate-100 font-medium rounded-xl p-3 text-sm focus:outline-none focus:border-ouro"></textarea>
+1. Princípios Constitucionais. 2. Limitações ao Poder de Tributar. 3. Crédito Tributário." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
                     </div>
                     <div class="flex justify-end">
-                        <button @click="adicionarTopicosEmMassaPontoFinal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-bold transition">Cadastrar Assuntos</button>
+                        <button @click="adicionarTopicosEmMassaPontoFinal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">Cadastrar Assuntos</button>
                     </div>
                 </div>
 
                 <!-- Tabela de Tópicos -->
-                <div class="overflow-x-auto rounded-xl border border-azul-medio/40 shadow-md">
+                <div class="overflow-x-auto rounded-xl border border-slate-700">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-950 text-ouro text-xs uppercase tracking-wider border-b border-azul-medio/40 font-bold">
+                            <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
                                 <th class="p-4">Tópico / Conteúdo</th>
                                 <th class="p-4 w-40">Status</th>
                                 <th class="p-4 w-36 text-center">Tipo</th>
                                 <th class="p-4 w-32 text-center">Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-azul-medio/20 text-sm">
+                        <tbody class="divide-y divide-slate-700/50 text-sm">
                             <template x-for="(topico, index) in (topicosPorMateria[selectedMat] || [])" :key="index">
                                 <tr class="transition"
                                     :class="{
-                                        'hover:bg-slate-950/60 bg-card border-l-4 border-ouro': topico.tipo !== 'subtopico',
-                                        'hover:bg-purple-950/30 bg-purple-950/10 border-l-4 border-purple-400': topico.tipo === 'subtopico'
+                                        'hover:bg-slate-700/25 bg-slate-900/20 border-l-4 border-blue-500': topico.tipo !== 'subtopico',
+                                        'hover:bg-slate-700/25 bg-purple-950/20 border-l-4 border-purple-500': topico.tipo === 'subtopico'
                                     }">
-                                    <td class="p-4 text-slate-100 font-semibold" :class="topico.tipo === 'subtopico' ? 'pl-8' : ''">
-                                        <div x-show="topicoEditandoIndex !== index" class="flex items-center gap-2">
+                                    <td class="p-4 text-slate-200" :class="topico.tipo === 'subtopico' ? 'pl-8' : ''">
+                                        <div x-show="topicoEditandoIndex !== index" class="font-medium flex items-center gap-2">
                                             <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-xs font-bold">↳</span>
                                             <span x-text="topico.conteudo"></span>
                                         </div>
                                         <div x-show="topicoEditandoIndex === index" class="flex gap-2">
-                                            <input type="text" x-model="topicoTextoEmEdicao" class="bg-slate-950 border border-ouro rounded-lg px-3 py-1 text-sm text-slate-100 font-medium w-full focus:outline-none">
+                                            <input type="text" x-model="topicoTextoEmEdicao" class="bg-slate-900 border border-blue-500 rounded-lg px-3 py-1 text-sm text-white w-full focus:outline-none">
                                             <button @click="salvarEdicaoTopico(selectedMat, index)" class="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition" title="Salvar">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                             </button>
                                         </div>
                                     </td>
                                     <td class="p-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-bold cursor-pointer"
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer"
                                               @click="toggleStatus(selectedMat, index)"
                                               :class="{
-                                                  'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': topico.status === 'CONCLUÍDO',
-                                                  'bg-amber-500/20 text-amber-300 border border-amber-500/40': topico.status === 'ESTUDANDO',
-                                                  'bg-slate-800 text-slate-300 border border-slate-700': topico.status === 'ESTUDAR'
+                                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
+                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
+                                                  'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
                                               }" x-text="topico.status"></span>
                                     </td>
                                     <td class="p-4 text-center">
-                                        <button @click="toggleTipoTopico(selectedMat, index)" class="px-2.5 py-1 rounded-lg text-xs font-bold transition border"
-                                                :class="topico.tipo === 'subtopico' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30' : 'bg-azul-medio/30 text-ouro border-azul-medio/50 hover:bg-azul-medio/50'"
+                                        <button @click="toggleTipoTopico(selectedMat, index)" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition border"
+                                                :class="topico.tipo === 'subtopico' ? 'bg-purple-500/10 text-purple-300 border-purple-500/30 hover:bg-purple-500/20' : 'bg-blue-500/10 text-blue-300 border-blue-500/30 hover:bg-blue-500/20'"
                                                 title="Clique para alternar entre Tópico e Subtópico">
                                             <span x-text="topico.tipo === 'subtopico' ? 'Subtópico' : 'Principal'"></span>
                                         </button>
                                     </td>
                                     <td class="p-4 text-center flex items-center justify-center gap-1">
                                         <!-- Botão Editar -->
-                                        <button @click="iniciarEdicaoTopico(index, topico.conteudo)" class="p-2 hover:bg-azul-medio/30 rounded-lg text-slate-300 hover:text-white transition" title="Editar Assunto">
+                                        <button @click="iniciarEdicaoTopico(index, topico.conteudo)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Editar Assunto">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                                         </button>
                                         <!-- Botão Mudar Status -->
-                                        <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-azul-medio/30 rounded-lg text-slate-300 hover:text-white transition" title="Mudar Status">
+                                        <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Mudar Status">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
                                         </button>
                                         <!-- Botão Excluir -->
-                                        <button @click="removerTopico(selectedMat, index)" class="p-2 hover:bg-rose-500/20 rounded-lg text-rose-400 hover:text-rose-300 transition" title="Excluir Tópico">
+                                        <button @click="removerTopico(selectedMat, index)" class="p-2 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Tópico">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                         </button>
                                     </td>
@@ -332,22 +318,22 @@
         <!-- TAB: QUESTÕES & REGISTRO -->
         <section x-show="activeTab === 'questoes'" class="space-y-6">
             <!-- Formulário flexível de registro -->
-            <div class="bg-card p-6 rounded-2xl border border-azul-medio/40 shadow-md space-y-4">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-5 h-5 text-ouro"></i> Registrar Desempenho em Questões
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/80 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Data (DD/MM/AAAA)</label>
-                        <input type="text" x-model="novaQuestao.data" placeholder="23/10/2026" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Data (DD/MM/AAAA)</label>
+                        <input type="text" x-model="novaQuestao.data" placeholder="23/10/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Semana / Ciclo</label>
-                        <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Semana / Ciclo</label>
+                        <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Matéria (Opcional se houver assunto)</label>
-                        <select x-model="novaQuestao.materia" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria (Opcional se houver assunto)</label>
+                        <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                             <option value="">-- Sem Matéria Específica --</option>
                             <template x-for="mat in materias" :key="mat.nome">
                                 <option :value="mat.nome" x-text="mat.nome"></option>
@@ -355,37 +341,37 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Assunto (Opcional se houver matéria)</label>
-                        <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto (Opcional se houver matéria)</label>
+                        <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Total de Questões</label>
-                        <input type="number" x-model.number="novaQuestao.qtd" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Total de Questões</label>
+                        <input type="number" x-model.number="novaQuestao.qtd" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Acertos</label>
-                        <input type="number" x-model.number="novaQuestao.acertos" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Acertos</label>
+                        <input type="number" x-model.number="novaQuestao.acertos" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Anotação de Gargalo / Ponto Fraco</label>
-                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Dificuldade na Anterioridade..." class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Anotação de Gargalo / Ponto Fraco</label>
+                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Dificuldade na Anterioridade..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
                 <div class="flex justify-end pt-2">
-                    <button @click="adicionarQuestao()" class="bg-ouro hover:bg-ouro/80 text-card px-6 py-2.5 rounded-xl text-sm font-bold transition">Salvar Registro</button>
+                    <button @click="adicionarQuestao()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">Salvar Registro</button>
                 </div>
             </div>
 
             <!-- Exibição Hierárquica: Data -> Matéria -> Assuntos -->
-            <div class="bg-card border border-azul-medio/40 rounded-2xl p-6 shadow-md space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-azul-medio/30 pb-4">
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-sm space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
                     <div>
-                        <h3 class="font-bold flex items-center gap-2 text-lg text-white"><i data-lucide="calendar" class="w-5 h-5 text-ouro"></i> Histórico por Data & Matéria</h3>
-                        <p class="text-xs text-slate-300 mt-0.5">Selecione por data, abra a matéria e veja os assuntos estudados.</p>
+                        <h3 class="font-bold flex items-center gap-2 text-lg"><i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> Histórico por Data & Matéria</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Selecione por data, abra a matéria e veja os assuntos estudados.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <label class="text-xs font-bold text-slate-300">Exibir:</label>
-                        <select x-model="filtroDiasQuestoes" class="bg-slate-950 border border-azul-medio/50 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-semibold focus:outline-none focus:border-ouro">
+                        <label class="text-xs font-medium text-slate-400">Exibir:</label>
+                        <select x-model="filtroDiasQuestoes" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
                             <option value="0">Todo o Período</option>
                             <option value="7">Últimos 7 dias</option>
                             <option value="15">Últimos 15 dias</option>
@@ -397,36 +383,36 @@
                 <!-- Lista Nível 1: Data -->
                 <div class="space-y-4">
                     <template x-for="(materiasNaData, dataKey) in questoesAgrupadasPorDataEMateria" :key="dataKey">
-                        <div class="bg-slate-950/60 border border-azul-medio/30 rounded-2xl p-5 space-y-3">
-                            <div class="flex justify-between items-center border-b border-azul-medio/30 pb-2.5">
-                                <h4 class="font-bold text-ouro text-base flex items-center gap-2">
-                                    <i data-lucide="clock" class="w-4 h-4 text-ouro"></i> <span x-text="formatarDataDD_MM_AA(dataKey)"></span>
+                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-700/80 pb-2.5">
+                                <h4 class="font-bold text-amber-400 text-base flex items-center gap-2">
+                                    <i data-lucide="clock" class="w-4 h-4"></i> <span x-text="formatarDataDD_MM_AA(dataKey)"></span>
                                 </h4>
                             </div>
 
                             <!-- Lista Nível 2: Matéria -->
                             <div class="space-y-2">
                                 <template x-for="(questoesDoAssunto, matName) in materiasNaData" :key="matName">
-                                    <div class="bg-card border border-azul-medio/40 rounded-xl overflow-hidden shadow-sm">
-                                        <div class="p-3.5 cursor-pointer flex justify-between items-center hover:bg-slate-950/40 transition" @click="toggleDataMateriaExpandida(dataKey + '_' + matName)">
-                                            <div class="flex items-center gap-2 font-bold text-sky-300 text-sm">
-                                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="isDataMateriaExpandida(dataKey + '_' + matName) ? 'rotate-90 text-ouro' : 'text-slate-400'"></i>
+                                    <div class="bg-slate-800/90 border border-slate-700/60 rounded-xl overflow-hidden">
+                                        <div class="p-3.5 cursor-pointer flex justify-between items-center hover:bg-slate-700/40 transition" @click="toggleDataMateriaExpandida(dataKey + '_' + matName)">
+                                            <div class="flex items-center gap-2 font-bold text-blue-400 text-sm">
+                                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="isDataMateriaExpandida(dataKey + '_' + matName) ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
                                                 <span x-text="matName"></span>
                                                 <span class="text-xs text-slate-400 font-normal" x-text="'(' + questoesDoAssunto.length + ' itens)'"></span>
                                             </div>
-                                            <div class="text-xs text-slate-200 font-semibold flex gap-3">
+                                            <div class="text-xs text-slate-300 font-medium flex gap-3">
                                                 <span>Qtd: <strong class="text-white" x-text="somarQtdMat(questoesDoAssunto)"></strong></span>
                                                 <span>Acertos: <strong class="text-emerald-400" x-text="somarAcertosMat(questoesDoAssunto)"></strong></span>
-                                                <span>%: <strong class="text-ouro" x-text="calcularPorcentagemMat(questoesDoAssunto) + '%'"></strong></span>
+                                                <span>%: <strong class="text-blue-400" x-text="calcularPorcentagemMat(questoesDoAssunto) + '%'"></strong></span>
                                             </div>
                                         </div>
 
                                         <!-- Lista Nível 3: Assuntos Estudados -->
-                                        <div x-show="isDataMateriaExpandida(dataKey + '_' + matName)" x-collapse class="border-t border-azul-medio/30 p-4 bg-slate-950/80">
+                                        <div x-show="isDataMateriaExpandida(dataKey + '_' + matName)" x-collapse class="border-t border-slate-700/60 p-4 bg-slate-900/90">
                                             <div class="overflow-x-auto">
                                                 <table class="w-full text-left text-xs">
                                                     <thead>
-                                                        <tr class="text-ouro font-bold uppercase tracking-wider border-b border-azul-medio/30">
+                                                        <tr class="text-slate-400 uppercase tracking-wider border-b border-slate-800">
                                                             <th class="pb-2">Semana</th>
                                                             <th class="pb-2">Assunto Estudado</th>
                                                             <th class="pb-2 text-center">Qtd</th>
@@ -436,28 +422,28 @@
                                                             <th class="pb-2 text-center">Ações</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody class="divide-y divide-azul-medio/20">
+                                                    <tbody class="divide-y divide-slate-800/50">
                                                         <template x-for="q in questoesDoAssunto" :key="q.id">
-                                                            <tr class="hover:bg-slate-900/60">
-                                                                <td class="py-2 text-slate-300 font-medium" x-text="q.semana"></td>
-                                                                <td class="py-2 text-slate-100 font-semibold">
-                                                                    <div x-show="questaoEditandoId !== q.id" x-text="q.assunto || 'Geral'"></div>
+                                                            <tr class="hover:bg-slate-800/40">
+                                                                <td class="py-2 text-slate-400" x-text="q.semana"></td>
+                                                                <td class="py-2 text-slate-200">
+                                                                    <div x-show="questaoEditandoId !== q.id" class="font-semibold text-slate-200" x-text="q.assunto || 'Geral'"></div>
                                                                     <div x-show="questaoEditandoId === q.id" class="flex gap-1.5">
-                                                                        <input type="text" x-model="questaoTextoAssuntoEdicao" class="bg-slate-950 border border-ouro rounded px-2 py-0.5 text-xs text-slate-100 focus:outline-none">
+                                                                        <input type="text" x-model="questaoTextoAssuntoEdicao" class="bg-slate-900 border border-blue-500 rounded px-2 py-0.5 text-xs text-white focus:outline-none">
                                                                         <button @click="salvarEdicaoAssuntoQuestao(q.id)" class="p-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded">
                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                                                         </button>
                                                                     </div>
                                                                 </td>
-                                                                <td class="py-2 text-center text-slate-200 font-medium" x-text="q.qtd"></td>
-                                                                <td class="py-2 text-center text-emerald-400 font-bold" x-text="q.acertos"></td>
+                                                                <td class="py-2 text-center text-slate-300" x-text="q.qtd"></td>
+                                                                <td class="py-2 text-center text-emerald-400 font-medium" x-text="q.acertos"></td>
                                                                 <td class="py-2 text-center font-bold" :class="(q.acertos/q.qtd) >= 0.8 ? 'text-emerald-400' : 'text-rose-400'" x-text="q.qtd > 0 ? ((q.acertos / q.qtd) * 100).toFixed(1) + '%' : '0%'"></td>
-                                                                <td class="py-2 text-rose-300 font-medium italic" x-text="q.gargalo || '-'"></td>
+                                                                <td class="py-2 text-rose-300 italic" x-text="q.gargalo || '-'"></td>
                                                                 <td class="py-2 text-center flex justify-center gap-1">
-                                                                    <button @click="iniciarEdicaoAssuntoQuestao(q.id, q.assunto)" class="p-1 text-slate-300 hover:text-white hover:bg-azul-medio/30 rounded" title="Editar Assunto">
+                                                                    <button @click="iniciarEdicaoAssuntoQuestao(q.id, q.assunto)" class="p-1 text-slate-400 hover:text-white rounded" title="Editar Assunto">
                                                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                                                                     </button>
-                                                                    <button @click="removerQuestaoPorId(q.id)" class="p-1 text-rose-400 hover:bg-rose-500/20 rounded" title="Excluir">
+                                                                    <button @click="removerQuestaoPorId(q.id)" class="p-1 text-rose-400 hover:bg-rose-500/10 rounded" title="Excluir">
                                                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                                                     </button>
                                                                 </td>
@@ -473,7 +459,7 @@
                         </div>
                     </template>
                     <template x-if="Object.keys(questoesAgrupadasPorDataEMateria).length === 0">
-                        <p class="text-center text-slate-300 text-sm py-6">Nenhum registro de questão encontrado para este período.</p>
+                        <p class="text-center text-slate-500 text-sm py-6">Nenhum registro de questão encontrado para este período.</p>
                     </template>
                 </div>
             </div>
@@ -481,36 +467,36 @@
 
         <!-- TAB: GARGALOS POR DISCIPLINA -->
         <section x-show="activeTab === 'gargalos'" class="space-y-6">
-            <div class="bg-card p-5 rounded-2xl border border-azul-medio/40 shadow-md">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm">
+                <h3 class="text-lg font-bold flex items-center gap-2">
                     <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos por Matéria
                 </h3>
-                <p class="text-xs text-slate-300 mt-1">Clique na disciplina para expandir os gargalos anotados.</p>
+                <p class="text-xs text-slate-400 mt-1">Clique na disciplina para expandir os gargalos anotados.</p>
             </div>
 
             <!-- Grid de 3 colunas -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <template x-for="(gargalosDaMat, matName) in gargalosAgrupadosPorMateria" :key="matName">
-                    <div class="bg-card border border-azul-medio/40 rounded-2xl p-5 shadow-md space-y-3 self-start">
-                        <div class="flex justify-between items-center cursor-pointer border-b border-azul-medio/30 pb-3" @click="toggleGargaloMatExpandida(matName)">
-                            <h4 class="font-bold text-ouro text-sm flex items-center gap-2">
-                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="gargaloMatExpandida === matName ? 'rotate-90 text-ouro' : 'text-slate-400'"></i>
+                    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-3 self-start">
+                        <div class="flex justify-between items-center cursor-pointer border-b border-slate-700 pb-3" @click="toggleGargaloMatExpandida(matName)">
+                            <h4 class="font-bold text-blue-400 text-sm flex items-center gap-2">
+                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="gargaloMatExpandida === matName ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
                                 <span x-text="matName"></span>
                             </h4>
-                            <span class="text-xs bg-slate-950 text-slate-200 border border-azul-medio/40 px-2 py-0.5 rounded-md font-bold" x-text="gargalosDaMat.length"></span>
+                            <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-semibold" x-text="gargalosDaMat.length"></span>
                         </div>
 
                         <!-- Ocultos por padrão -->
                         <div x-show="gargaloMatExpandida === matName" x-collapse class="space-y-2.5 pt-1">
                             <template x-for="g in gargalosDaMat" :key="g.id">
-                                <div class="flex items-start gap-2.5 bg-slate-950/60 p-3 rounded-xl border border-azul-medio/30">
-                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-0.5 w-3.5 h-3.5 text-emerald-600 bg-slate-900 border-azul-medio/50 rounded cursor-pointer">
+                                <div class="flex items-start gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-0.5 w-3.5 h-3.5 text-emerald-600 bg-slate-800 border-slate-600 rounded cursor-pointer">
                                     <div class="flex-grow space-y-1">
                                         <div class="flex justify-between text-[11px]">
-                                            <span class="font-bold text-slate-200" x-text="g.assunto || 'Geral'"></span>
-                                            <span class="text-slate-400 font-mono font-medium" x-text="formatarDataDD_MM_AA(g.data)"></span>
+                                            <span class="font-semibold text-slate-300" x-text="g.assunto || 'Geral'"></span>
+                                            <span class="text-slate-500 font-mono" x-text="formatarDataDD_MM_AA(g.data)"></span>
                                         </div>
-                                        <p class="text-xs transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-300 font-semibold'" x-text="g.gargalo"></p>
+                                        <p class="text-xs transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
                                     </div>
                                 </div>
                             </template>
@@ -519,7 +505,7 @@
                 </template>
             </div>
             <template x-if="Object.keys(gargalosAgrupadosPorMateria).length === 0">
-                <div class="bg-card border border-azul-medio/40 rounded-2xl p-8 text-center text-slate-300 font-medium">
+                <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-8 text-center text-slate-500">
                     Nenhum gargalo registrado até o momento.
                 </div>
             </template>
@@ -527,23 +513,23 @@
 
         <!-- TAB: CRONOGRAMA -->
         <section x-show="activeTab === 'cronograma'" class="space-y-6">
-            <div class="bg-card p-6 rounded-2xl border border-azul-medio/40 shadow-md space-y-4">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/80 shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="calendar-plus" class="w-5 h-5 text-ouro"></i> <span x-text="cicloEmEdicaoIndex !== null ? 'Editar Ciclo do Cronograma' : 'Criar Novo Ciclo no Cronograma'"></span>
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-400"></i> <span x-text="cicloEmEdicaoIndex !== null ? 'Editar Ciclo do Cronograma' : 'Criar Novo Ciclo no Cronograma'"></span>
                     </h3>
-                    <button x-show="cicloEmEdicaoIndex !== null" @click="cancelarEdicaoCiclo()" class="text-xs text-rose-400 hover:underline font-semibold">Cancelar Edição</button>
+                    <button x-show="cicloEmEdicaoIndex !== null" @click="cancelarEdicaoCiclo()" class="text-xs text-rose-400 hover:underline">Cancelar Edição</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Nome da Semana / Ciclo</label>
-                        <input type="text" x-model="novoCiclo.semana" placeholder="Ex: SEMANA 5" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Nome da Semana / Ciclo</label>
+                        <input type="text" x-model="novoCiclo.semana" placeholder="Ex: SEMANA 5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Matérias / Tópicos (separados por vírgula)</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matérias / Tópicos (separados por vírgula)</label>
                         <div class="flex gap-2">
-                            <input type="text" x-model="novoCiclo.materiasTexto" placeholder="Ex: Direito Tributário, Auditoria, TI" class="w-full bg-slate-950 border border-azul-medio/50 text-slate-100 font-medium rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-ouro">
-                            <button @click="salvarCiclo()" class="bg-ouro hover:bg-ouro/80 text-card px-5 py-2 rounded-xl text-sm font-bold transition shrink-0" x-text="cicloEmEdicaoIndex !== null ? 'Atualizar' : 'Adicionar'"></button>
+                            <input type="text" x-model="novoCiclo.materiasTexto" placeholder="Ex: Direito Tributário, Auditoria, TI" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <button @click="salvarCiclo()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shrink-0" x-text="cicloEmEdicaoIndex !== null ? 'Atualizar' : 'Adicionar'"></button>
                         </div>
                     </div>
                 </div>
@@ -551,20 +537,20 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <template x-for="(sem, index) in cronogramaSemanas" :key="index">
-                    <div class="bg-card border border-azul-medio/40 rounded-2xl p-5 shadow-md space-y-4 flex flex-col justify-between">
+                    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
                         <div class="space-y-3">
-                            <div class="flex justify-between items-center border-b border-azul-medio/30 pb-3">
-                                <h4 class="font-bold text-ouro" x-text="sem.semana"></h4>
+                            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                                <h4 class="font-bold text-blue-400" x-text="sem.semana"></h4>
                                 <div class="flex items-center gap-1">
-                                    <button @click="carregarCicloParaEdicao(index)" class="p-1 hover:bg-azul-medio/30 text-slate-300 hover:text-white rounded-lg transition" title="Editar Ciclo">
+                                    <button @click="carregarCicloParaEdicao(index)" class="p-1 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition" title="Editar Ciclo">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </button>
-                                    <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/20 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
+                                    <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </div>
-                            <ul class="space-y-2 text-sm text-slate-100 font-medium">
+                            <ul class="space-y-2 text-sm text-slate-300">
                                 <template x-for="m in sem.materias">
                                     <li class="flex items-start gap-2">
                                         <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i>
@@ -581,7 +567,7 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-card border-t border-azul-medio/40 py-6 mt-12 text-center text-sm text-slate-300 font-medium">
+    <footer class="bg-slate-800/80 border-t border-slate-700/80 py-6 mt-12 text-center text-sm text-slate-400">
         <p>Sistema de Controle de Estudos — Foco ISS Caruaru & Concursos Fiscais 2026</p>
     </footer>
 
