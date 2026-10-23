@@ -55,6 +55,18 @@
 
         <!-- TAB: DASHBOARD -->
         <section x-show="activeTab === 'dashboard'" class="space-y-6">
+            <!-- REQUISITO 6: Quadro de Lembretes / Avisos na Página Inicial -->
+            <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm space-y-2">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
+                        <i data-lucide="sticky-note" class="w-4 h-4"></i> Lembretes & Anotações Fixas
+                    </h3>
+                    <span class="text-[10px] text-slate-500">Salvo automaticamente</span>
+                </div>
+                <textarea x-model="lembreteFixado" rows="3" placeholder="Digite aqui metagerais, metas da semana, avisos ou lembretes rápidos para visualizar assim que abrir o site..." class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500/50 resize-y"></textarea>
+            </div>
+
+            <!-- Cards de Métricas -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
@@ -102,20 +114,44 @@
                 </div>
             </div>
 
-            <!-- Avanço Geral das Matérias -->
+            <!-- REQUISITO 4: Progresso Geral com expansão para ver assuntos ao clicar -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Progresso Geral das Matérias
-                </h3>
-                <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Progresso no Conteúdo Programático
+                    </h3>
+                    <p class="text-xs text-slate-400">Clique na matéria para expandir os assuntos</p>
+                </div>
+                <div class="space-y-3">
                     <template x-for="mat in materias" :key="mat.nome">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="font-medium text-slate-200" x-text="mat.nome"></span>
-                                <span class="text-slate-400 font-semibold" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
+                        <div class="bg-slate-900/50 border border-slate-700/60 rounded-xl p-4 cursor-pointer hover:border-slate-600 transition" @click="matExpandidaDashboard = (matExpandidaDashboard === mat.nome ? null : mat.nome)">
+                            <div class="flex justify-between items-center text-sm mb-2">
+                                <span class="font-semibold text-slate-200 flex items-center gap-2">
+                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaDashboard === mat.nome ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
+                                    <span x-text="mat.nome"></span>
+                                </span>
+                                <span class="text-slate-400 font-bold" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
                             </div>
-                            <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                            <div class="w-full bg-slate-700/60 h-2.5 rounded-full overflow-hidden">
                                 <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" :style="'width: ' + calcularProgressoMatéria(mat.nome) + '%'"></div>
+                            </div>
+
+                            <!-- Assuntos expandidos -->
+                            <div x-show="matExpandidaDashboard === mat.nome" x-collapse class="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
+                                <template x-for="topico in (topicosPorMateria[mat.nome] || [])">
+                                    <div class="flex justify-between items-center text-xs bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/40">
+                                        <span class="text-slate-300" x-text="topico.conteudo"></span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                              :class="{
+                                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
+                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
+                                                  'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
+                                              }" x-text="topico.status"></span>
+                                    </div>
+                                </template>
+                                <template x-if="!topicosPorMateria[mat.nome] || topicosPorMateria[mat.nome].length === 0">
+                                    <p class="text-xs text-slate-500 italic text-center py-2">Nenhum assunto cadastrado nesta matéria.</p>
+                                </template>
                             </div>
                         </div>
                     </template>
@@ -125,38 +161,69 @@
 
         <!-- TAB: MATÉRIAS & TÓPICOS -->
         <section x-show="activeTab === 'materias'" class="space-y-6">
-            <!-- Adicionar Matéria -->
+            <!-- REQUISITO 3: Adicionar / Editar Matéria -->
             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div>
                     <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i data-lucide="book-plus" class="w-5 h-5 text-blue-400"></i> Gerenciar Matérias
+                        <i data-lucide="book-plus" class="w-5 h-5 text-blue-400"></i> Gerenciar Disciplinas
                     </h3>
-                    <p class="text-xs text-slate-400">Adicione novas disciplinas ao seu ciclo de estudos.</p>
+                    <p class="text-xs text-slate-400">Cadastre novas matérias ou renomeie as existentes.</p>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <input type="text" x-model="nuevaMateria" placeholder="Nome da Matéria..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 flex-grow sm:w-64">
-                    <button @click="adicionarMateria()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shrink-0">Adicionar</button>
+                    <button @click="adicionarMateria()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shrink-0">Cadastrar</button>
                 </div>
             </div>
 
-            <!-- Selecionar Matéria e Adicionar Tópicos -->
+            <!-- Gerenciar Tópicos da Matéria Selecionada -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div class="w-full sm:w-72">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Selecionar Matéria</label>
-                        <select x-model="selectedMat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
-                            <template x-for="mat in materias" :key="mat.nome">
-                                <option :value="mat.nome" x-text="mat.nome"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <!-- Formulário novo tópico -->
-                    <div class="flex gap-2 w-full sm:w-auto items-end">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="w-full md:w-72 flex items-center gap-2">
                         <div class="flex-grow">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Novo Tópico / Conteúdo</label>
-                            <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Obrigações Tributárias..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full sm:w-80">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Selecionar Matéria</label>
+                            <select x-model="selectedMat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                                <template x-for="mat in materias" :key="mat.nome">
+                                    <option :value="mat.nome" x-text="mat.nome"></option>
+                                </template>
+                            </select>
                         </div>
-                        <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Cadastrar Tópico</button>
+                        <!-- Botão de Editar Nome da Matéria -->
+                        <button @click="editarNomeMateria(selectedMat)" class="mt-5 p-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition" title="Editar nome desta matéria">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- REQUISITO 2: Alternar entre Cadastro Único e Cadastro em Massa -->
+                    <div class="flex gap-2">
+                        <button @click="modoCadastroTopico = 'unico'" :class="modoCadastroTopico === 'unico' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                            Item Único
+                        </button>
+                        <button @click="modoCadastroTopico = 'massa'" :class="modoCadastroTopico === 'massa' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                            Colem vários (Em Massa)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formulário Único -->
+                <div x-show="modoCadastroTopico === 'unico'" class="flex gap-2 items-end">
+                    <div class="flex-grow">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Novo Assunto / Tópico</label>
+                        <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Legalidade..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full">
+                    </div>
+                    <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Adicionar</button>
+                </div>
+
+                <!-- REQUISITO 2: Formulário em Massa (Copiar e Colar com Separador) -->
+                <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por linha ou por ponto e vírgula `;`):</label>
+                        <textarea x-model="textoTopicosMassa" rows="4" placeholder="Exemplo:
+1. Princípios Constitucionais;
+2. Limitações ao Poder de Tributar;
+3. Crédito Tributário" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button @click="adicionarTopicosEmMassa()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">Cadastrar Todos os Assuntos</button>
                     </div>
                 </div>
 
@@ -184,6 +251,10 @@
                                               }" x-text="topico.status"></span>
                                     </td>
                                     <td class="p-4 text-center flex justify-center gap-2">
+                                        <!-- REQUISITO 3: Editar Nome do Tópico -->
+                                        <button @click="editarTopico(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Editar Assunto">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                        </button>
                                         <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Mudar Status">
                                             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                                         </button>
@@ -242,7 +313,7 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-medium text-slate-400 mb-1">Anotação de Gargalo / Ponto Fraco</label>
-                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Confusão em imunidades subjetivas..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Dificuldade no conceito de imunidade x isenção..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
                 <div class="flex justify-end pt-2">
@@ -288,64 +359,66 @@
                                     </td>
                                 </tr>
                             </template>
-                            <template x-if="questoesRegistro.length === 0">
-                                <tr>
-                                    <td colspan="9" class="p-6 text-center text-slate-500">Nenhum registro de questão encontrado.</td>
-                                </tr>
-                            </template>
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- TAB: GARGALOS POR DIA -->
+        <!-- TAB: GARGALOS POR DISCIPLINA (REQUISITO 1) -->
         <section x-show="activeTab === 'gargalos'" class="space-y-6">
             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm">
                 <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos por Dia
+                    <i data-lucide="check-square" class="w-5 h-5 text-amber-400"></i> Tarefas de Revisão de Gargalos
                 </h3>
-                <p class="text-xs text-slate-400 mt-1">Visualize todos os pontos fracos e anotações registrados, organizados cronologicamente por dia de estudo.</p>
+                <p class="text-xs text-slate-400 mt-1">Os pontos fracos estão organizados por Disciplina. Marque a caixa de seleção após revisar para riscar a tarefa.</p>
             </div>
 
-            <div class="space-y-4">
-                <template x-for="(gargalosDoDia, dataKey) in gargalosAgrupadosPorDia" :key="dataKey">
-                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3">
+            <div class="space-y-6">
+                <template x-for="(gargalosDaMat, matName) in gargalosAgrupadosPorMateria" :key="matName">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
                         <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                            <h4 class="font-bold text-amber-400 flex items-center gap-2">
-                                <i data-lucide="calendar" class="w-4 h-4"></i> <span x-text="dataKey"></span>
+                            <h4 class="font-bold text-blue-400 flex items-center gap-2 text-base">
+                                <i data-lucide="book-open" class="w-5 h-5"></i> <span x-text="matName"></span>
                             </h4>
-                            <span class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg" x-text="gargalosDoDia.length + ' anotações'"></span>
+                            <span class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg" x-text="gargalosDaMat.length + ' gargalos anotados'"></span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <template x-for="g in gargalosDoDia">
-                                <div class="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl space-y-2">
-                                    <div class="flex justify-between text-xs">
-                                        <span class="font-bold text-blue-400" x-text="g.materia"></span>
-                                        <span class="text-slate-400" x-text="g.assunto"></span>
+
+                        <!-- Lista de Tarefas de Gargalo dentro da Disciplina -->
+                        <div class="space-y-2.5">
+                            <template x-for="g in gargalosDaMat" :key="g.id">
+                                <div class="flex items-start gap-3 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60 transition hover:border-slate-600">
+                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-1 w-4 h-4 text-emerald-600 bg-slate-800 border-slate-600 rounded focus:ring-emerald-500 cursor-pointer">
+                                    <div class="flex-grow space-y-1">
+                                        <div class="flex flex-wrap justify-between items-center text-xs">
+                                            <span class="font-semibold text-slate-300" x-text="g.assunto"></span>
+                                            <span class="text-[11px] text-slate-500" x-text="g.data"></span>
+                                        </div>
+                                        <p class="text-sm transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
                                     </div>
-                                    <p class="text-sm text-rose-200 font-medium" x-text="g.gargalo"></p>
-                                    <div class="text-[10px] text-slate-500 uppercase tracking-wider" x-text="g.semana"></div>
                                 </div>
                             </template>
                         </div>
                     </div>
                 </template>
-                <template x-if="Object.keys(gargalosAgrupadosPorDia).length === 0">
+                <template x-if="Object.keys(gargalosAgrupadosPorMateria).length === 0">
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center text-slate-500">
-                        Nenhum gargalo registrado até o momento. Cadastre anotações na aba de Questões.
+                        Nenhum gargalo registrado até o momento. Adicione anotações de gargalo na aba de Questões.
                     </div>
                 </template>
             </div>
         </section>
 
-        <!-- TAB: CRONOGRAMA -->
+        <!-- TAB: CRONOGRAMA (REQUISITO 5: Edição de Ciclos) -->
         <section x-show="activeTab === 'cronograma'" class="space-y-6">
-            <!-- Adicionar Nova Semana/Ciclo -->
+            <!-- Formulário para Criar / Editar Ciclo -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-400"></i> Criar / Editar Ciclo do Cronograma
-                </h3>
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-400"></i> <span x-text="cicloEmEdicaoIndex !== null ? 'Editar Ciclo do Cronograma' : 'Criar Novo Ciclo no Cronograma'"></span>
+                    </h3>
+                    <button x-show="cicloEmEdicaoIndex !== null" @click="cancelarEdicaoCiclo()" class="text-xs text-rose-400 hover:underline">Cancelar Edição</button>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Nome da Semana / Ciclo</label>
@@ -355,7 +428,7 @@
                         <label class="block text-xs font-medium text-slate-400 mb-1">Matérias / Tópicos (separados por vírgula)</label>
                         <div class="flex gap-2">
                             <input type="text" x-model="novoCiclo.materiasTexto" placeholder="Ex: Direito Tributário, Auditoria, TI" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <button @click="adicionarCiclo()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shrink-0">Adicionar Ciclo</button>
+                            <button @click="salvarCiclo()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shrink-0" x-text="cicloEmEdicaoIndex !== null ? 'Atualizar' : 'Adicionar'"></button>
                         </div>
                     </div>
                 </div>
@@ -368,9 +441,15 @@
                         <div class="space-y-3">
                             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                                 <h4 class="font-bold text-blue-400" x-text="sem.semana"></h4>
-                                <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
+                                <div class="flex items-center gap-1">
+                                    <!-- Botão de Editar Ciclo -->
+                                    <button @click="carregarCicloParaEdicao(index)" class="p-1 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition" title="Editar Ciclo">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </button>
+                                    <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                             </div>
                             <ul class="space-y-2 text-sm text-slate-300">
                                 <template x-for="m in sem.materias">
@@ -393,12 +472,14 @@
         <p>Sistema de Controle de Estudos — Foco ISS Caruaru & Concursos Fiscais 2026</p>
     </footer>
 
-    <!-- SCRIPT DE DADOS E PERSISTÊNCIA -->
+    <!-- SCRIPT DE DADOS E LÓGICA -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('appData', () => ({
                 activeTab: 'dashboard',
-                
+                lembreteFixado: localStorage.getItem('fisc_lembrete') || 'Coloque aqui seu objetivo diário, lista de prioridades ou frases de foco!',
+                matExpandidaDashboard: null,
+
                 // Matérias
                 materias: JSON.parse(localStorage.getItem('fisc_materias')) || [
                     { nome: 'D. TRIBUTÁRIO' },
@@ -416,9 +497,11 @@
                 ],
                 nuevaMateria: '',
 
-                // Tópicos por Matéria
+                // Tópicos
                 selectedMat: 'D. TRIBUTÁRIO',
+                modoCadastroTopico: 'unico',
                 novoTopicoTexto: '',
+                textoTopicosMassa: '',
                 topicosPorMateria: JSON.parse(localStorage.getItem('fisc_topicos')) || {
                     'D. TRIBUTÁRIO': [
                         { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO' },
@@ -429,23 +512,24 @@
                 // Questões & Gargalos
                 novaQuestao: { data: '', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
                 questoesRegistro: JSON.parse(localStorage.getItem('fisc_questoes')) || [
-                    { id: 1, semana: 'SEMANA 1', data: '2026-07-27', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Confusão no Princípio da Anterioridade' }
+                    { id: 1, semana: 'SEMANA 1', data: '2026-07-27', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Dúvidas no Princípio da Anterioridade Nonagesimal', resolvido: false }
                 ],
 
                 // Cronograma
                 novoCiclo: { semana: '', materiasTexto: '' },
+                cicloEmEdicaoIndex: null,
                 cronogramaSemanas: JSON.parse(localStorage.getItem('fisc_cronograma')) || [
                     { semana: 'SEMANA 1', materias: ['Direito Tributário', 'Direito Constitucional', 'Contabilidade Pública'] },
                     { semana: 'SEMANA 2', materias: ['Direito Tributário', 'Contabilidade Pública', 'Português & RLM'] }
                 ],
 
                 init() {
+                    this.$watch('lembreteFixado', val => localStorage.setItem('fisc_lembrete', val));
                     this.$watch('materias', val => localStorage.setItem('fisc_materias', JSON.stringify(val)));
                     this.$watch('topicosPorMateria', val => localStorage.setItem('fisc_topicos', JSON.stringify(val)));
                     this.$watch('questoesRegistro', val => localStorage.setItem('fisc_questoes', JSON.stringify(val)));
                     this.$watch('cronogramaSemanas', val => localStorage.setItem('fisc_cronograma', JSON.stringify(val)));
-                    
-                    // Atualiza ícones após renderização
+
                     this.$nextTick(() => { lucide.createIcons(); });
                 },
 
@@ -454,7 +538,22 @@
                     if(nome && !this.materias.some(m => m.nome === nome)) {
                         this.materias.push({ nome: nome });
                         this.topicosPorMateria[nome] = [];
+                        this.selectedMat = nome;
                         this.nuevaMateria = '';
+                    }
+                },
+
+                editarNomeMateria(nomeAntigo) {
+                    let novoNome = prompt('Digite o novo nome para a disciplina:', nomeAntigo);
+                    if(novoNome && novoNome.trim() !== '' && novoNome !== nomeAntigo) {
+                        novoNome = novoNome.trim().toUpperCase();
+                        let idx = this.materias.findIndex(m => m.nome === nomeAntigo);
+                        if(idx !== -1) {
+                            this.materias[idx].nome = novoNome;
+                            this.topicosPorMateria[novoNome] = this.topicosPorMateria[nomeAntigo] || [];
+                            delete this.topicosPorMateria[nomeAntigo];
+                            this.selectedMat = novoNome;
+                        }
                     }
                 },
 
@@ -466,6 +565,27 @@
                         }
                         this.topicosPorMateria[this.selectedMat].push({ conteudo: texto, status: 'ESTUDAR' });
                         this.novoTopicoTexto = '';
+                    }
+                },
+
+                adicionarTopicosEmMassa() {
+                    if(!this.textoTopicosMassa.trim()) return;
+                    let lista = this.textoTopicosMassa.split(/[\n;]+/).map(item => item.trim()).filter(item => item !== '');
+                    if(!this.topicosPorMateria[this.selectedMat]) {
+                        this.topicosPorMateria[this.selectedMat] = [];
+                    }
+                    lista.forEach(item => {
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR' });
+                    });
+                    this.textoTopicosMassa = '';
+                    alert(lista.length + ' assuntos adicionados com sucesso!');
+                },
+
+                editarTopico(mat, index) {
+                    let topico = this.topicosPorMateria[mat][index];
+                    let novoTexto = prompt('Editar nome do assunto:', topico.conteudo);
+                    if(novoTexto && novoTexto.trim() !== '') {
+                        topico.conteudo = novoTexto.trim();
                     }
                 },
 
@@ -496,9 +616,9 @@
                         assunto: this.novaQuestao.assunto,
                         qtd: Number(this.novaQuestao.qtd) || 0,
                         acertos: Number(this.novaQuestao.acertos) || 0,
-                        gargalo: this.novaQuestao.gargalo
+                        gargalo: this.novaQuestao.gargalo,
+                        resolvido: false
                     });
-                    // Limpar campos mantendo data e matéria
                     this.novaQuestao.assunto = '';
                     this.novaQuestao.gargalo = '';
                 },
@@ -507,14 +627,43 @@
                     this.questoesRegistro.splice(index, 1);
                 },
 
-                adicionarCiclo() {
+                toggleGargaloResolvido(id) {
+                    let item = this.questoesRegistro.find(q => q.id === id);
+                    if(item) {
+                        item.resolvido = !item.resolvido;
+                    }
+                },
+
+                salvarCiclo() {
                     let sem = this.novoCiclo.semana.trim().toUpperCase();
                     let mats = this.novoCiclo.materiasTexto.split(',').map(m => m.trim()).filter(m => m);
-                    if(sem && mats.length > 0) {
-                        this.cronogramaSemanas.push({ semana: sem, materias: mats });
-                        this.novoCiclo.semana = '';
-                        this.novoCiclo.materiasTexto = '';
+                    if(!sem || mats.length === 0) {
+                        alert('Preencha o nome do ciclo e ao menos uma matéria.');
+                        return;
                     }
+
+                    if(this.cicloEmEdicaoIndex !== null) {
+                        this.cronogramaSemanas[this.cicloEmEdicaoIndex] = { semana: sem, materias: mats };
+                        this.cicloEmEdicaoIndex = null;
+                    } else {
+                        this.cronogramaSemanas.push({ semana: sem, materias: mats });
+                    }
+                    this.novoCiclo.semana = '';
+                    this.novoCiclo.materiasTexto = '';
+                },
+
+                carregarCicloParaEdicao(index) {
+                    let c = this.cronogramaSemanas[index];
+                    this.novoCiclo.semana = c.semana;
+                    this.novoCiclo.materiasTexto = c.materias.join(', ');
+                    this.cicloEmEdicaoIndex = index;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                cancelarEdicaoCiclo() {
+                    this.cicloEmEdicaoIndex = null;
+                    this.novoCiclo.semana = '';
+                    this.novoCiclo.materiasTexto = '';
                 },
 
                 removerCiclo(index) {
@@ -528,15 +677,15 @@
                     return Math.round((concluidos / topicos.length) * 100);
                 },
 
-                get gargalosAgrupadosPorDia() {
+                get gargalosAgrupadosPorMateria() {
                     let agrupado = {};
                     this.questoesRegistro.forEach(q => {
                         if(q.gargalo && q.gargalo.trim() !== '') {
-                            let dataKey = q.data || 'Sem Data';
-                            if(!agrupado[dataKey]) {
-                                agrupado[dataKey] = [];
+                            let matKey = q.materia || 'Outras';
+                            if(!agrupado[matKey]) {
+                                agrupado[matKey] = [];
                             }
-                            agrupado[dataKey].push(q);
+                            agrupado[matKey].push(q);
                         }
                     });
                     return agrupado;
