@@ -75,9 +75,9 @@
         <div class="px-4 py-2 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs">
           <span class="flex items-center space-x-1.5 text-slate-400">
             <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400 animate-ping' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
-            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Dados Salvos' : 'Sem Conexão')"></span>
+            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada' : 'Modo Local / Sincronizando')"></span>
           </span>
-          <button @click="saveData()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Guardar/Sincronizar">
+          <button @click="loadFromSupabase()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Sincronização com a Nuvem">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="syncing && 'animate-spin'"></i>
           </button>
         </div>
@@ -441,7 +441,7 @@
                           <!-- Left: Expand Toggle + Topic Name + Priority -->
                           <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <!-- Toggle Collapse Button -->
-                            <button @click="group.parent.expandido = !group.parent.expandido; saveData()"
+                            <button @click="group.parent.expandido = !group.parent.expandido; saveLocal(); saveToSupabase()"
                               class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0">
                               <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
                             </button>
@@ -455,7 +455,7 @@
                             <!-- Title (Uppercase for parent topic) -->
                             <span class="text-xs font-bold truncate cursor-pointer tracking-wide"
                                   :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'"
-                                  @click="group.parent.expandido = !group.parent.expandido; saveData()"
+                                  @click="group.parent.expandido = !group.parent.expandido; saveLocal(); saveToSupabase()"
                                   x-text="group.parent.nome"></span>
 
                             <!-- Priority Tag -->
@@ -890,18 +890,15 @@
     </div>
   </div>
 
-  <!-- Application Logic & Supabase + LocalStorage Sync -->
+  <!-- Application Logic & Supabase Sync -->
   <script>
     const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
     const ROW_ID = 'dados_auditor';
-    const LOCAL_STORAGE_KEY = 'auditor_estudos_data_v1';
 
     let supabaseClient = null;
     try {
-      if (window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } catch(e) {
       console.warn("Supabase init error:", e);
     }
@@ -922,7 +919,6 @@
         activeTab: 'materias',
         syncing: false,
         lastSync: false,
-        isInitialized: false, // Prevents premature watcher saving
 
         // Navigation Config
         tabs: [
@@ -977,7 +973,7 @@
           }
         ],
         questoesFilterMateria: 'todas',
-        questoesPeriodFilter: 'total', // 'total', '30', '15', '7'
+        questoesPeriodFilter: 'total',
 
         gargalos: [
           { id: 'g1', materia: 'Auditoria Fiscal', titulo: 'Amostragem Estatística (MUS vs Clássica)', descricao: 'Dificuldade nos cálculos do tamanho da amostra.', resolvido: false }
@@ -1021,30 +1017,47 @@
         showFixNoteModal: false,
         modalNoteText: '',
 
-        // Initialization Logic
-        async initApp() {
-          // 1. First try loading from LocalStorage / Supabase
-          await this.loadInitialData();
-          
-          // 2. Mark app as fully loaded
-          this.isInitialized = true;
+        // Initialization
+        initApp() {
+          // 1. Carrega imediatamente do localStorage para garantir velocidade e zero perda local
+          const localData = localStorage.getItem('auditor_fiscal_data_v3');
+          if (localData) {
+            try {
+              const parsed = JSON.parse(localData);
+              this.applyLoadedData(parsed);
+            } catch(e) {
+              console.error("Erro ao ler localStorage:", e);
+            }
+          }
 
-          // 3. Register deep watchers for auto-saving changes
-          this.$watch('materias', () => this.isInitialized && this.saveData(), { deep: true });
-          this.$watch('questoes', () => this.isInitialized && this.saveData(), { deep: true });
-          this.$watch('gargalos', () => this.isInitialized && this.saveData(), { deep: true });
-          this.$watch('pinnedNotes', () => this.isInitialized && this.saveData(), { deep: true });
-          this.$watch('cronograma', () => this.isInitialized && this.saveData(), { deep: true });
+          // 2. Tenta carregar do Supabase para sincronizar com a nuvem / celular
+          this.loadFromSupabase();
+
+          // 3. Watchers para salvar automaticamente no armazenamento local e nuvem
+          this.$watch('materias', () => { this.saveLocal(); this.saveToSupabase(); }, { deep: true });
+          this.$watch('questoes', () => { this.saveLocal(); this.saveToSupabase(); }, { deep: true });
+          this.$watch('gargalos', () => { this.saveLocal(); this.saveToSupabase(); }, { deep: true });
+          this.$watch('pinnedNotes', () => { this.saveLocal(); this.saveToSupabase(); }, { deep: true });
+          this.$watch('cronograma', () => { this.saveLocal(); this.saveToSupabase(); }, { deep: true });
 
           this.$nextTick(() => {
             if (window.lucide) window.lucide.createIcons();
           });
         },
 
-        // Apply loaded payload to current state
-        applyState(loaded) {
-          if (!loaded) return;
-          if (loaded.materias && Array.isArray(loaded.materias)) {
+        saveLocal() {
+          const payload = {
+            materias: this.materias,
+            questoes: this.questoes,
+            gargalos: this.gargalos,
+            pinnedNotes: this.pinnedNotes,
+            cronograma: this.cronograma
+          };
+          localStorage.setItem('auditor_fiscal_data_v3', JSON.stringify(payload));
+        },
+
+        applyLoadedData(loaded) {
+          if (loaded.materias) {
             this.materias = loaded.materias.map(m => {
               m.topicos = (m.topicos || []).map(t => {
                 if (!t.status) {
@@ -1059,93 +1072,61 @@
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
           if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
           if (loaded.cronograma) this.cronograma = loaded.cronograma;
-
-          if (this.materias.length > 0) {
-            const exists = this.materias.some(m => m.id === this.selectedMateriaId);
-            if (!exists) this.selectedMateriaId = this.materias[0].id;
+          if (this.materias.length > 0 && !this.materias.some(m => m.id === this.selectedMateriaId)) {
+            this.selectedMateriaId = this.materias[0].id;
           }
         },
 
-        // Initial Data Load (LocalStorage + Supabase)
-        async loadInitialData() {
+        // ==================== SUPABASE SYNC ====================
+        async loadFromSupabase() {
+          if (!supabaseClient) return;
           this.syncing = true;
-          let loadedFromAny = false;
-
-          // Step A: Load from LocalStorage (Instant & Offline-first)
           try {
-            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (localData) {
-              const parsed = JSON.parse(localData);
-              this.applyState(parsed);
-              loadedFromAny = true;
-            }
-          } catch(e) {
-            console.warn("Erro ao ler localStorage:", e);
-          }
+            const { data, error } = await supabaseClient
+              .from('dados_auditor')
+              .select('conteudo')
+              .eq('id', ROW_ID)
+              .single();
 
-          // Step B: Load from Supabase (Cloud Sync)
-          if (supabaseClient) {
-            try {
-              const { data, error } = await supabaseClient
-                .from('dados_auditor')
-                .select('conteudo')
-                .eq('id', ROW_ID)
-                .single();
-
-              if (data && data.conteudo) {
-                const cloudContent = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
-                this.applyState(cloudContent);
-                // Also update local mirror
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cloudContent));
-                loadedFromAny = true;
-                this.lastSync = true;
-              }
-            } catch(e) {
-              console.warn("Aviso ao carregar do Supabase:", e);
-            }
-          }
-
-          if (loadedFromAny) {
-            this.lastSync = true;
-          }
-          this.syncing = false;
-        },
-
-        // Centralized Save Function (Saves to both LocalStorage and Supabase)
-        async saveData() {
-          if (!this.isInitialized) return;
-          this.syncing = true;
-
-          const payload = {
-            materias: this.materias,
-            questoes: this.questoes,
-            gargalos: this.gargalos,
-            pinnedNotes: this.pinnedNotes,
-            cronograma: this.cronograma
-          };
-
-          // 1. Always save immediately to LocalStorage
-          try {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
-            this.lastSync = true;
-          } catch(e) {
-            console.warn("Erro ao salvar localmente:", e);
-          }
-
-          // 2. Save to Supabase Cloud
-          if (supabaseClient) {
-            try {
-              await supabaseClient
-                .from('dados_auditor')
-                .upsert({ id: ROW_ID, conteudo: payload });
+            if (data && data.conteudo) {
+              const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
+              this.applyLoadedData(loaded);
+              this.saveLocal();
               this.lastSync = true;
-            } catch(e) {
-              console.warn("Aviso ao salvar no Supabase:", e);
             }
+          } catch(e) {
+            console.log("Aviso ao carregar do Supabase:", e);
+            this.lastSync = false;
+          } finally {
+            this.syncing = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
           }
+        },
 
-          this.syncing = false;
-          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        async saveToSupabase() {
+          if (!supabaseClient) return;
+          this.syncing = true;
+          try {
+            const payload = {
+              materias: this.materias,
+              questoes: this.questoes,
+              gargalos: this.gargalos,
+              pinnedNotes: this.pinnedNotes,
+              cronograma: this.cronograma
+            };
+
+            const { error } = await supabaseClient
+              .from('dados_auditor')
+              .upsert({ id: ROW_ID, conteudo: payload });
+
+            if (error) throw error;
+            this.lastSync = true;
+          } catch(e) {
+            console.log("Aviso ao salvar no Supabase (verifique permissões RLS da tabela):", e);
+            this.lastSync = false;
+          } finally {
+            this.syncing = false;
+          }
         },
 
         // ==================== TOPIC GROUPING & ACCORDION (MATÉRIAS) ====================
@@ -1180,7 +1161,8 @@
             mat.topicos.forEach(t => {
               if (!t.eSubtopico) t.expandido = status;
             });
-            this.saveData();
+            this.saveLocal();
+            this.saveToSupabase();
           }
         },
 
@@ -1189,7 +1171,6 @@
           const mat = this.getSelectedMateria();
           if (!mat) return;
 
-          // Mass insert split by period '.'
           const rawItems = this.newTopicText.split('.').map(s => s.trim()).filter(Boolean);
 
           rawItems.forEach(item => {
@@ -1207,16 +1188,17 @@
           });
 
           this.newTopicText = '';
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
-        // Status 3 Options: Estudar -> Estudando -> Concluido
         cycleStatus(topic) {
           const states = ['estudar', 'estudando', 'concluido'];
           const currentIdx = states.indexOf(topic.status || 'estudar');
           const nextIdx = (currentIdx + 1) % states.length;
           topic.status = states[nextIdx];
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         getStatusLabel(status) {
@@ -1244,7 +1226,8 @@
           if (t) {
             t.eSubtopico = !t.eSubtopico;
             t.nome = formatTextCase(t.nome, t.eSubtopico);
-            this.saveData();
+            this.saveLocal();
+            this.saveToSupabase();
           }
         },
 
@@ -1252,7 +1235,8 @@
           const mat = this.getSelectedMateria();
           if (!mat) return;
           mat.topicos = mat.topicos.filter(t => t.id !== topicId);
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         cyclePriority(topic) {
@@ -1260,7 +1244,8 @@
           const currentIdx = priorities.indexOf(topic.prioridade || 'media');
           const nextIdx = (currentIdx + 1) % priorities.length;
           topic.prioridade = priorities[nextIdx];
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         getPriorityLabel(priority) {
@@ -1281,7 +1266,6 @@
           }
         },
 
-        // Edit Topic Name Modal
         openEditTopicModal(topic) {
           this.editingTopicObj = topic;
           this.modalTopicText = topic.nome;
@@ -1293,7 +1277,8 @@
           this.editingTopicObj.nome = formatTextCase(this.modalTopicText.trim(), this.editingTopicObj.eSubtopico);
           this.showEditTopicModal = false;
           this.editingTopicObj = null;
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         // ==================== MATÉRIAS CRUD & EDIT ====================
@@ -1338,13 +1323,15 @@
 
           this.showMateriaModal = false;
           this.editingMateriaId = null;
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         deleteMateria(matId) {
           this.materias = this.materias.filter(m => m.id !== matId);
           if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         // ==================== METRICS & CALCULATIONS ====================
@@ -1491,12 +1478,14 @@
 
           this.showQuestaoModal = false;
           this.editingQuestaoId = null;
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         deleteQuestao(qId) {
           this.questoes = this.questoes.filter(q => q.id !== qId);
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         getFilteredQuestoes() {
@@ -1527,20 +1516,23 @@
           this.showGargaloModal = false;
           this.modalGargaloTitulo = '';
           this.modalGargaloDesc = '';
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         toggleGargaloStatus(gId) {
           const g = this.gargalos.find(item => item.id === gId);
           if (g) {
             g.resolvido = !g.resolvido;
-            this.saveData();
+            this.saveLocal();
+            this.saveToSupabase();
           }
         },
 
         deleteGargalo(gId) {
           this.gargalos = this.gargalos.filter(g => g.id !== gId);
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         // ==================== PINNED NOTES & CRONOGRAMA ====================
@@ -1549,12 +1541,14 @@
           this.pinnedNotes.push(this.modalNoteText.trim());
           this.modalNoteText = '';
           this.showFixNoteModal = false;
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         removePinnedNote(index) {
           this.pinnedNotes.splice(index, 1);
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         addCronogramaItem(dia) {
@@ -1562,13 +1556,15 @@
           if (text && text.trim()) {
             if (!this.cronograma[dia]) this.cronograma[dia] = [];
             this.cronograma[dia].push(text.trim());
-            this.saveData();
+            this.saveLocal();
+            this.saveToSupabase();
           }
         },
 
         removeFromCronograma(dia, index) {
           this.cronograma[dia].splice(index, 1);
-          this.saveData();
+          this.saveLocal();
+          this.saveToSupabase();
         },
 
         formatDate(dateStr) {
