@@ -30,17 +30,20 @@
                 </div>
             </div>
             <!-- Navegação por Abas -->
-            <nav class="flex flex-wrap gap-2 bg-slate-900/60 p-1.5 rounded-xl border border-slate-700">
-                <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+            <nav class="flex flex-wrap gap-1.5 bg-slate-900/60 p-1.5 rounded-xl border border-slate-700">
+                <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
                 </button>
-                <button @click="activeTab = 'materias'" :class="activeTab === 'materias' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                    <i data-lucide="book-open" class="w-4 h-4"></i> Matérias & Tópicos
+                <button @click="activeTab = 'materias'" :class="activeTab === 'materias' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Matérias
                 </button>
-                <button @click="activeTab = 'questoes'" :class="activeTab === 'questoes' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                    <i data-lucide="check-square" class="w-4 h-4"></i> Questões & Gargalos
+                <button @click="activeTab = 'questoes'" :class="activeTab === 'questoes' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+                    <i data-lucide="check-square" class="w-4 h-4"></i> Questões
                 </button>
-                <button @click="activeTab = 'cronograma'" :class="activeTab === 'cronograma' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <button @click="activeTab = 'gargalos'" :class="activeTab === 'gargalos' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Gargalos
+                </button>
+                <button @click="activeTab = 'cronograma'" :class="activeTab === 'cronograma' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
                     <i data-lucide="calendar" class="w-4 h-4"></i> Cronograma
                 </button>
             </nav>
@@ -48,11 +51,10 @@
     </header>
 
     <!-- MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full space-y-8">
 
         <!-- TAB: DASHBOARD -->
         <section x-show="activeTab === 'dashboard'" class="space-y-6">
-            <!-- Cards de Métricas Principais -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
@@ -90,30 +92,30 @@
                 <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Disciplinas Concluídas</p>
-                            <h3 class="text-2xl font-bold mt-1 text-purple-400" x-text="stats.materiasConcluidas + '/' + materias.length"></h3>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Disciplinas Cadastradas</p>
+                            <h3 class="text-2xl font-bold mt-1 text-purple-400" x-text="materias.length"></h3>
                         </div>
                         <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
-                            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                            <i data-lucide="book-open" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Progresso Geral das Matérias (Baseado na aba PLANO) -->
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Avanço no Conteúdo (Prioridade 1)
+            <!-- Avanço Geral das Matérias -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Progresso Geral das Matérias
                 </h3>
                 <div class="space-y-4">
                     <template x-for="mat in materias" :key="mat.nome">
                         <div>
                             <div class="flex justify-between text-sm mb-1">
                                 <span class="font-medium text-slate-200" x-text="mat.nome"></span>
-                                <span class="text-slate-400 font-semibold" x-text="mat.progresso + '%'"></span>
+                                <span class="text-slate-400 font-semibold" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
                             </div>
                             <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
-                                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" :style="'width: ' + mat.progresso + '%'"></div>
+                                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" :style="'width: ' + calcularProgressoMatéria(mat.nome) + '%'"></div>
                             </div>
                         </div>
                     </template>
@@ -122,46 +124,78 @@
         </section>
 
         <!-- TAB: MATÉRIAS & TÓPICOS -->
-        <section x-show="activeTab === 'materias'" class="space-y-6" x-data="{ selectedMat: 'D. TRIBUTÁRIO' }">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 p-4 rounded-2xl border border-slate-700">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="book" class="w-5 h-5 text-blue-400"></i> Conteúdo Programático por Matéria
-                </h3>
-                <select x-model="selectedMat" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    <template x-for="mat in materias" :key="mat.nome">
-                        <option :value="mat.nome" x-text="mat.nome"></option>
-                    </template>
-                </select>
+        <section x-show="activeTab === 'materias'" class="space-y-6">
+            <!-- Adicionar Matéria -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="book-plus" class="w-5 h-5 text-blue-400"></i> Gerenciar Matérias
+                    </h3>
+                    <p class="text-xs text-slate-400">Adicione novas disciplinas ao seu ciclo de estudos.</p>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <input type="text" x-model="nuevaMateria" placeholder="Nome da Matéria..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 flex-grow sm:w-64">
+                    <button @click="adicionarMateria()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shrink-0">Adicionar</button>
+                </div>
             </div>
 
-            <!-- Tabela de Tópicos -->
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-sm">
-                <div class="overflow-x-auto">
+            <!-- Selecionar Matéria e Adicionar Tópicos -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="w-full sm:w-72">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Selecionar Matéria</label>
+                        <select x-model="selectedMat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                            <template x-for="mat in materias" :key="mat.nome">
+                                <option :value="mat.nome" x-text="mat.nome"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <!-- Formulário novo tópico -->
+                    <div class="flex gap-2 w-full sm:w-auto items-end">
+                        <div class="flex-grow">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Novo Tópico / Conteúdo</label>
+                            <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Obrigações Tributárias..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full sm:w-80">
+                        </div>
+                        <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Cadastrar Tópico</button>
+                    </div>
+                </div>
+
+                <!-- Tabela de Tópicos -->
+                <div class="overflow-x-auto rounded-xl border border-slate-700">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                            <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
                                 <th class="p-4">Tópico / Conteúdo</th>
                                 <th class="p-4 w-40">Status</th>
-                                <th class="p-4 w-24 text-center">Ações</th>
+                                <th class="p-4 w-28 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-700/50 text-sm">
-                            <template x-for="(topico, index) in topicosPorMateria[selectedMat] || []" :key="index">
+                            <template x-for="(topico, index) in (topicosPorMateria[selectedMat] || [])" :key="index">
                                 <tr class="hover:bg-slate-700/25 transition">
                                     <td class="p-4 text-slate-200" x-text="topico.conteudo"></td>
                                     <td class="p-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer"
+                                              @click="toggleStatus(selectedMat, index)"
                                               :class="{
                                                   'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
                                                   'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
                                                   'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
                                               }" x-text="topico.status"></span>
                                     </td>
-                                    <td class="p-4 text-center">
-                                        <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Alterar Status">
+                                    <td class="p-4 text-center flex justify-center gap-2">
+                                        <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Mudar Status">
                                             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                                         </button>
+                                        <button @click="removerTopico(selectedMat, index)" class="p-2 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Tópico">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
                                     </td>
+                                </tr>
+                            </template>
+                            <template x-if="!topicosPorMateria[selectedMat] || topicosPorMateria[selectedMat].length === 0">
+                                <tr>
+                                    <td colspan="3" class="p-6 text-center text-slate-500">Nenhum tópico cadastrado para esta matéria ainda.</td>
                                 </tr>
                             </template>
                         </tbody>
@@ -170,15 +204,57 @@
             </div>
         </section>
 
-        <!-- TAB: QUESTÕES & GARGALOS -->
+        <!-- TAB: QUESTÕES & REGISTRO -->
         <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <div class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl border border-slate-700">
+            <!-- Formulário para Registrar Questões -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="check-square" class="w-5 h-5 text-blue-400"></i> Registro de Questões & Análise de Gargalos
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
                 </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Data</label>
+                        <input type="date" x-model="novaQuestao.data" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Semana / Ciclo</label>
+                        <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria</label>
+                        <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <template x-for="mat in materias" :key="mat.nome">
+                                <option :value="mat.nome" x-text="mat.nome"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto</label>
+                        <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Total de Questões</label>
+                        <input type="number" x-model.number="novaQuestao.qtd" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Acertos</label>
+                        <input type="number" x-model.number="novaQuestao.acertos" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Anotação de Gargalo / Ponto Fraco</label>
+                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Confusão em imunidades subjetivas..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-end pt-2">
+                    <button @click="adicionarQuestao()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">Salvar Registro</button>
+                </div>
             </div>
 
+            <!-- Tabela de Questões Registradas -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-sm">
+                <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                    <h3 class="font-bold flex items-center gap-2"><i data-lucide="table" class="w-4 h-4 text-blue-400"></i> Histórico de Questões</h3>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -190,11 +266,12 @@
                                 <th class="p-4 text-center">Qtd</th>
                                 <th class="p-4 text-center">Acertos</th>
                                 <th class="p-4 text-center">%</th>
-                                <th class="p-4">Gargalo / Ponto Fraco</th>
+                                <th class="p-4">Gargalo</th>
+                                <th class="p-4 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-700/50 text-sm">
-                            <template x-for="q in questoesRegistro" :key="q.id">
+                            <template x-for="(q, index) in questoesRegistro" :key="q.id || index">
                                 <tr class="hover:bg-slate-700/25 transition">
                                     <td class="p-4 font-medium text-slate-300" x-text="q.semana"></td>
                                     <td class="p-4 text-slate-400" x-text="q.data"></td>
@@ -202,8 +279,18 @@
                                     <td class="p-4 text-slate-200" x-text="q.assunto"></td>
                                     <td class="p-4 text-center text-slate-300" x-text="q.qtd"></td>
                                     <td class="p-4 text-center text-emerald-400 font-medium" x-text="q.acertos"></td>
-                                    <td class="p-4 text-center font-bold" :class="q.porcentagem >= 0.8 ? 'text-emerald-400' : (q.porcentagem >= 0.7 ? 'text-amber-400' : 'text-rose-400')" x-text="(q.porcentagem * 100).toFixed(1) + '%'"></td>
-                                    <td class="p-4 text-rose-300 italic" x-text="q.gargalo || '-'"></td>
+                                    <td class="p-4 text-center font-bold" :class="(q.acertos/q.qtd) >= 0.8 ? 'text-emerald-400' : ((q.acertos/q.qtd) >= 0.7 ? 'text-amber-400' : 'text-rose-400')" x-text="q.qtd > 0 ? ((q.acertos / q.qtd) * 100).toFixed(1) + '%' : '0.0%'"></td>
+                                    <td class="p-4 text-rose-300 italic text-xs" x-text="q.gargalo || '-'"></td>
+                                    <td class="p-4 text-center">
+                                        <button @click="removerQuestao(index)" class="p-1.5 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="questoesRegistro.length === 0">
+                                <tr>
+                                    <td colspan="9" class="p-6 text-center text-slate-500">Nenhum registro de questão encontrado.</td>
                                 </tr>
                             </template>
                         </tbody>
@@ -212,28 +299,88 @@
             </div>
         </section>
 
-        <!-- TAB: CRONOGRAMA -->
-        <section x-show="activeTab === 'cronograma'" class="space-y-6">
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+        <!-- TAB: GARGALOS POR DIA -->
+        <section x-show="activeTab === 'gargalos'" class="space-y-6">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm">
                 <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> Cronograma de Ciclos de Estudo
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos por Dia
                 </h3>
+                <p class="text-xs text-slate-400 mt-1">Visualize todos os pontos fracos e anotações registrados, organizados cronologicamente por dia de estudo.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <template x-for="sem in cronogramaSemanas" :key="sem.semana">
+
+            <div class="space-y-4">
+                <template x-for="(gargalosDoDia, dataKey) in gargalosAgrupadosPorDia" :key="dataKey">
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                            <h4 class="font-bold text-blue-400" x-text="sem.semana"></h4>
-                            <span class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg">Ciclo Ativo</span>
+                            <h4 class="font-bold text-amber-400 flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-4 h-4"></i> <span x-text="dataKey"></span>
+                            </h4>
+                            <span class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg" x-text="gargalosDoDia.length + ' anotações'"></span>
                         </div>
-                        <ul class="space-y-2 text-sm text-slate-300">
-                            <template x-for="m in sem.materias">
-                                <li class="flex items-start gap-2">
-                                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i>
-                                    <span x-text="m"></span>
-                                </li>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <template x-for="g in gargalosDoDia">
+                                <div class="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl space-y-2">
+                                    <div class="flex justify-between text-xs">
+                                        <span class="font-bold text-blue-400" x-text="g.materia"></span>
+                                        <span class="text-slate-400" x-text="g.assunto"></span>
+                                    </div>
+                                    <p class="text-sm text-rose-200 font-medium" x-text="g.gargalo"></p>
+                                    <div class="text-[10px] text-slate-500 uppercase tracking-wider" x-text="g.semana"></div>
+                                </div>
                             </template>
-                        </ul>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="Object.keys(gargalosAgrupadosPorDia).length === 0">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center text-slate-500">
+                        Nenhum gargalo registrado até o momento. Cadastre anotações na aba de Questões.
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- TAB: CRONOGRAMA -->
+        <section x-show="activeTab === 'cronograma'" class="space-y-6">
+            <!-- Adicionar Nova Semana/Ciclo -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-400"></i> Criar / Editar Ciclo do Cronograma
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Nome da Semana / Ciclo</label>
+                        <input type="text" x-model="novoCiclo.semana" placeholder="Ex: SEMANA 5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matérias / Tópicos (separados por vírgula)</label>
+                        <div class="flex gap-2">
+                            <input type="text" x-model="novoCiclo.materiasTexto" placeholder="Ex: Direito Tributário, Auditoria, TI" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <button @click="adicionarCiclo()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shrink-0">Adicionar Ciclo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listagem de Ciclos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="(sem, index) in cronogramaSemanas" :key="index">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                                <h4 class="font-bold text-blue-400" x-text="sem.semana"></h4>
+                                <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <ul class="space-y-2 text-sm text-slate-300">
+                                <template x-for="m in sem.materias">
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i>
+                                        <span x-text="m"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
                     </div>
                 </template>
             </div>
@@ -246,84 +393,170 @@
         <p>Sistema de Controle de Estudos — Foco ISS Caruaru & Concursos Fiscais 2026</p>
     </footer>
 
-    <!-- SCRIPT DE DADOS E LÓGICA -->
+    <!-- SCRIPT DE DADOS E PERSISTÊNCIA -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('appData', () => ({
                 activeTab: 'dashboard',
-                materias: [
-                    { nome: 'D. TRIBUTÁRIO', progresso: 97 },
-                    { nome: 'AUDITORIA', progresso: 60 },
-                    { nome: 'CONTABILIDADE GERAL', progresso: 39 },
-                    { nome: 'CONTABILIDADE DE CUSTOS', progresso: 0 },
-                    { nome: 'CONTABILIDADE PÚBLICA', progresso: 100 },
-                    { nome: 'TECNOLOGIA DA INFORMAÇÃO', progresso: 18 },
-                    { nome: 'FINANÇAS PÚBLICAS', progresso: 18 },
-                    { nome: 'DIREITO CONSTITUCIONAL', progresso: 85 },
-                    { nome: 'DIREITO ADMINISTRATIVO', progresso: 80 },
-                    { nome: 'PORTUGUÊS', progresso: 87 },
-                    { nome: 'RLM', progresso: 87 },
-                    { nome: 'DIREITO FINANCEIRO', progresso: 75 },
-                    { nome: 'ESTATÍSTICA', progresso: 40 }
+                
+                // Matérias
+                materias: JSON.parse(localStorage.getItem('fisc_materias')) || [
+                    { nome: 'D. TRIBUTÁRIO' },
+                    { nome: 'AUDITORIA' },
+                    { nome: 'CONTABILIDADE GERAL' },
+                    { nome: 'CONTABILIDADE PÚBLICA' },
+                    { nome: 'TECNOLOGIA DA INFORMAÇÃO' },
+                    { nome: 'FINANÇAS PÚBLICAS' },
+                    { nome: 'DIREITO CONSTITUCIONAL' },
+                    { nome: 'DIREITO ADMINISTRATIVO' },
+                    { nome: 'PORTUGUÊS' },
+                    { nome: 'RLM' },
+                    { nome: 'DIREITO FINANCEIRO' },
+                    { nome: 'ESTATÍSTICA' }
                 ],
-                topicosPorMateria: {
+                nuevaMateria: '',
+
+                // Tópicos por Matéria
+                selectedMat: 'D. TRIBUTÁRIO',
+                novoTopicoTexto: '',
+                topicosPorMateria: JSON.parse(localStorage.getItem('fisc_topicos')) || {
                     'D. TRIBUTÁRIO': [
                         { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO' },
-                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO' },
-                        { conteudo: 'Normas orçamentárias', status: 'CONCLUÍDO' },
-                        { conteudo: 'Limitações ao poder de tributar', status: 'CONCLUÍDO' },
-                        { conteudo: '2. Código Tributário Nacional (CTN)', status: 'CONCLUÍDO' }
-                    ],
-                    'CONTABILIDADE GERAL': [
-                        { conteudo: 'Conceito, objeto, objetivos e usuários', status: 'CONCLUÍDO' },
-                        { conteudo: 'Estrutura Conceitual CPC 00', status: 'CONCLUÍDO' },
-                        { conteudo: 'Apuração dos resultados', status: 'CONCLUÍDO' },
-                        { conteudo: 'Componentes Patrimoniais: Ativo, Passivo e PL', status: 'CONCLUÍDO' },
-                        { conteudo: 'Fatos Contábeis e Variações Patrimoniais', status: 'ESTUDAR' }
-                    ],
-                    'TECNOLOGIA DA INFORMAÇÃO': [
-                        { conteudo: 'Organização e Arquitetura de Computadores', status: 'CONCLUÍDO' },
-                        { conteudo: 'Periféricos e dispositivos de E/S', status: 'CONCLUÍDO' },
-                        { conteudo: 'Banco de Dados e SGBD / SQL', status: 'ESTUDANDO' },
-                        { conteudo: 'EFD ICMS/IPI e NF-e (XML / Registros)', status: 'ESTUDANDO' },
-                        { conteudo: 'Governança de TI (COBIT 2019 / ITIL V4)', status: 'ESTUDAR' }
+                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO' }
                     ]
                 },
-                questoesRegistro: [
-                    { id: 1, semana: 'SEMANA 1', data: '2026-07-27', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, porcentagem: 0.6, gargalo: 'Anterioridade' },
-                    { id: 2, semana: 'SEMANA 1', data: '2026-07-30', materia: 'AUDITORIA', assunto: 'NBC TSP', qtd: 14, acertos: 9, porcentagem: 0.64, gargalo: '' },
-                    { id: 3, semana: 'SEMANA 1', data: '2026-07-31', materia: 'CONTABILIDADE GERAL', assunto: 'CPC 00', qtd: 10, acertos: 9, porcentagem: 0.9, gargalo: '' },
-                    { id: 4, semana: 'SEMANA 2', data: '2026-08-04', materia: 'D. TRIBUTÁRIO', assunto: 'Competências e Limitações', qtd: 10, acertos: 7, porcentagem: 0.7, gargalo: 'Imunidades Subjetivas' }
+
+                // Questões & Gargalos
+                novaQuestao: { data: '', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
+                questoesRegistro: JSON.parse(localStorage.getItem('fisc_questoes')) || [
+                    { id: 1, semana: 'SEMANA 1', data: '2026-07-27', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Confusão no Princípio da Anterioridade' }
                 ],
-                cronogramaSemanas: [
-                    { semana: 'SEMANA 1', materias: ['Direito Tributário (Obr. Tributária)', 'Direito Constitucional (Direitos Fundamentais)', 'Contabilidade Pública (Sistema Contábil)', 'Finanças Públicas (Orçamento Público)'] },
-                    { semana: 'SEMANA 2', materias: ['Direito Constitucional (Organização Adm.)', 'Direito Tributário (Sistema Tributário Nacional)', 'Contabilidade Pública (Balanço Patrimonial)', 'Português & RLM'] },
-                    { semana: 'SEMANA 3', materias: ['Direito Constitucional (Controle de Constitucionalidade)', 'Código Tributário Municipal', 'Contabilidade Pública (Balanço Financeiro)', 'Licitações e Contratos'] }
+
+                // Cronograma
+                novoCiclo: { semana: '', materiasTexto: '' },
+                cronogramaSemanas: JSON.parse(localStorage.getItem('fisc_cronograma')) || [
+                    { semana: 'SEMANA 1', materias: ['Direito Tributário', 'Direito Constitucional', 'Contabilidade Pública'] },
+                    { semana: 'SEMANA 2', materias: ['Direito Tributário', 'Contabilidade Pública', 'Português & RLM'] }
                 ],
-                get stats() {
-                    let totalQ = this.questoesRegistro.reduce((acc, curr) => acc + curr.qtd, 0);
-                    let totalA = this.questoesRegistro.reduce((acc, curr) => acc + curr.acertos, 0);
-                    let totalE = totalQ - totalA;
-                    let media = totalQ > 0 ? ((totalA / totalQ) * 100).toFixed(1) : 0;
-                    let conc = this.materias.filter(m => m.progresso === 100).length;
-                    return {
-                        totalQuestao: totalQ,
-                        totalAcertos: totalA,
-                        totalErros: totalE,
-                        mediaAproveitamento: media,
-                        materiasConcluidas: conc
-                    };
+
+                init() {
+                    this.$watch('materias', val => localStorage.setItem('fisc_materias', JSON.stringify(val)));
+                    this.$watch('topicosPorMateria', val => localStorage.setItem('fisc_topicos', JSON.stringify(val)));
+                    this.$watch('questoesRegistro', val => localStorage.setItem('fisc_questoes', JSON.stringify(val)));
+                    this.$watch('cronogramaSemanas', val => localStorage.setItem('fisc_cronograma', JSON.stringify(val)));
+                    
+                    // Atualiza ícones após renderização
+                    this.$nextTick(() => { lucide.createIcons(); });
                 },
+
+                adicionarMateria() {
+                    let nome = this.nuevaMateria.trim().toUpperCase();
+                    if(nome && !this.materias.some(m => m.nome === nome)) {
+                        this.materias.push({ nome: nome });
+                        this.topicosPorMateria[nome] = [];
+                        this.nuevaMateria = '';
+                    }
+                },
+
+                adicionarTopico() {
+                    let texto = this.novoTopicoTexto.trim();
+                    if(texto) {
+                        if(!this.topicosPorMateria[this.selectedMat]) {
+                            this.topicosPorMateria[this.selectedMat] = [];
+                        }
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: texto, status: 'ESTUDAR' });
+                        this.novoTopicoTexto = '';
+                    }
+                },
+
+                removerTopico(mat, index) {
+                    if(this.topicosPorMateria[mat]) {
+                        this.topicosPorMateria[mat].splice(index, 1);
+                    }
+                },
+
                 toggleStatus(mat, index) {
                     if(!this.topicosPorMateria[mat]) return;
                     let t = this.topicosPorMateria[mat][index];
                     if(t.status === 'ESTUDAR') t.status = 'ESTUDANDO';
                     else if(t.status === 'ESTUDANDO') t.status = 'CONCLUÍDO';
                     else t.status = 'ESTUDAR';
+                },
+
+                adicionarQuestao() {
+                    if(!this.novaQuestao.data || !this.novaQuestao.assunto) {
+                        alert('Por favor, preencha a data e o assunto.');
+                        return;
+                    }
+                    this.questoesRegistro.unshift({
+                        id: Date.now(),
+                        semana: this.novaQuestao.semana,
+                        data: this.novaQuestao.data,
+                        materia: this.novaQuestao.materia,
+                        assunto: this.novaQuestao.assunto,
+                        qtd: Number(this.novaQuestao.qtd) || 0,
+                        acertos: Number(this.novaQuestao.acertos) || 0,
+                        gargalo: this.novaQuestao.gargalo
+                    });
+                    // Limpar campos mantendo data e matéria
+                    this.novaQuestao.assunto = '';
+                    this.novaQuestao.gargalo = '';
+                },
+
+                removerQuestao(index) {
+                    this.questoesRegistro.splice(index, 1);
+                },
+
+                adicionarCiclo() {
+                    let sem = this.novoCiclo.semana.trim().toUpperCase();
+                    let mats = this.novoCiclo.materiasTexto.split(',').map(m => m.trim()).filter(m => m);
+                    if(sem && mats.length > 0) {
+                        this.cronogramaSemanas.push({ semana: sem, materias: mats });
+                        this.novoCiclo.semana = '';
+                        this.novoCiclo.materiasTexto = '';
+                    }
+                },
+
+                removerCiclo(index) {
+                    this.cronogramaSemanas.splice(index, 1);
+                },
+
+                calcularProgressoMatéria(matName) {
+                    let topicos = this.topicosPorMateria[matName] || [];
+                    if(topicos.length === 0) return 0;
+                    let concluidos = topicos.filter(t => t.status === 'CONCLUÍDO').length;
+                    return Math.round((concluidos / topicos.length) * 100);
+                },
+
+                get gargalosAgrupadosPorDia() {
+                    let agrupado = {};
+                    this.questoesRegistro.forEach(q => {
+                        if(q.gargalo && q.gargalo.trim() !== '') {
+                            let dataKey = q.data || 'Sem Data';
+                            if(!agrupado[dataKey]) {
+                                agrupado[dataKey] = [];
+                            }
+                            agrupado[dataKey].push(q);
+                        }
+                    });
+                    return agrupado;
+                },
+
+                get stats() {
+                    let totalQ = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.qtd) || 0), 0);
+                    let totalA = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.acertos) || 0), 0);
+                    let totalE = totalQ - totalA;
+                    let media = totalQ > 0 ? ((totalA / totalQ) * 100).toFixed(1) : 0;
+                    return {
+                        totalQuestao: totalQ,
+                        totalAcertos: totalA,
+                        totalErros: totalE,
+                        mediaAproveitamento: media
+                    };
                 }
             }));
         });
-        document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
+        document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { lucide.createIcons(); }, 100); });
     </script>
 </body>
 </html>
