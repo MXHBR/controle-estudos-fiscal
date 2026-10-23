@@ -75,9 +75,9 @@
         <div class="px-4 py-2 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs">
           <span class="flex items-center space-x-1.5 text-slate-400">
             <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400 animate-ping' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
-            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada' : 'Sem Conexão')"></span>
+            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Dados Salvos' : 'Sem Conexão')"></span>
           </span>
-          <button @click="saveToSupabase()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Sincronização">
+          <button @click="saveData()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Guardar/Sincronizar">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="syncing && 'animate-spin'"></i>
           </button>
         </div>
@@ -98,7 +98,7 @@
       <!-- Footer Info -->
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.0</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.1</span>
       </div>
     </aside>
 
@@ -441,7 +441,7 @@
                           <!-- Left: Expand Toggle + Topic Name + Priority -->
                           <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <!-- Toggle Collapse Button -->
-                            <button @click="group.parent.expandido = !group.parent.expandido; saveToSupabase()"
+                            <button @click="group.parent.expandido = !group.parent.expandido; saveData()"
                               class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0">
                               <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
                             </button>
@@ -455,7 +455,7 @@
                             <!-- Title (Uppercase for parent topic) -->
                             <span class="text-xs font-bold truncate cursor-pointer tracking-wide"
                                   :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'"
-                                  @click="group.parent.expandido = !group.parent.expandido; saveToSupabase()"
+                                  @click="group.parent.expandido = !group.parent.expandido; saveData()"
                                   x-text="group.parent.nome"></span>
 
                             <!-- Priority Tag -->
@@ -890,15 +890,18 @@
     </div>
   </div>
 
-  <!-- Application Logic & Supabase Sync -->
+  <!-- Application Logic & Supabase + LocalStorage Sync -->
   <script>
     const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
     const ROW_ID = 'dados_auditor';
+    const LOCAL_STORAGE_KEY = 'auditor_estudos_data_v1';
 
     let supabaseClient = null;
     try {
-      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
     } catch(e) {
       console.warn("Supabase init error:", e);
     }
@@ -907,11 +910,9 @@
     function formatTextCase(str, isSubtopic) {
       if (!str) return '';
       if (isSubtopic) {
-        // Sentence case: Only first letter uppercase, rest lowercase
         const clean = str.trim();
         return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
       } else {
-        // Uppercase: Entire string uppercase
         return str.toUpperCase();
       }
     }
@@ -921,6 +922,7 @@
         activeTab: 'materias',
         syncing: false,
         lastSync: false,
+        isInitialized: false, // Prevents premature watcher saving
 
         // Navigation Config
         tabs: [
@@ -1019,83 +1021,131 @@
         showFixNoteModal: false,
         modalNoteText: '',
 
-        // Initialization
-        initApp() {
-          this.loadFromSupabase();
-          this.$watch('materias', () => this.saveToSupabase(), { deep: true });
-          this.$watch('questoes', () => this.saveToSupabase(), { deep: true });
-          this.$watch('gargalos', () => this.saveToSupabase(), { deep: true });
-          this.$watch('pinnedNotes', () => this.saveToSupabase(), { deep: true });
-          this.$watch('cronograma', () => this.saveToSupabase(), { deep: true });
+        // Initialization Logic
+        async initApp() {
+          // 1. First try loading from LocalStorage / Supabase
+          await this.loadInitialData();
+          
+          // 2. Mark app as fully loaded
+          this.isInitialized = true;
+
+          // 3. Register deep watchers for auto-saving changes
+          this.$watch('materias', () => this.isInitialized && this.saveData(), { deep: true });
+          this.$watch('questoes', () => this.isInitialized && this.saveData(), { deep: true });
+          this.$watch('gargalos', () => this.isInitialized && this.saveData(), { deep: true });
+          this.$watch('pinnedNotes', () => this.isInitialized && this.saveData(), { deep: true });
+          this.$watch('cronograma', () => this.isInitialized && this.saveData(), { deep: true });
 
           this.$nextTick(() => {
             if (window.lucide) window.lucide.createIcons();
           });
         },
 
-        // ==================== SUPABASE SYNC ====================
-        async loadFromSupabase() {
-          if (!supabaseClient) return;
-          this.syncing = true;
-          try {
-            const { data, error } = await supabaseClient
-              .from('dados_auditor')
-              .select('conteudo')
-              .eq('id', ROW_ID)
-              .single();
+        // Apply loaded payload to current state
+        applyState(loaded) {
+          if (!loaded) return;
+          if (loaded.materias && Array.isArray(loaded.materias)) {
+            this.materias = loaded.materias.map(m => {
+              m.topicos = (m.topicos || []).map(t => {
+                if (!t.status) {
+                  t.status = t.concluido ? 'concluido' : 'estudar';
+                }
+                return t;
+              });
+              return m;
+            });
+          }
+          if (loaded.questoes) this.questoes = loaded.questoes;
+          if (loaded.gargalos) this.gargalos = loaded.gargalos;
+          if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
+          if (loaded.cronograma) this.cronograma = loaded.cronograma;
 
-            if (data && data.conteudo) {
-              const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
-              if (loaded.materias) {
-                // Ensure backward compatibility with status field
-                this.materias = loaded.materias.map(m => {
-                  m.topicos = (m.topicos || []).map(t => {
-                    if (!t.status) {
-                      t.status = t.concluido ? 'concluido' : 'estudar';
-                    }
-                    return t;
-                  });
-                  return m;
-                });
-              }
-              if (loaded.questoes) this.questoes = loaded.questoes;
-              if (loaded.gargalos) this.gargalos = loaded.gargalos;
-              if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
-              if (loaded.cronograma) this.cronograma = loaded.cronograma;
-              if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
-              this.lastSync = true;
-            }
-          } catch(e) {
-            console.log("Aviso ao carregar do Supabase:", e);
-          } finally {
-            this.syncing = false;
-            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          if (this.materias.length > 0) {
+            const exists = this.materias.some(m => m.id === this.selectedMateriaId);
+            if (!exists) this.selectedMateriaId = this.materias[0].id;
           }
         },
 
-        async saveToSupabase() {
-          if (!supabaseClient) return;
+        // Initial Data Load (LocalStorage + Supabase)
+        async loadInitialData() {
           this.syncing = true;
+          let loadedFromAny = false;
+
+          // Step A: Load from LocalStorage (Instant & Offline-first)
           try {
-            const payload = {
-              materias: this.materias,
-              questoes: this.questoes,
-              gargalos: this.gargalos,
-              pinnedNotes: this.pinnedNotes,
-              cronograma: this.cronograma
-            };
+            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (localData) {
+              const parsed = JSON.parse(localData);
+              this.applyState(parsed);
+              loadedFromAny = true;
+            }
+          } catch(e) {
+            console.warn("Erro ao ler localStorage:", e);
+          }
 
-            await supabaseClient
-              .from('dados_auditor')
-              .upsert({ id: ROW_ID, conteudo: payload });
+          // Step B: Load from Supabase (Cloud Sync)
+          if (supabaseClient) {
+            try {
+              const { data, error } = await supabaseClient
+                .from('dados_auditor')
+                .select('conteudo')
+                .eq('id', ROW_ID)
+                .single();
 
+              if (data && data.conteudo) {
+                const cloudContent = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
+                this.applyState(cloudContent);
+                // Also update local mirror
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cloudContent));
+                loadedFromAny = true;
+                this.lastSync = true;
+              }
+            } catch(e) {
+              console.warn("Aviso ao carregar do Supabase:", e);
+            }
+          }
+
+          if (loadedFromAny) {
+            this.lastSync = true;
+          }
+          this.syncing = false;
+        },
+
+        // Centralized Save Function (Saves to both LocalStorage and Supabase)
+        async saveData() {
+          if (!this.isInitialized) return;
+          this.syncing = true;
+
+          const payload = {
+            materias: this.materias,
+            questoes: this.questoes,
+            gargalos: this.gargalos,
+            pinnedNotes: this.pinnedNotes,
+            cronograma: this.cronograma
+          };
+
+          // 1. Always save immediately to LocalStorage
+          try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
             this.lastSync = true;
           } catch(e) {
-            console.log("Aviso ao salvar no Supabase:", e);
-          } finally {
-            this.syncing = false;
-            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            console.warn("Erro ao salvar localmente:", e);
           }
+
+          // 2. Save to Supabase Cloud
+          if (supabaseClient) {
+            try {
+              await supabaseClient
+                .from('dados_auditor')
+                .upsert({ id: ROW_ID, conteudo: payload });
+              this.lastSync = true;
+            } catch(e) {
+              console.warn("Aviso ao salvar no Supabase:", e);
+            }
+          }
+
+          this.syncing = false;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
         },
 
         // ==================== TOPIC GROUPING & ACCORDION (MATÉRIAS) ====================
@@ -1130,7 +1180,7 @@
             mat.topicos.forEach(t => {
               if (!t.eSubtopico) t.expandido = status;
             });
-            this.saveToSupabase();
+            this.saveData();
           }
         },
 
@@ -1157,7 +1207,7 @@
           });
 
           this.newTopicText = '';
-          this.saveToSupabase();
+          this.saveData();
         },
 
         // Status 3 Options: Estudar -> Estudando -> Concluido
@@ -1166,7 +1216,7 @@
           const currentIdx = states.indexOf(topic.status || 'estudar');
           const nextIdx = (currentIdx + 1) % states.length;
           topic.status = states[nextIdx];
-          this.saveToSupabase();
+          this.saveData();
         },
 
         getStatusLabel(status) {
@@ -1193,9 +1243,8 @@
           const t = mat.topicos.find(item => item.id === topicId);
           if (t) {
             t.eSubtopico = !t.eSubtopico;
-            // Format casing dynamically when toggled between topic and subtopic
             t.nome = formatTextCase(t.nome, t.eSubtopico);
-            this.saveToSupabase();
+            this.saveData();
           }
         },
 
@@ -1203,7 +1252,7 @@
           const mat = this.getSelectedMateria();
           if (!mat) return;
           mat.topicos = mat.topicos.filter(t => t.id !== topicId);
-          this.saveToSupabase();
+          this.saveData();
         },
 
         cyclePriority(topic) {
@@ -1211,7 +1260,7 @@
           const currentIdx = priorities.indexOf(topic.prioridade || 'media');
           const nextIdx = (currentIdx + 1) % priorities.length;
           topic.prioridade = priorities[nextIdx];
-          this.saveToSupabase();
+          this.saveData();
         },
 
         getPriorityLabel(priority) {
@@ -1244,7 +1293,7 @@
           this.editingTopicObj.nome = formatTextCase(this.modalTopicText.trim(), this.editingTopicObj.eSubtopico);
           this.showEditTopicModal = false;
           this.editingTopicObj = null;
-          this.saveToSupabase();
+          this.saveData();
         },
 
         // ==================== MATÉRIAS CRUD & EDIT ====================
@@ -1266,20 +1315,17 @@
           if (!this.modalMateriaNome.trim()) return;
           
           if (this.editingMateriaId) {
-            // Edit existing materia
             const mat = this.materias.find(m => m.id === this.editingMateriaId);
             if (mat) {
               const oldName = mat.nome;
               mat.nome = this.modalMateriaNome.trim();
               mat.cor = this.modalMateriaCor;
               
-              // Update questions assigned to old name
               this.questoes.forEach(q => {
                 if (q.materia === oldName) q.materia = mat.nome;
               });
             }
           } else {
-            // Create new materia
             const newMat = {
               id: 'mat_' + Date.now(),
               nome: this.modalMateriaNome.trim(),
@@ -1292,13 +1338,13 @@
 
           this.showMateriaModal = false;
           this.editingMateriaId = null;
-          this.saveToSupabase();
+          this.saveData();
         },
 
         deleteMateria(matId) {
           this.materias = this.materias.filter(m => m.id !== matId);
           if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
-          this.saveToSupabase();
+          this.saveData();
         },
 
         // ==================== METRICS & CALCULATIONS ====================
@@ -1327,7 +1373,6 @@
           return Math.round((this.countCompletedTopics() / total) * 100);
         },
 
-        // Get questions filtered by time period (total, 30, 15, 7 days)
         getQuestionsByPeriod() {
           if (this.questoesPeriodFilter === 'total') return this.questoes;
           
@@ -1423,7 +1468,6 @@
           if (!this.modalQuestaoMateria) return;
           
           if (this.editingQuestaoId) {
-            // Edit existing question record
             const q = this.questoes.find(item => item.id === this.editingQuestaoId);
             if (q) {
               q.data = this.modalQuestaoData;
@@ -1434,7 +1478,6 @@
               q.anotacao = this.modalQuestaoAnotacao;
             }
           } else {
-            // Add new question record
             this.questoes.push({
               id: 'q_' + Date.now(),
               materia: this.modalQuestaoMateria,
@@ -1448,15 +1491,14 @@
 
           this.showQuestaoModal = false;
           this.editingQuestaoId = null;
-          this.saveToSupabase();
+          this.saveData();
         },
 
         deleteQuestao(qId) {
           this.questoes = this.questoes.filter(q => q.id !== qId);
-          this.saveToSupabase();
+          this.saveData();
         },
 
-        // Filter & Sort Questions by Date (Newest to Oldest)
         getFilteredQuestoes() {
           let list = this.getQuestionsByPeriod();
 
@@ -1464,7 +1506,6 @@
             list = list.filter(q => q.materia === this.questoesFilterMateria);
           }
 
-          // Sort by date descending (Newest first)
           return list.sort((a, b) => new Date(b.data) - new Date(a.data));
         },
 
@@ -1486,20 +1527,20 @@
           this.showGargaloModal = false;
           this.modalGargaloTitulo = '';
           this.modalGargaloDesc = '';
-          this.saveToSupabase();
+          this.saveData();
         },
 
         toggleGargaloStatus(gId) {
           const g = this.gargalos.find(item => item.id === gId);
           if (g) {
             g.resolvido = !g.resolvido;
-            this.saveToSupabase();
+            this.saveData();
           }
         },
 
         deleteGargalo(gId) {
           this.gargalos = this.gargalos.filter(g => g.id !== gId);
-          this.saveToSupabase();
+          this.saveData();
         },
 
         // ==================== PINNED NOTES & CRONOGRAMA ====================
@@ -1508,12 +1549,12 @@
           this.pinnedNotes.push(this.modalNoteText.trim());
           this.modalNoteText = '';
           this.showFixNoteModal = false;
-          this.saveToSupabase();
+          this.saveData();
         },
 
         removePinnedNote(index) {
           this.pinnedNotes.splice(index, 1);
-          this.saveToSupabase();
+          this.saveData();
         },
 
         addCronogramaItem(dia) {
@@ -1521,18 +1562,17 @@
           if (text && text.trim()) {
             if (!this.cronograma[dia]) this.cronograma[dia] = [];
             this.cronograma[dia].push(text.trim());
-            this.saveToSupabase();
+            this.saveData();
           }
         },
 
         removeFromCronograma(dia, index) {
           this.cronograma[dia].splice(index, 1);
-          this.saveToSupabase();
+          this.saveData();
         },
 
         formatDate(dateStr) {
           if (!dateStr) return '';
-          // Avoid timezone offset shift
           const parts = dateStr.split('-');
           if (parts.length === 3) {
             return `${parts[2]}/${parts[1]}/${parts[0]}`;
