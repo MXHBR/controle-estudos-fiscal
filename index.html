@@ -36,21 +36,10 @@
 
   <style>
     [x-cloak] { display: none !important; }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-indigo-500 selection:text-white" x-data="appData()" x-init="initApp()">
@@ -75,7 +64,7 @@
         <div class="px-4 py-2 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs">
           <span class="flex items-center space-x-1.5 text-slate-400">
             <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400 animate-ping' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
-            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada' : 'Modo Seguro Local')"></span>
+            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada (Auto-Sync)' : 'Modo Seguro Local')"></span>
           </span>
           <button @click="loadFromSupabase()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Sincronização">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="syncing && 'animate-spin'"></i>
@@ -98,7 +87,7 @@
       <!-- Footer Info -->
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.2</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.3 Auto</span>
       </div>
     </aside>
 
@@ -382,13 +371,13 @@
                       <template x-if="group.parent">
                         <div class="p-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
                           <div class="flex items-center space-x-3 flex-1 min-w-0">
-                            <button @click="group.parent.expandido = !group.parent.expandido; saveData()" class="p-1 rounded hover:bg-slate-800 text-slate-400 transition shrink-0">
+                            <button @click="group.parent.expandido = !group.parent.expandido; saveAll()" class="p-1 rounded hover:bg-slate-800 text-slate-400 transition shrink-0">
                               <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
                             </button>
                             <button @click="cycleStatus(group.parent)" class="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-md border transition flex items-center space-x-1" :class="getStatusBadgeClass(group.parent.status)">
                               <span x-text="getStatusLabel(group.parent.status)"></span>
                             </button>
-                            <span class="text-xs font-bold truncate cursor-pointer tracking-wide" :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'" @click="group.parent.expandido = !group.parent.expandido; saveData()" x-text="group.parent.nome"></span>
+                            <span class="text-xs font-bold truncate cursor-pointer tracking-wide" :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'" @click="group.parent.expandido = !group.parent.expandido; saveAll()" x-text="group.parent.nome"></span>
                             <button @click="cyclePriority(group.parent)" class="shrink-0 text-[10px] px-2 py-0.5 rounded border transition" :class="getPriorityBadgeClass(group.parent.prioridade)">
                               <span x-text="getPriorityLabel(group.parent.prioridade)"></span>
                             </button>
@@ -579,7 +568,6 @@
   </div>
 
   <!-- ==================== MODALS ==================== -->
-  <!-- Modal: Matéria -->
   <div x-show="showMateriaModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingMateriaId ? 'Editar Matéria' : 'Nova Matéria'"></h3>
@@ -600,7 +588,6 @@
     </div>
   </div>
 
-  <!-- Modal: Editar Assunto -->
   <div x-show="showEditTopicModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base">Editar Nome do Assunto</h3>
@@ -617,7 +604,6 @@
     </div>
   </div>
 
-  <!-- Modal: Questões -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Treino' : 'Registrar Treino'"></h3>
@@ -660,7 +646,6 @@
     </div>
   </div>
 
-  <!-- Modal: Gargalo -->
   <div x-show="showGargaloModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base">Adicionar Gargalo</h3>
@@ -689,7 +674,6 @@
     </div>
   </div>
 
-  <!-- Modal: Lembrete -->
   <div x-show="showFixNoteModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base">Novo Lembrete Fixado</h3>
@@ -703,7 +687,7 @@
     </div>
   </div>
 
-  <!-- Application Logic & Safe Persistence -->
+  <!-- Application Logic with Auto-Polling Sync -->
   <script>
     const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
@@ -732,7 +716,7 @@
         activeTab: 'materias',
         syncing: false,
         lastSync: false,
-        isLoaded: false, // Trava de segurança para impedir salvamento de dados vazios no início
+        isLoaded: false,
 
         tabs: [
           { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
@@ -794,7 +778,6 @@
         modalNoteText: '',
 
         async initApp() {
-          // 1. Tenta carregar do localStorage primeiro (mantém edições locais seguras)
           const local = localStorage.getItem(LOCAL_KEY);
           if (local) {
             try {
@@ -807,13 +790,14 @@
             }
           }
 
-          // 2. Tenta carregar da nuvem (Supabase) para atualizar dados entre dispositivos
           await this.loadFromSupabase();
-
-          // Libera salvamento automático apenas após carregar os dados salvos
           this.isLoaded = true;
 
-          // Watchers seguros
+          // Sincronização automática em segundo plano a cada 5 segundos (Auto-Polling)
+          setInterval(() => {
+            this.backgroundSync();
+          }, 5000);
+
           this.$watch('materias', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('questoes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('gargalos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
@@ -834,7 +818,9 @@
               });
               return m;
             });
-            if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
+            if (this.materias.length > 0 && !this.materias.some(m => m.id === this.selectedMateriaId)) {
+              this.selectedMateriaId = this.materias[0].id;
+            }
           }
           if (loaded.questoes) this.questoes = loaded.questoes;
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
@@ -851,9 +837,7 @@
             pinnedNotes: this.pinnedNotes,
             cronograma: this.cronograma
           };
-          // Salva localmente
           localStorage.setItem(LOCAL_KEY, JSON.stringify(payload));
-          // Salva na nuvem (Supabase)
           this.saveToSupabase(payload);
         },
 
@@ -861,7 +845,7 @@
           if (!supabaseClient) return;
           this.syncing = true;
           try {
-            const { data, error } = await supabaseClient
+            const { data } = await supabaseClient
               .from('dados_auditor')
               .select('conteudo')
               .eq('id', ROW_ID)
@@ -876,11 +860,37 @@
               }
             }
           } catch(e) {
-            console.log("Modo offline ou erro ao ler Supabase:", e);
             this.lastSync = false;
           } finally {
             this.syncing = false;
             this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async backgroundSync() {
+          if (!supabaseClient || this.syncing) return;
+          try {
+            const { data } = await supabaseClient
+              .from('dados_auditor')
+              .select('conteudo')
+              .eq('id', ROW_ID)
+              .single();
+
+            if (data && data.conteudo) {
+              const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
+              const currentLocal = localStorage.getItem(LOCAL_KEY);
+              const remoteString = JSON.stringify(loaded);
+
+              // Se os dados remotos forem diferentes do local, atualiza a tela silenciosamente
+              if (currentLocal !== remoteString && loaded.materias && loaded.materias.length > 0) {
+                this.applyData(loaded);
+                localStorage.setItem(LOCAL_KEY, remoteString);
+                this.lastSync = true;
+                this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+              }
+            }
+          } catch(e) {
+            // Silencioso em caso de oscilação de rede no celular
           }
         },
 
@@ -895,14 +905,13 @@
             if (error) throw error;
             this.lastSync = true;
           } catch(e) {
-            console.log("Erro ao salvar na nuvem:", e);
             this.lastSync = false;
           } finally {
             this.syncing = false;
           }
         },
 
-        // Demais funções da interface mantidas intactas
+        // Demais funções mantidas intactas
         getSelectedMateria() { return this.materias.find(m => m.id === this.selectedMateriaId) || this.materias[0]; },
         getGroupedTopics(materia) {
           if (!materia || !materia.topicos) return [];
