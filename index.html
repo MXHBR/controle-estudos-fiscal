@@ -57,7 +57,6 @@
 
         <!-- TAB: DASHBOARD -->
         <section x-show="activeTab === 'dashboard'" class="space-y-6">
-            <!-- Quadro de Lembretes Fixos -->
             <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm space-y-2">
                 <div class="flex justify-between items-center">
                     <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
@@ -65,7 +64,7 @@
                     </h3>
                     <span class="text-[10px] text-slate-500">Salvo automaticamente</span>
                 </div>
-                <textarea x-model="lembreteFixado" rows="3" placeholder="Digite aqui metas gerais, avisos ou lembretes rápidos para visualizar assim que abrir o site..." class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500/50 resize-y"></textarea>
+                <textarea x-model="lembreteFixado" rows="3" placeholder="Digite aqui metas gerais, avisos ou lembretes rápidos..." class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500/50 resize-y"></textarea>
             </div>
 
             <!-- Cards de Métricas -->
@@ -116,7 +115,7 @@
                 </div>
             </div>
 
-            <!-- Progresso Geral com expansão de assuntos ao clicar na matéria -->
+            <!-- Progresso Geral -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-bold flex items-center gap-2">
@@ -140,8 +139,9 @@
 
                             <div x-show="matExpandidaDashboard === mat.nome" x-collapse class="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
                                 <template x-for="topico in (topicosPorMateria[mat.nome] || [])">
-                                    <div class="flex justify-between items-center text-xs bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/40">
-                                        <span class="text-slate-300" x-text="topico.conteudo"></span>
+                                    <div class="flex justify-between items-center text-xs p-2.5 rounded-lg border"
+                                         :class="topico.tipo === 'sub' ? 'bg-slate-900/90 ml-4 border-slate-700/80 text-slate-300' : 'bg-slate-800/90 border-slate-700/50 text-slate-200 font-medium'">
+                                        <span x-text="topico.conteudo"></span>
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                               :class="{
                                                   'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
@@ -173,7 +173,7 @@
                 </div>
             </div>
 
-            <!-- Gerenciar Tópicos -->
+            <!-- Gerenciar Tópicos / Subtópicos -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="w-full md:w-72 flex items-center gap-2">
@@ -195,47 +195,56 @@
                             Item Único
                         </button>
                         <button @click="modoCadastroTopico = 'massa'" :class="modoCadastroTopico === 'massa' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-                            Colem vários (Em Massa)
+                            Em Massa (Ponto Final)
                         </button>
                     </div>
                 </div>
 
-                <!-- Formulário Único -->
-                <div x-show="modoCadastroTopico === 'unico'" class="flex gap-2 items-end">
-                    <div class="flex-grow">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Novo Assunto / Tópico</label>
+                <!-- Formulário Único com seletor de Tópico ou Subtópico -->
+                <div x-show="modoCadastroTopico === 'unico'" class="flex flex-col sm:flex-row gap-3 items-end bg-slate-900/40 p-4 rounded-xl border border-slate-700/60">
+                    <div class="w-full sm:w-48">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
+                        <select x-model="novoTopicoTipo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="principal">Tópico Principal</option>
+                            <option value="sub">Subtópico</option>
+                        </select>
+                    </div>
+                    <div class="flex-grow w-full">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Nome do Assunto</label>
                         <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Legalidade..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full">
                     </div>
-                    <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Adicionar</button>
+                    <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0 w-full sm:w-auto">Adicionar</button>
                 </div>
 
-                <!-- Inclusão em massa com separador por Ponto Final '.' -->
+                <!-- Inclusão em massa -->
                 <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
-                        <textarea x-model="textoTopicosMassa" rows="4" placeholder="Exemplo:
-1. Princípios Constitucionais. 2. Limitações ao Poder de Tributar. 3. Crédito Tributário." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Cole o texto com os assuntos (separados por ponto final `.`):</label>
+                        <textarea x-model="textoTopicosMassa" rows="4" placeholder="Exemplo: 1. Princípios. 2. Imunidades." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
                     </div>
                     <div class="flex justify-end">
                         <button @click="adicionarTopicosEmMassaPontoFinal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">Cadastrar Assuntos</button>
                     </div>
                 </div>
 
-                <!-- Tabela de Tópicos -->
+                <!-- Tabela de Tópicos (Com cores/linhas diferenciadas e ícones garantidos) -->
                 <div class="overflow-x-auto rounded-xl border border-slate-700">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
-                                <th class="p-4">Tópico / Conteúdo</th>
+                                <th class="p-4">Tópico / Subtópico</th>
                                 <th class="p-4 w-40">Status</th>
-                                <th class="p-4 w-28 text-center">Ações</th>
+                                <th class="p-4 w-32 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-700/50 text-sm">
                             <template x-for="(topico, index) in (topicosPorMateria[selectedMat] || [])" :key="index">
-                                <tr class="hover:bg-slate-700/25 transition">
-                                    <td class="p-4 text-slate-200">
-                                        <div x-show="topicoEditandoIndex !== index" class="font-medium" x-text="topico.conteudo"></div>
+                                <tr class="transition" :class="topico.tipo === 'sub' ? 'bg-slate-900/70 border-l-4 border-l-blue-500/60' : 'bg-slate-800/40'">
+                                    <td class="p-4" :class="topico.tipo === 'sub' ? 'pl-8' : ''">
+                                        <div x-show="topicoEditandoIndex !== index" class="flex items-center gap-2">
+                                            <span class="text-xs px-2 py-0.5 rounded font-bold" :class="topico.tipo === 'sub' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'" x-text="topico.tipo === 'sub' ? 'SUB' : 'TÓPICO'"></span>
+                                            <span class="text-slate-200 font-medium" x-text="topico.conteudo"></span>
+                                        </div>
                                         <div x-show="topicoEditandoIndex === index" class="flex gap-2">
                                             <input type="text" x-model="topicoTextoEmEdicao" class="bg-slate-900 border border-blue-500 rounded-lg px-3 py-1 text-sm text-white w-full focus:outline-none">
                                             <button @click="salvarEdicaoTopico(selectedMat, index)" class="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition" title="Salvar">
@@ -252,16 +261,18 @@
                                                   'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
                                               }" x-text="topico.status"></span>
                                     </td>
-                                    <td class="p-4 text-center flex justify-center gap-2">
-                                        <button @click="iniciarEdicaoTopico(index, topico.conteudo)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Editar Assunto Inline">
-                                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                                        </button>
-                                        <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Mudar Status">
-                                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                                        </button>
-                                        <button @click="removerTopico(selectedMat, index)" class="p-2 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Tópico">
-                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        </button>
+                                    <td class="p-4 text-center">
+                                        <div class="flex justify-center items-center gap-1.5">
+                                            <button @click="iniciarEdicaoTopico(index, topico.conteudo)" class="p-2 bg-slate-700/60 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition" title="Editar Assunto">
+                                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                                            </button>
+                                            <button @click="toggleStatus(selectedMat, index)" class="p-2 bg-slate-700/60 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition" title="Mudar Status">
+                                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                            </button>
+                                            <button @click="removerTopico(selectedMat, index)" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg text-rose-400 transition" title="Excluir Tópico">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </template>
@@ -273,7 +284,6 @@
 
         <!-- TAB: QUESTÕES & REGISTRO -->
         <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <!-- Formulário flexível de registro -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
@@ -288,7 +298,7 @@
                         <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria (Opcional se houver assunto)</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria</label>
                         <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                             <option value="">-- Sem Matéria Específica --</option>
                             <template x-for="mat in materias" :key="mat.nome">
@@ -297,7 +307,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto (Opcional se houver matéria)</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto</label>
                         <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
@@ -318,7 +328,7 @@
                 </div>
             </div>
 
-            <!-- Exibição Hierárquica: Data -> Matéria -> Assuntos -->
+            <!-- Exibição por Data -> Matéria -> Assuntos (Com Data Visível ao lado do ícone) -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -336,17 +346,17 @@
                     </div>
                 </div>
 
-                <!-- Lista Nível 1: Data -->
+                <!-- REQUISITO 1: Data visível ao lado do ícone relógio -->
                 <div class="space-y-4">
                     <template x-for="(materiasNaData, dataKey) in questoesAgrupadasPorDataEMateria" :key="dataKey">
                         <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 space-y-3">
                             <div class="flex justify-between items-center border-b border-slate-700/80 pb-2.5">
                                 <h4 class="font-bold text-amber-400 text-base flex items-center gap-2">
-                                    <i data-lucide="clock" class="w-4 h-4"></i> <span x-text="formatarDataDD/MM/AA(dataKey)"></span>
+                                    <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                                    <span>Data: <strong class="text-white font-mono" x-text="formatarDataDD_MM_AA(dataKey)"></strong></span>
                                 </h4>
                             </div>
 
-                            <!-- Lista Nível 2: Matéria -->
                             <div class="space-y-2">
                                 <template x-for="(questoesDoAssunto, matName) in materiasNaData" :key="matName">
                                     <div class="bg-slate-800/90 border border-slate-700/60 rounded-xl overflow-hidden">
@@ -363,7 +373,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Lista Nível 3: Assuntos Estudados -->
                                         <div x-show="isDataMateriaExpandida(dataKey + '_' + matName)" x-collapse class="border-t border-slate-700/60 p-4 bg-slate-900/90">
                                             <div class="overflow-x-auto">
                                                 <table class="w-full text-left text-xs">
@@ -442,7 +451,6 @@
                             <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-semibold" x-text="gargalosDaMat.length"></span>
                         </div>
 
-                        <!-- Ocultos por padrão -->
                         <div x-show="gargaloMatExpandida === matName" x-collapse class="space-y-2.5 pt-1">
                             <template x-for="g in gargalosDaMat" :key="g.id">
                                 <div class="flex items-start gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
@@ -563,11 +571,12 @@
                 selectedMat: 'D. TRIBUTÁRIO',
                 modoCadastroTopico: 'unico',
                 novoTopicoTexto: '',
+                novoTopicoTipo: 'principal',
                 textoTopicosMassa: '',
                 topicosPorMateria: JSON.parse(localStorage.getItem('fisc_topicos')) || {
                     'D. TRIBUTÁRIO': [
-                        { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO' },
-                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO' }
+                        { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO', tipo: 'principal' },
+                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO', tipo: 'sub' }
                     ]
                 },
 
@@ -592,27 +601,37 @@
                     this.$nextTick(() => { lucide.createIcons(); });
                 },
 
-                // Formatação estricta para DD/MM/AA
                 formatarDataDD_MM_AA(strData) {
                     if(!strData) return '23/10/26';
                     let limpo = strData.toString().replace(/\D/g, '');
-                    if(limpo.length === 8) { // YYYYMMDD ou DDMMYYYY
-                        if(limpo.startsWith('20')) { // YYYYMMDD
+                    if(limpo.length === 8) {
+                        if(limpo.startsWith('20')) {
                             return limpo.substring(6,8) + '/' + limpo.substring(4,6) + '/' + limpo.substring(2,4);
-                        } else { // DDMMYYYY
+                        } else {
                             return limpo.substring(0,2) + '/' + limpo.substring(2,4) + '/' + limpo.substring(6,8);
                         }
                     }
-                    if(limpo.length === 6) { // DDMMAA
+                    if(limpo.length === 6) {
                         return limpo.substring(0,2) + '/' + limpo.substring(2,4) + '/' + limpo.substring(4,6);
                     }
-                    if(strData.includes('-')) { // YYYY-MM-DD
+                    if(strData.includes('-')) {
                         let partes = strData.split('-');
                         if(partes.length === 3) {
                             return partes[2] + '/' + partes[1] + '/' + partes[0].slice(-2);
                         }
                     }
                     return strData;
+                },
+
+                adicionarTopico() {
+                    let texto = this.novoTopicoTexto.trim();
+                    if(texto) {
+                        if(!this.topicosPorMateria[this.selectedMat]) {
+                            this.topicosPorMateria[this.selectedMat] = [];
+                        }
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: texto, status: 'ESTUDAR', tipo: this.novoTopicoTipo });
+                        this.novoTopicoTexto = '';
+                    }
                 },
 
                 adicionarTopicosEmMassaPontoFinal() {
@@ -622,7 +641,7 @@
                         this.topicosPorMateria[this.selectedMat] = [];
                     }
                     lista.forEach(item => {
-                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR' });
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR', tipo: 'principal' });
                     });
                     this.textoTopicosMassa = '';
                 },
@@ -678,170 +697,4 @@
 
                 editarNomeMateria(nomeAntigo) {
                     let novoNome = prompt('Editar nome da matéria:', nomeAntigo);
-                    if(novoNome && novoNome.trim() !== '' && novoNome !== nomeAntigo) {
-                        novoNome = novoNome.trim().toUpperCase();
-                        let idx = this.materias.findIndex(m => m.nome === nomeAntigo);
-                        if(idx !== -1) {
-                            this.materias[idx].nome = novoNome;
-                            this.topicosPorMateria[novoNome] = this.topicosPorMateria[nomeAntigo] || [];
-                            delete this.topicosPorMateria[nomeAntigo];
-                            this.selectedMat = novoNome;
-                        }
-                    }
-                },
-
-                adicionarTopico() {
-                    let texto = this.novoTopicoTexto.trim();
-                    if(texto) {
-                        if(!this.topicosPorMateria[this.selectedMat]) {
-                            this.topicosPorMateria[this.selectedMat] = [];
-                        }
-                        this.topicosPorMateria[this.selectedMat].push({ conteudo: texto, status: 'ESTUDAR' });
-                        this.novoTopicoTexto = '';
-                    }
-                },
-
-                removerTopico(mat, index) {
-                    if(this.topicosPorMateria[mat]) {
-                        this.topicosPorMateria[mat].splice(index, 1);
-                    }
-                },
-
-                toggleStatus(mat, index) {
-                    if(!this.topicosPorMateria[mat]) return;
-                    let t = this.topicosPorMateria[mat][index];
-                    if(t.status === 'ESTUDAR') t.status = 'ESTUDANDO';
-                    else if(t.status === 'ESTUDANDO') t.status = 'CONCLUÍDO';
-                    else t.status = 'ESTUDAR';
-                },
-
-                adicionarQuestao() {
-                    if(!this.novaQuestao.materia && !this.novaQuestao.assunto) {
-                        alert('Preencha ao menos a Matéria ou o Assunto.');
-                        return;
-                    }
-                    this.questoesRegistro.unshift({
-                        id: Date.now(),
-                        semana: this.novaQuestao.semana,
-                        data: this.formatarDataDD_MM_AA(this.novaQuestao.data),
-                        materia: this.novaQuestao.materia || 'Geral',
-                        assunto: this.novaQuestao.assunto || 'Geral',
-                        qtd: Number(this.novaQuestao.qtd) || 0,
-                        acertos: Number(this.novaQuestao.acertos) || 0,
-                        gargalo: this.novaQuestao.gargalo,
-                        timestamp: Date.now(),
-                        resolvido: false
-                    });
-                    this.novaQuestao.assunto = '';
-                    this.novaQuestao.gargalo = '';
-                },
-
-                removerQuestaoPorId(id) {
-                    let idx = this.questoesRegistro.findIndex(q => q.id === id);
-                    if(idx !== -1) this.questoesRegistro.splice(idx, 1);
-                },
-
-                toggleGargaloResolvido(id) {
-                    let item = this.questoesRegistro.find(q => q.id === id);
-                    if(item) item.resolvido = !item.resolvido;
-                },
-
-                salvarCiclo() {
-                    let sem = this.novoCiclo.semana.trim().toUpperCase();
-                    let mats = this.novoCiclo.materiasTexto.split(',').map(m => m.trim()).filter(m => m);
-                    if(!sem || mats.length === 0) return;
-
-                    if(this.cicloEmEdicaoIndex !== null) {
-                        this.cronogramaSemanas[this.cicloEmEdicaoIndex] = { semana: sem, materias: mats };
-                        this.cicloEmEdicaoIndex = null;
-                    } else {
-                        this.cronogramaSemanas.push({ semana: sem, materias: mats });
-                    }
-                    this.novoCiclo.semana = '';
-                    this.novoCiclo.materiasTexto = '';
-                },
-
-                carregarCicloParaEdicao(index) {
-                    let c = this.cronogramaSemanas[index];
-                    this.novoCiclo.semana = c.semana;
-                    this.novoCiclo.materiasTexto = c.materias.join(', ');
-                    this.cicloEmEdicaoIndex = index;
-                },
-
-                cancelarEdicaoCiclo() {
-                    this.cicloEmEdicaoIndex = null;
-                    this.novoCiclo.semana = '';
-                    this.novoCiclo.materiasTexto = '';
-                },
-
-                removerCiclo(index) {
-                    this.cronogramaSemanas.splice(index, 1);
-                },
-
-                calcularProgressoMatéria(matName) {
-                    let topicos = this.topicosPorMateria[matName] || [];
-                    if(topicos.length === 0) return 0;
-                    let concluidos = topicos.filter(t => t.status === 'CONCLUÍDO').length;
-                    return Math.round((concluidos / topicos.length) * 100);
-                },
-
-                get questoesAgrupadasPorDataEMateria() {
-                    let dias = Number(this.filtroDiasQuestoes);
-                    let limiteTimestamp = dias > 0 ? Date.now() - (dias * 24 * 60 * 60 * 1000) : 0;
-
-                    let listaFiltrada = this.questoesRegistro.filter(q => {
-                        if(dias === 0) return true;
-                        let ts = q.timestamp || Date.now();
-                        return ts >= limiteTimestamp;
-                    });
-
-                    let porData = {};
-                    listaFiltrada.forEach(q => {
-                        let dKey = this.formatarDataDD_MM_AA(q.data) || '23/10/26';
-                        let mKey = q.materia || 'Geral';
-
-                        if(!porData[dKey]) porData[dKey] = {};
-                        if(!porData[dKey][mKey]) porData[dKey][mKey] = [];
-                        porData[dKey][mKey].push(q);
-                    });
-                    return porData;
-                },
-
-                somarQtdMat(lista) { return lista.reduce((a, b) => a + (Number(b.qtd)||0), 0); },
-                somarAcertosMat(lista) { return lista.reduce((a, b) => a + (Number(b.acertos)||0), 0); },
-                calcularPorcentagemMat(lista) {
-                    let q = this.somarQtdMat(lista);
-                    let a = this.somarAcertosMat(lista);
-                    return q > 0 ? ((a / q) * 100).toFixed(1) : 0;
-                },
-
-                get gargalosAgrupadosPorMateria() {
-                    let agrupado = {};
-                    this.questoesRegistro.forEach(q => {
-                        if(q.gargalo && q.gargalo.trim() !== '') {
-                            let matKey = q.materia || 'Geral';
-                            if(!agrupado[matKey]) agrupado[matKey] = [];
-                            agrupado[matKey].push(q);
-                        }
-                    });
-                    return agrupado;
-                },
-
-                get stats() {
-                    let totalQ = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.qtd) || 0), 0);
-                    let totalA = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.acertos) || 0), 0);
-                    let totalE = totalQ - totalA;
-                    let media = totalQ > 0 ? ((totalA / totalQ) * 100).toFixed(1) : 0;
-                    return {
-                        totalQuestao: totalQ,
-                        totalAcertos: totalA,
-                        totalErros: totalE,
-                        mediaAproveitamento: media
-                    };
-                }
-            }));
-        });
-        document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { lucide.createIcons(); }, 100); });
-    </script>
-</body>
-</html>
+                    if(novo
