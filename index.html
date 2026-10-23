@@ -23,19 +23,9 @@
     <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <!-- REQUISITO 3: Ícone Vetorial Minimalista de Caveira com Capelo -->
-                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/30 flex items-center justify-center">
-                    <svg class="w-7 h-7 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <!-- Capelo (Chapéu de Formatura) -->
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                        <path d="M6 9v3.5c0 1.5 2.7 2.5 6 2.5s6-1 6-2.5V9"></path>
-                        <path d="M22 7v5"></path>
-                        <!-- Caveira -->
-                        <path d="M7 15a5 5 0 1 1 10 0c0 1.8-1 3-2 4h-6c-1-1-2-2.2-2-4z"></path>
-                        <circle cx="9.5" cy="14.5" r="1.2" fill="currentColor"></circle>
-                        <circle cx="14.5" cy="14.5" r="1.2" fill="currentColor"></circle>
-                        <path d="M10 18.5v1.5M12 18.5v1.5M14 18.5v1.5"></path>
-                    </svg>
+                <!-- REQUISITO 7: Retornar ao ícone anterior de Capelo -->
+                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/30">
+                    <i data-lucide="graduation-cap" class="w-7 h-7"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">Painel do Auditor Fiscal</h1>
@@ -68,7 +58,7 @@
 
         <!-- TAB: DASHBOARD -->
         <section x-show="activeTab === 'dashboard'" class="space-y-6">
-            <!-- Quadro de Lembretes -->
+            <!-- Quadro de Lembretes Fixos -->
             <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm space-y-2">
                 <div class="flex justify-between items-center">
                     <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
@@ -127,7 +117,7 @@
                 </div>
             </div>
 
-            <!-- Progresso Geral com expansão ao clicar -->
+            <!-- Progresso Geral com expansão de assuntos ao clicar na matéria -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-bold flex items-center gap-2">
@@ -160,9 +150,6 @@
                                                   'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
                                               }" x-text="topico.status"></span>
                                     </div>
-                                </template>
-                                <template x-if="!topicosPorMateria[mat.nome] || topicosPorMateria[mat.nome].length === 0">
-                                    <p class="text-xs text-slate-500 italic text-center py-2">Nenhum assunto cadastrado nesta matéria.</p>
                                 </template>
                             </div>
                         </div>
@@ -223,17 +210,15 @@
                     <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Adicionar</button>
                 </div>
 
-                <!-- Formulário em Massa -->
+                <!-- REQUISITO 5: Inclusão em massa com separador por Ponto Final '.' -->
                 <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por linha ou `;`):</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
                         <textarea x-model="textoTopicosMassa" rows="4" placeholder="Exemplo:
-1. Princípios Constitucionais;
-2. Limitações ao Poder de Tributar;
-3. Crédito Tributário" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
+1. Princípios Constitucionais. 2. Limitações ao Poder de Tributar. 3. Crédito Tributário." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
                     </div>
                     <div class="flex justify-end">
-                        <button @click="adicionarTopicosEmMassa()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">Cadastrar Todos os Assuntos</button>
+                        <button @click="adicionarTopicosEmMassaPontoFinal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">Cadastrar Assuntos</button>
                     </div>
                 </div>
 
@@ -250,7 +235,6 @@
                         <tbody class="divide-y divide-slate-700/50 text-sm">
                             <template x-for="(topico, index) in (topicosPorMateria[selectedMat] || [])" :key="index">
                                 <tr class="hover:bg-slate-700/25 transition">
-                                    <!-- REQUISITO 1: Edição do Assunto diretamente na linha (sem pop-up) -->
                                     <td class="p-4 text-slate-200">
                                         <div x-show="topicoEditandoIndex !== index" class="font-medium" x-text="topico.conteudo"></div>
                                         <div x-show="topicoEditandoIndex === index" class="flex gap-2">
@@ -290,32 +274,35 @@
 
         <!-- TAB: QUESTÕES & REGISTRO -->
         <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <!-- Registrar Questões -->
+            <!-- REQUISITO 3: Formulário com campos flexíveis de Matéria e/ou Assunto -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <!-- REQUISITO 2: Data em formato DDMMAA -->
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Data (DDMMAA ou Seleção)</label>
-                        <input type="text" x-model="novaQuestao.data" placeholder="Ex: 231026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <!-- REQUISITO 1: Formato de Data DD/MM/AA -->
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Data (DD/MM/AA)</label>
+                        <input type="text" x-model="novaQuestao.data" placeholder="23/10/26" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Semana / Ciclo</label>
                         <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria</label>
+                        <!-- REQUISITO 3: Matéria opcional ou selecionável -->
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria (Opcional se houver assunto)</label>
                         <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="">-- Sem Matéria Específica --</option>
                             <template x-for="mat in materias" :key="mat.nome">
                                 <option :value="mat.nome" x-text="mat.nome"></option>
                             </template>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto</label>
-                        <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <!-- REQUISITO 3: Assunto opcional ou digitável -->
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto (Opcional se houver matéria)</label>
+                        <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Total de Questões</label>
@@ -327,7 +314,7 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-medium text-slate-400 mb-1">Anotação de Gargalo / Ponto Fraco</label>
-                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Dificuldade no conceito de imunidade..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Dificuldade na Anterioridade..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
                 <div class="flex justify-end pt-2">
@@ -335,15 +322,13 @@
                 </div>
             </div>
 
-            <!-- REQUISITOS 4 e 5: Filtro por Dias + Exibição por Matéria Expansível com Assuntos Estudados -->
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-sm space-y-4 p-6">
+            <!-- REQUISITO 2 e 4: Exibição Agrupada por Data -> Matéria -> Assuntos com Edição Inline -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
                     <div>
-                        <h3 class="font-bold flex items-center gap-2 text-lg"><i data-lucide="filter" class="w-5 h-5 text-blue-400"></i> Questões por Matéria & Assunto</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Clique na matéria para expandir os assuntos resolvidos.</p>
+                        <h3 class="font-bold flex items-center gap-2 text-lg"><i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> Histórico por Data & Matéria</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Selecione por data, abra a matéria e veja os assuntos estudados.</p>
                     </div>
-
-                    <!-- REQUISITO 4: Seletor de Período (30, 15, 7 dias ou Tudo) -->
                     <div class="flex items-center gap-2">
                         <label class="text-xs font-medium text-slate-400">Exibir:</label>
                         <select x-model="filtroDiasQuestoes" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
@@ -355,101 +340,126 @@
                     </div>
                 </div>
 
-                <!-- REQUISITO 5: Matérias Expansíveis exibindo Assuntos somente ao clicar -->
-                <div class="space-y-3">
-                    <template x-for="(questoesDaMat, matName) in questoesFiltradasEAgrupadas" :key="matName">
-                        <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl overflow-hidden">
-                            <!-- Cabeçalho da Matéria (Clique para expandir) -->
-                            <div class="p-4 cursor-pointer flex justify-between items-center hover:bg-slate-800/60 transition" @click="matExpandidaQuestoes = (matExpandidaQuestoes === matName ? null : matName)">
-                                <div class="flex items-center gap-2 font-bold text-blue-400">
-                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaQuestoes === matName ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
-                                    <span x-text="matName"></span>
-                                    <span class="text-xs text-slate-400 font-normal" x-text="'(' + questoesDaMat.length + ' registros)'"></span>
-                                </div>
-                                <div class="text-xs text-slate-300 font-medium flex gap-4">
-                                    <span>Qtd: <strong class="text-white" x-text="somarQtdMat(questoesDaMat)"></strong></span>
-                                    <span>Acertos: <strong class="text-emerald-400" x-text="somarAcertosMat(questoesDaMat)"></strong></span>
-                                    <span>%: <strong class="text-blue-400" x-text="calcularPorcentagemMat(questoesDaMat) + '%'"></strong></span>
-                                </div>
+                <!-- Estrutura Nível 1: Blocos de Data -->
+                <div class="space-y-4">
+                    <template x-for="(materiasNaData, dataKey) in questoesAgrupadasPorDataEMateria" :key="dataKey">
+                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-700/80 pb-2.5">
+                                <h4 class="font-bold text-amber-400 text-base flex items-center gap-2">
+                                    <i data-lucide="clock" class="w-4 h-4"></i> <span x-text="dataKey"></span>
+                                </h4>
                             </div>
 
-                            <!-- Assuntos estudados (Exibidos apenas ao clicar) -->
-                            <div x-show="matExpandidaQuestoes === matName" x-collapse class="border-t border-slate-700/60 p-4 space-y-2 bg-slate-900/80">
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left text-xs">
-                                        <thead>
-                                            <tr class="text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                                                <th class="pb-2">Data</th>
-                                                <th class="pb-2">Semana</th>
-                                                <th class="pb-2">Assunto Estudado</th>
-                                                <th class="pb-2 text-center">Qtd</th>
-                                                <th class="pb-2 text-center">Acertos</th>
-                                                <th class="pb-2 text-center">%</th>
-                                                <th class="pb-2">Gargalo</th>
-                                                <th class="pb-2 text-center">Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-800/50">
-                                            <template x-for="q in questoesDaMat" :key="q.id">
-                                                <tr class="hover:bg-slate-800/40">
-                                                    <!-- REQUISITO 2: Data em formato DDMMAA -->
-                                                    <td class="py-2.5 text-slate-400 font-mono" x-text="formatarDataDDMMAA(q.data)"></td>
-                                                    <td class="py-2.5 text-slate-400" x-text="q.semana"></td>
-                                                    <td class="py-2.5 text-slate-200 font-semibold" x-text="q.assunto"></td>
-                                                    <td class="py-2.5 text-center text-slate-300" x-text="q.qtd"></td>
-                                                    <td class="py-2.5 text-center text-emerald-400 font-medium" x-text="q.acertos"></td>
-                                                    <td class="py-2.5 text-center font-bold" :class="(q.acertos/q.qtd) >= 0.8 ? 'text-emerald-400' : 'text-rose-400'" x-text="q.qtd > 0 ? ((q.acertos / q.qtd) * 100).toFixed(1) + '%' : '0%'"></td>
-                                                    <td class="py-2.5 text-rose-300 italic" x-text="q.gargalo || '-'"></td>
-                                                    <td class="py-2.5 text-center">
-                                                        <button @click="removerQuestaoPorId(q.id)" class="p-1 text-rose-400 hover:bg-rose-500/10 rounded" title="Excluir">
-                                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <!-- Estrutura Nível 2: Matérias dentro da Data -->
+                            <div class="space-y-2">
+                                <template x-for="(questoesDoAssunto, matName) in materiasNaData" :key="matName">
+                                    <div class="bg-slate-800/90 border border-slate-700/60 rounded-xl overflow-hidden">
+                                        <!-- Clique na matéria para exibir assuntos -->
+                                        <div class="p-3.5 cursor-pointer flex justify-between items-center hover:bg-slate-700/40 transition" @click="toggleDataMateriaExpandida(dataKey + '_' + matName)">
+                                            <div class="flex items-center gap-2 font-bold text-blue-400 text-sm">
+                                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="isDataMateriaExpandida(dataKey + '_' + matName) ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
+                                                <span x-text="matName"></span>
+                                                <span class="text-xs text-slate-400 font-normal" x-text="'(' + questoesDoAssunto.length + ' itens)'"></span>
+                                            </div>
+                                            <div class="text-xs text-slate-300 font-medium flex gap-3">
+                                                <span>Qtd: <strong class="text-white" x-text="somarQtdMat(questoesDoAssunto)"></strong></span>
+                                                <span>Acertos: <strong class="text-emerald-400" x-text="somarAcertosMat(questoesDoAssunto)"></strong></span>
+                                                <span>%: <strong class="text-blue-400" x-text="calcularPorcentagemMat(questoesDoAssunto) + '%'"></strong></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Estrutura Nível 3: Tabela de Assuntos Estudados -->
+                                        <div x-show="isDataMateriaExpandida(dataKey + '_' + matName)" x-collapse class="border-t border-slate-700/60 p-4 bg-slate-900/90">
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full text-left text-xs">
+                                                    <thead>
+                                                        <tr class="text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                                            <th class="pb-2">Semana</th>
+                                                            <th class="pb-2">Assunto Estudado</th>
+                                                            <th class="pb-2 text-center">Qtd</th>
+                                                            <th class="pb-2 text-center">Acertos</th>
+                                                            <th class="pb-2 text-center">%</th>
+                                                            <th class="pb-2">Gargalo</th>
+                                                            <th class="pb-2 text-center">Ações</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-800/50">
+                                                        <template x-for="q in questoesDoAssunto" :key="q.id">
+                                                            <tr class="hover:bg-slate-800/40">
+                                                                <td class="py-2 text-slate-400" x-text="q.semana"></td>
+                                                                <!-- REQUISITO 4: Edição do Assunto na própria tabela -->
+                                                                <td class="py-2 text-slate-200">
+                                                                    <div x-show="questaoEditandoId !== q.id" class="font-semibold text-slate-200" x-text="q.assunto || 'Geral'"></div>
+                                                                    <div x-show="questaoEditandoId === q.id" class="flex gap-1.5">
+                                                                        <input type="text" x-model="questaoTextoAssuntoEdicao" class="bg-slate-900 border border-blue-500 rounded px-2 py-0.5 text-xs text-white focus:outline-none">
+                                                                        <button @click="salvarEdicaoAssuntoQuestao(q.id)" class="p-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded">
+                                                                            <i data-lucide="check" class="w-3 h-3"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="py-2 text-center text-slate-300" x-text="q.qtd"></td>
+                                                                <td class="py-2 text-center text-emerald-400 font-medium" x-text="q.acertos"></td>
+                                                                <td class="py-2 text-center font-bold" :class="(q.acertos/q.qtd) >= 0.8 ? 'text-emerald-400' : 'text-rose-400'" x-text="q.qtd > 0 ? ((q.acertos / q.qtd) * 100).toFixed(1) + '%' : '0%'"></td>
+                                                                <td class="py-2 text-rose-300 italic" x-text="q.gargalo || '-'"></td>
+                                                                <td class="py-2 text-center flex justify-center gap-1">
+                                                                    <button @click="iniciarEdicaoAssuntoQuestao(q.id, q.assunto)" class="p-1 text-slate-400 hover:text-white rounded" title="Editar Assunto">
+                                                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                                                    </button>
+                                                                    <button @click="removerQuestaoPorId(q.id)" class="p-1 text-rose-400 hover:bg-rose-500/10 rounded" title="Excluir">
+                                                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        </template>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </template>
-                    <template x-if="Object.keys(questoesFiltradasEAgrupadas).length === 0">
-                        <p class="text-center text-slate-500 text-sm py-6">Nenhum registro encontrado para este período.</p>
+                    <template x-if="Object.keys(questoesAgrupadasPorDataEMateria).length === 0">
+                        <p class="text-center text-slate-500 text-sm py-6">Nenhum registro de questão encontrado para este período.</p>
                     </template>
                 </div>
             </div>
         </section>
 
-        <!-- TAB: GARGALOS POR DISCIPLINA -->
+        <!-- TAB: GARGALOS POR DISCIPLINA (REQUISITO 6: Grid de 3 Colunas + Ocultos ao Clicar) -->
         <section x-show="activeTab === 'gargalos'" class="space-y-6">
             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm">
                 <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="check-square" class="w-5 h-5 text-amber-400"></i> Tarefas de Revisão de Gargalos
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos por Matéria
                 </h3>
-                <p class="text-xs text-slate-400 mt-1">Gargalos organizados por Matéria com datas no padrão DDMMAA.</p>
+                <p class="text-xs text-slate-400 mt-1">Clique na disciplina para expandir os gargalos anotados.</p>
             </div>
 
-            <div class="space-y-6">
+            <!-- Grid de até 3 colunas por fileira -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <template x-for="(gargalosDaMat, matName) in gargalosAgrupadosPorMateria" :key="matName">
-                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                            <h4 class="font-bold text-blue-400 flex items-center gap-2 text-base">
-                                <i data-lucide="book-open" class="w-5 h-5"></i> <span x-text="matName"></span>
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3 self-start">
+                        <!-- Cabeçalho Clicável da Matéria -->
+                        <div class="flex justify-between items-center cursor-pointer border-b border-slate-700 pb-3" @click="toggleGargaloMatExpandida(matName)">
+                            <h4 class="font-bold text-blue-400 text-sm flex items-center gap-2">
+                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="gargaloMatExpandida === matName ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
+                                <span x-text="matName"></span>
                             </h4>
-                            <span class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg" x-text="gargalosDaMat.length + ' gargalos'"></span>
+                            <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-semibold" x-text="gargalosDaMat.length"></span>
                         </div>
 
-                        <div class="space-y-2.5">
+                        <!-- Ocultos por padrão: exibidos somente ao clicar -->
+                        <div x-show="gargaloMatExpandida === matName" x-collapse class="space-y-2.5 pt-1">
                             <template x-for="g in gargalosDaMat" :key="g.id">
-                                <div class="flex items-start gap-3 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60 transition hover:border-slate-600">
-                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-1 w-4 h-4 text-emerald-600 bg-slate-800 border-slate-600 rounded focus:ring-emerald-500 cursor-pointer">
+                                <div class="flex items-start gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-0.5 w-3.5 h-3.5 text-emerald-600 bg-slate-800 border-slate-600 rounded cursor-pointer">
                                     <div class="flex-grow space-y-1">
-                                        <div class="flex flex-wrap justify-between items-center text-xs">
-                                            <span class="font-semibold text-slate-300" x-text="g.assunto"></span>
-                                            <!-- REQUISITO 2: Data em DDMMAA -->
-                                            <span class="text-[11px] text-slate-500 font-mono" x-text="formatarDataDDMMAA(g.data)"></span>
+                                        <div class="flex justify-between text-[11px]">
+                                            <span class="font-semibold text-slate-300" x-text="g.assunto || 'Geral'"></span>
+                                            <span class="text-slate-500 font-mono" x-text="qDataFormatada(g.data)"></span>
                                         </div>
-                                        <p class="text-sm transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
+                                        <p class="text-xs transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
                                     </div>
                                 </div>
                             </template>
@@ -457,6 +467,11 @@
                     </div>
                 </template>
             </div>
+            <template x-if="Object.keys(gargalosAgrupadosPorMateria).length === 0">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center text-slate-500">
+                    Nenhum gargalo registrado até o momento.
+                </div>
+            </template>
         </section>
 
         <!-- TAB: CRONOGRAMA -->
@@ -526,14 +541,16 @@
                 activeTab: 'dashboard',
                 lembreteFixado: localStorage.getItem('fisc_lembrete') || 'Coloque aqui seu objetivo diário!',
                 matExpandidaDashboard: null,
-                matExpandidaQuestoes: null,
+                dataMateriaExpandidaMap: {},
+                gargaloMatExpandida: null,
 
-                // REQUISITO 4: Filtro de Período de Questões (0 = Tudo, 7, 15, 30 dias)
                 filtroDiasQuestoes: '0',
 
-                // REQUISITO 1: Edição Inline sem Pop-up
+                // Edição de Tópicos e Questões
                 topicoEditandoIndex: null,
                 topicoTextoEmEdicao: '',
+                questaoEditandoId: null,
+                questaoTextoAssuntoEdicao: '',
 
                 // Matérias
                 materias: JSON.parse(localStorage.getItem('fisc_materias')) || [
@@ -564,10 +581,10 @@
                     ]
                 },
 
-                // Questões com formato de data DDMMAA (Ex: 231026)
-                novaQuestao: { data: '231026', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
+                // REQUISITO 1: Data em formato padrão DD/MM/AA
+                novaQuestao: { data: '23/10/26', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
                 questoesRegistro: JSON.parse(localStorage.getItem('fisc_questoes')) || [
-                    { id: 1, semana: 'SEMANA 1', data: '231026', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Anterioridade Nonagesimal', resolvido: false }
+                    { id: 1, semana: 'SEMANA 1', data: '23/10/26', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Anterioridade Nonagesimal', resolvido: false }
                 ],
 
                 // Cronograma
@@ -587,22 +604,52 @@
                     this.$nextTick(() => { lucide.createIcons(); });
                 },
 
-                // REQUISITO 2: Formatar qualquer entrada para DDMMAA
-                formatarDataDDMMAA(strData) {
-                    if(!strData) return '-';
-                    let limpo = strData.toString().replace(/\D/g, '');
-                    if(limpo.length === 8) { // YYYYMMDD ou DDMMYYYY
-                        if(limpo.startsWith('20')) { // YYYYMMDD
-                            return limpo.substring(6,8) + limpo.substring(4,6) + limpo.substring(2,4);
-                        } else { // DDMMYYYY
-                            return limpo.substring(0,4) + limpo.substring(6,8);
-                        }
-                    }
-                    if(limpo.length === 6) return limpo; // Já é DDMMAA
-                    return strData;
+                qDataFormatada(val) {
+                    if(!val) return '23/10/26';
+                    return val.includes('/') ? val : val;
                 },
 
-                // REQUISITO 1: Métodos de Edição Inline sem Pop-up
+                // REQUISITO 5: Cadastro em massa separado por Ponto Final '.'
+                adicionarTopicosEmMassaPontoFinal() {
+                    if(!this.textoTopicosMassa.trim()) return;
+                    let lista = this.textoTopicosMassa.split('.').map(item => item.trim()).filter(item => item !== '');
+                    if(!this.topicosPorMateria[this.selectedMat]) {
+                        this.topicosPorMateria[this.selectedMat] = [];
+                    }
+                    lista.forEach(item => {
+                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR' });
+                    });
+                    this.textoTopicosMassa = '';
+                },
+
+                // REQUISITO 4: Métodos para editar o assunto de questões diretamente
+                iniciarEdicaoAssuntoQuestao(id, assuntoAtual) {
+                    this.questaoEditandoId = id;
+                    this.questaoTextoAssuntoEdicao = assuntoAtual || '';
+                },
+
+                salvarEdicaoAssuntoQuestao(id) {
+                    let q = this.questoesRegistro.find(item => item.id === id);
+                    if(q) {
+                        q.assunto = this.questaoTextoAssuntoEdicao.trim();
+                    }
+                    this.questaoEditandoId = null;
+                    this.questaoTextoAssuntoEdicao = '';
+                },
+
+                // Controle de Expansão na Aba Questões (Data -> Matéria)
+                toggleDataMateriaExpandida(key) {
+                    this.dataMateriaExpandidaMap[key] = !this.dataMateriaExpandidaMap[key];
+                },
+
+                isDataMateriaExpandida(key) {
+                    return !!this.dataMateriaExpandidaMap[key];
+                },
+
+                toggleGargaloMatExpandida(mat) {
+                    this.gargaloMatExpandida = (this.gargaloMatExpandida === mat ? null : mat);
+                },
+
                 iniciarEdicaoTopico(index, textoAtual) {
                     this.topicoEditandoIndex = index;
                     this.topicoTextoEmEdicao = textoAtual;
@@ -651,18 +698,6 @@
                     }
                 },
 
-                adicionarTopicosEmMassa() {
-                    if(!this.textoTopicosMassa.trim()) return;
-                    let lista = this.textoTopicosMassa.split(/[\n;]+/).map(item => item.trim()).filter(item => item !== '');
-                    if(!this.topicosPorMateria[this.selectedMat]) {
-                        this.topicosPorMateria[this.selectedMat] = [];
-                    }
-                    lista.forEach(item => {
-                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR' });
-                    });
-                    this.textoTopicosMassa = '';
-                },
-
                 removerTopico(mat, index) {
                     if(this.topicosPorMateria[mat]) {
                         this.topicosPorMateria[mat].splice(index, 1);
@@ -677,17 +712,18 @@
                     else t.status = 'ESTUDAR';
                 },
 
+                // REQUISITO 3: Permite registrar por Matéria, por Assunto, ou por ambos
                 adicionarQuestao() {
-                    if(!this.novaQuestao.assunto) {
-                        alert('Por favor, preencha o assunto.');
+                    if(!this.novaQuestao.materia && !this.novaQuestao.assunto) {
+                        alert('Preencha ao menos a Matéria ou o Assunto.');
                         return;
                     }
                     this.questoesRegistro.unshift({
                         id: Date.now(),
                         semana: this.novaQuestao.semana,
-                        data: this.formatarDataDDMMAA(this.novaQuestao.data),
-                        materia: this.novaQuestao.materia,
-                        assunto: this.novaQuestao.assunto,
+                        data: this.novaQuestao.data || '23/10/26',
+                        materia: this.novaQuestao.materia || 'Geral',
+                        assunto: this.novaQuestao.assunto || 'Geral',
                         qtd: Number(this.novaQuestao.qtd) || 0,
                         acertos: Number(this.novaQuestao.acertos) || 0,
                         gargalo: this.novaQuestao.gargalo,
@@ -747,8 +783,8 @@
                     return Math.round((concluidos / topicos.length) * 100);
                 },
 
-                // REQUISITO 4 e 5: Filtragem por data e agrupamento de questões por Matéria
-                get questoesFiltradasEAgrupadas() {
+                // REQUISITO 2: Agrupamento em 3 Níveis: Data -> Matéria -> Questões/Assuntos
+                get questoesAgrupadasPorDataEMateria() {
                     let dias = Number(this.filtroDiasQuestoes);
                     let limiteTimestamp = dias > 0 ? Date.now() - (dias * 24 * 60 * 60 * 1000) : 0;
 
@@ -758,13 +794,16 @@
                         return ts >= limiteTimestamp;
                     });
 
-                    let agrupado = {};
+                    let porData = {};
                     listaFiltrada.forEach(q => {
-                        let mat = q.materia || 'Outras';
-                        if(!agrupado[mat]) agrupado[mat] = [];
-                        agrupado[mat].push(q);
+                        let dKey = q.data || 'Sem Data';
+                        let mKey = q.materia || 'Geral';
+
+                        if(!porData[dKey]) porData[dKey] = {};
+                        if(!porData[dKey][mKey]) porData[dKey][mKey] = [];
+                        porData[dKey][mKey].push(q);
                     });
-                    return agrupado;
+                    return porData;
                 },
 
                 somarQtdMat(lista) { return lista.reduce((a, b) => a + (Number(b.qtd)||0), 0); },
@@ -779,7 +818,7 @@
                     let agrupado = {};
                     this.questoesRegistro.forEach(q => {
                         if(q.gargalo && q.gargalo.trim() !== '') {
-                            let matKey = q.materia || 'Outras';
+                            let matKey = q.materia || 'Geral';
                             if(!agrupado[matKey]) agrupado[matKey] = [];
                             agrupado[matKey].push(q);
                         }
