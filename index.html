@@ -83,7 +83,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.6</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.7</span>
       </div>
     </aside>
 
@@ -231,33 +231,64 @@
           </div>
         </div>
 
-        <!-- ==================== TAB 2: MATÉRIAS ==================== -->
+        <!-- ==================== TAB 2: MATÉRIAS (GRID DE ACESSO RÁPIDO & BUSCA) ==================== -->
         <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
-              <p class="text-slate-400 text-sm">Organize seu edital. Tópicos principais ficam em MAIÚSCULO e Subtópicos em Primeira maiúscula.</p>
+              <p class="text-slate-400 text-sm">Selecione uma matéria abaixo ou busque rapidamente para gerenciar seus tópicos.</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Nova Matéria</span>
-              </button>
+            <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Nova Matéria</span>
+            </button>
+          </div>
+
+          <!-- Barra de Pesquisa e Filtro de Matérias -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div class="relative w-full sm:w-80">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                <input type="text" x-model="materiaSearchQuery" placeholder="Buscar matéria..." class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              </div>
+              <div class="text-xs text-slate-400 font-mono">
+                Total: <span class="text-slate-200 font-bold" x-text="materias.length"></span> matérias cadastradas
+              </div>
+            </div>
+
+            <!-- Grid Elegante de Matérias (Substitui a barra lateral de abas) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-2 max-h-72 overflow-y-auto pr-1">
+              <template x-for="mat in getFilteredMateriasGrid()" :key="'grid_' + mat.id">
+                <div @click="selectedMateriaId = mat.id"
+                  class="bg-slate-850 border rounded-xl p-3.5 cursor-pointer transition-all duration-150 flex flex-col justify-between space-y-3 group hover:border-indigo-500/50 hover:bg-slate-800/60"
+                  :class="selectedMateriaId === mat.id ? 'border-indigo-500 bg-indigo-600/10 shadow-md shadow-indigo-500/10' : 'border-slate-800'">
+                  
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                      <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
+                      <span class="font-bold text-slate-200 text-xs truncate group-hover:text-white" x-text="mat.nome"></span>
+                    </div>
+                    <span class="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px] font-mono shrink-0" x-text="`${mat.topicos.length} tópicos`"></span>
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="flex justify-between items-center text-[10px] text-slate-400">
+                      <span>Progreso</span>
+                      <span class="font-bold font-mono" x-text="calcMateriaPercent(mat) + '%'"></span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                      <div class="h-full rounded-full transition-all" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <div x-show="getFilteredMateriasGrid().length === 0" class="col-span-full py-8 text-center text-slate-500 text-xs">
+                Nenhuma matéria encontrada com esse termo de busca.
+              </div>
             </div>
           </div>
 
-          <div class="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-slate-800">
-            <template x-for="mat in materias" :key="mat.id">
-              <button @click="selectedMateriaId = mat.id"
-                :class="selectedMateriaId === mat.id ? 'bg-slate-800 text-slate-100 border-indigo-500 shadow-sm' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-300 border-transparent'"
-                class="px-4 py-2 rounded-lg text-xs font-medium border flex items-center space-x-2 whitespace-nowrap transition">
-                <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
-                <span x-text="mat.nome"></span>
-                <span class="bg-slate-950 text-slate-400 px-1.5 py-0.5 rounded text-[10px]" x-text="mat.topicos.length"></span>
-              </button>
-            </template>
-          </div>
-
+          <!-- Conteúdo da Matéria Selecionada -->
           <template x-if="getSelectedMateria()">
             <div class="space-y-6">
               <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
@@ -734,7 +765,7 @@
 
     function appData() {
       return {
-        activeTab: 'dashboard', // Página inicial definida como Dashboard
+        activeTab: 'dashboard',
         syncing: false,
         lastSync: false,
         isLoaded: false,
@@ -759,6 +790,7 @@
           }
         ],
         selectedMateriaId: 'mat_1',
+        materiaSearchQuery: '', // Campo para busca instantânea de matérias
         newTopicText: '',
         pinnedNotes: ['Meta semanal: Focar em revisões ativas e questões de concurso.'],
         questoes: [],
@@ -926,10 +958,6 @@
           }
         },
 
-        // --- Regras de Cores para as Barras de Progresso ---
-        // 0% - 44%: Vermelho
-        // 45% - 74%: Laranja
-        // 75% - 100%: Verde
         getCustomProgressBarBg(pct) {
           if (pct >= 75) return 'bg-emerald-500';
           if (pct >= 45) return 'bg-amber-500';
@@ -940,6 +968,13 @@
           if (pct >= 75) return 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/25';
           if (pct >= 45) return 'text-amber-400 bg-amber-500/10 border border-amber-500/25';
           return 'text-rose-400 bg-rose-500/10 border border-rose-500/25';
+        },
+
+        // Filtro para o Grid de Matérias
+        getFilteredMateriasGrid() {
+          if (!this.materiaSearchQuery.trim()) return this.materias;
+          const query = this.materiaSearchQuery.toLowerCase();
+          return this.materias.filter(m => m.nome.toLowerCase().includes(query));
         },
 
         getGroupedQuestionsByDate() {
