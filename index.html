@@ -1,1035 +1,1219 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Controle de Estudos - Auditor Fiscal</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js Collapse Plugin -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plano de Estudos - Auditor Fiscal</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#151e2e',
+              900: '#0f172a',
+              950: '#080d1a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Alpine.js Collapse Plugin + Alpine Core -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col" x-data="appData()">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-indigo-500 selection:text-white" x-data="appData()" x-init="initApp()">
 
-    <!-- HEADER -->
-    <header class="bg-slate-800/90 border-b border-slate-700/70 sticky top-0 z-50 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/20">
-                    <i data-lucide="graduation-cap" class="w-7 h-7"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-bold tracking-tight text-white">Painel do Auditor Fiscal</h1>
-                        <!-- Indicador de Status Supabase -->
-                        <span x-text="syncStatus" :class="{
-                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': syncStatus === '☁️ Nuvem Sincronizada',
-                            'bg-amber-500/10 text-amber-400 border-amber-500/20': syncStatus === '⏳ Guardando...',
-                            'bg-rose-500/10 text-rose-400 border-rose-500/20': syncStatus === '❌ Erro ao Sincronizar'
-                        }" class="text-[10px] px-2.5 py-0.5 rounded-full border font-semibold"></span>
-                    </div>
-                    <p class="text-xs text-slate-400">Controle Avançado de Estudos & Desempenho</p>
-                </div>
-            </div>
-            <!-- Navegação por Abas -->
-            <nav class="flex flex-wrap gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/80">
-                <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-                </button>
-                <button @click="activeTab = 'materias'" :class="activeTab === 'materias' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
-                    <i data-lucide="book-open" class="w-4 h-4"></i> Matérias
-                </button>
-                <button @click="activeTab = 'questoes'" :class="activeTab === 'questoes' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
-                    <i data-lucide="check-square" class="w-4 h-4"></i> Questões
-                </button>
-                <button @click="activeTab = 'gargalos'" :class="activeTab === 'gargalos' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
-                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Gargalos
-                </button>
-                <button @click="activeTab = 'cronograma'" :class="activeTab === 'cronograma' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
-                    <i data-lucide="calendar" class="w-4 h-4"></i> Cronograma
-                </button>
-            </nav>
+  <div class="flex h-screen overflow-hidden">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 hidden md:flex">
+      <div>
+        <!-- Logo Header -->
+        <div class="p-5 border-b border-slate-800/80 flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-slate-100 tracking-wide text-sm">Auditor Fiscal</h1>
+            <p class="text-xs text-slate-400 font-medium">Controle de Alta Performance</p>
+          </div>
         </div>
-    </header>
 
-    <!-- MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full space-y-8">
+        <!-- Sync Status Bar -->
+        <div class="px-4 py-2 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs">
+          <span class="flex items-center space-x-1.5 text-slate-400">
+            <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400 animate-ping' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
+            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada' : 'Sem Conexão')"></span>
+          </span>
+          <button @click="saveToSupabase()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Sincronização">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="syncing && 'animate-spin'"></i>
+          </button>
+        </div>
 
-        <!-- TAB: DASHBOARD -->
-        <section x-show="activeTab === 'dashboard'" class="space-y-6">
-            <!-- Quadro de Lembretes Fixos -->
-            <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm space-y-2">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
-                        <i data-lucide="sticky-note" class="w-4 h-4"></i> Lembretes & Anotações Fixas
-                    </h3>
-                    <span class="text-[10px] text-slate-400">Sincronizado via Supabase</span>
-                </div>
-                <textarea x-model="lembreteFixado" @change="salvarTudoNaNuvem()" rows="3" placeholder="Digite aqui metas gerais, avisos ou lembretes rápidos para visualizar assim que abrir o site..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500/60 resize-y"></textarea>
+        <!-- Navigation Menu -->
+        <nav class="p-3 space-y-1">
+          <template x-for="tab in tabs" :key="tab.id">
+            <button @click="activeTab = tab.id"
+              :class="activeTab === tab.id ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
+              class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150">
+              <i :data-lucide="tab.icon" class="w-4 h-4"></i>
+              <span x-text="tab.label"></span>
+            </button>
+          </template>
+        </nav>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
+        <span>RFB / SEFAZ</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v2.5</span>
+      </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-950">
+      
+      <!-- Top Mobile Header -->
+      <header class="md:hidden bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <span class="font-bold text-slate-100 text-sm">Auditor Fiscal</span>
+        </div>
+        <div class="flex space-x-1">
+          <template x-for="tab in tabs" :key="tab.id">
+            <button @click="activeTab = tab.id"
+              :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'"
+              class="p-2 rounded-lg transition">
+              <i :data-lucide="tab.icon" class="w-4 h-4"></i>
+            </button>
+          </template>
+        </div>
+      </header>
+
+      <!-- Scrollable Main Content -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- ==================== TAB 1: DASHBOARD ==================== -->
+        <div x-show="activeTab === 'dashboard'" x-cloak class="space-y-6">
+          
+          <!-- Header Title -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Visão Geral do Edital</h2>
+              <p class="text-slate-400 text-sm">Acompanhe seu progresso global e métricas de desempenho.</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button @click="showFixNoteModal = true" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition">
+                <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Novo Lembrete</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Stats Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Overall Progress -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-medium text-slate-400">Progresso Geral</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallProgress() + '%'"></span>
+                <span class="text-xs text-slate-400" x-text="`(${countCompletedTopics()}/${countTotalTopics()} tópicos)`"></span>
+              </div>
+              <!-- Dynamic Bar -->
+              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div class="h-full transition-all duration-500 rounded-full"
+                  :class="getProgressBarBg(calcOverallProgress())"
+                  :style="`width: ${calcOverallProgress()}%`"></div>
+              </div>
             </div>
 
-            <!-- Cards de Métricas -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Questões</p>
-                            <h3 class="text-2xl font-bold mt-1 text-white" x-text="stats.totalQuestao"></h3>
-                        </div>
-                        <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
-                            <i data-lucide="file-text" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Acertos / Erros</p>
-                            <h3 class="text-2xl font-bold mt-1 text-emerald-400"><span x-text="stats.totalAcertos"></span> / <span class="text-rose-400" x-text="stats.totalErros"></span></h3>
-                        </div>
-                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
-                            <i data-lucide="award" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aproveitamento Médio</p>
-                            <h3 class="text-2xl font-bold mt-1 text-blue-400" x-text="stats.mediaAproveitamento + '%'"></h3>
-                        </div>
-                        <div class="p-3 bg-sky-500/10 text-sky-400 rounded-xl">
-                            <i data-lucide="trending-up" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-slate-800 border border-slate-700/80 p-5 rounded-2xl shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Disciplinas Cadastradas</p>
-                            <h3 class="text-2xl font-bold mt-1 text-purple-400" x-text="materias.length"></h3>
-                        </div>
-                        <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
-                            <i data-lucide="book-open" class="w-6 h-6"></i>
-                        </div>
-                    </div>
-                </div>
+            <!-- Total Question Accuracy -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-medium text-slate-400">Taxa de Acerto Geral</span>
+                <i data-lucide="target" class="w-4 h-4 text-sky-400"></i>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
+                <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div class="h-full transition-all duration-500 rounded-full"
+                  :class="getProgressBarBg(calcOverallAccuracy())"
+                  :style="`width: ${calcOverallAccuracy()}%`"></div>
+              </div>
             </div>
 
-            <!-- Progresso Geral com expansão de assuntos e Barra Dinâmica -->
-            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-sm space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Progresso no Conteúdo Programático
-                    </h3>
-                    <p class="text-xs text-slate-400">Clique na matéria para expandir os assuntos</p>
-                </div>
-                <div class="space-y-3">
-                    <template x-for="mat in materias" :key="mat.nome">
-                        <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 cursor-pointer hover:border-slate-500 transition" @click="matExpandidaDashboard = (matExpandidaDashboard === mat.nome ? null : mat.nome)">
-                            <div class="flex justify-between items-center text-sm mb-2">
-                                <span class="font-semibold text-slate-200 flex items-center gap-2">
-                                    <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="matExpandidaDashboard === mat.nome ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
-                                    <span x-text="mat.nome"></span>
-                                </span>
-                                <span class="font-bold" :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).text" x-text="calcularProgressoMatéria(mat.nome) + '%'"></span>
-                            </div>
-                            
-                            <!-- Barra de Progresso com Cores Dinâmicas -->
-                            <div class="w-full bg-slate-700/60 h-2.5 rounded-full overflow-hidden">
-                                <div class="h-2.5 rounded-full transition-all duration-500" 
-                                     :class="obterCorStatusProgresso(calcularProgressoMatéria(mat.nome)).bg"
-                                     :style="'width: ' + calcularProgressoMatéria(mat.nome) + '%'"></div>
-                            </div>
-
-                            <div x-show="matExpandidaDashboard === mat.nome" x-collapse class="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
-                                <template x-for="topico in (topicosPorMateria[mat.nome] || [])">
-                                    <div class="flex justify-between items-center text-xs p-2.5 rounded-lg border"
-                                         :class="topico.tipo === 'subtopico' ? 'bg-slate-900/80 border-purple-500/30 ml-4' : 'bg-slate-800/80 border-slate-700/40'">
-                                        <span class="text-slate-300 flex items-center gap-2">
-                                            <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-[10px] font-bold">↳</span>
-                                            <!-- Tag de Prioridade no Dashboard -->
-                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold border"
-                                                  :class="{
-                                                      'bg-rose-500/10 text-rose-400 border-rose-500/30': topico.prioridade === 'alta',
-                                                      'bg-amber-500/10 text-amber-400 border-amber-500/30': topico.prioridade === 'media',
-                                                      'bg-slate-700/50 text-slate-300 border-slate-600': !topico.prioridade || topico.prioridade === 'baixa'
-                                                  }"
-                                                  x-text="topico.prioridade === 'alta' ? '🔥 Alta' : (topico.prioridade === 'media' ? '⚖️ Média' : '🔹 Baixa')"></span>
-                                            <span x-text="topico.conteudo"></span>
-                                        </span>
-                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                              :class="{
-                                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
-                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
-                                                  'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
-                                              }" x-text="topico.status"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB: MATÉRIAS & TÓPICOS -->
-        <section x-show="activeTab === 'materias'" class="space-y-6">
-            <!-- Adicionar Matéria -->
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div>
-                    <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i data-lucide="book-plus" class="w-5 h-5 text-blue-400"></i> Gerenciar Disciplinas
-                    </h3>
-                    <p class="text-xs text-slate-400">Cadastre novas matérias ou renomeie as existentes.</p>
-                </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <input type="text" x-model="nuevaMateria" placeholder="Nome da Matéria..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 flex-grow sm:w-64">
-                    <button @click="adicionarMateria()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shrink-0">Cadastrar</button>
-                </div>
+            <!-- Active Bottlenecks -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-medium text-slate-400">Gargalos Ativos</span>
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-2xl font-extrabold text-slate-100" x-text="countActiveBottlenecks()"></span>
+                <span class="text-xs text-slate-400">itens pendentes</span>
+              </div>
+              <div class="text-xs text-amber-400/80 font-medium">Revisão prioritária</div>
             </div>
 
-            <!-- Gerenciar Tópicos -->
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/80 shadow-sm space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div class="w-full md:w-72 flex items-center gap-2">
-                        <div class="flex-grow">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Selecionar Matéria</label>
-                            <select x-model="selectedMat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
-                                <template x-for="mat in materias" :key="mat.nome">
-                                    <option :value="mat.nome" x-text="mat.nome"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <button @click="editarNomeMateria(selectedMat)" class="mt-5 p-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition" title="Editar nome desta matéria">
-                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <button @click="modoCadastroTopico = 'unico'" :class="modoCadastroTopico === 'unico' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-                            Item Único
-                        </button>
-                        <button @click="modoCadastroTopico = 'massa'" :class="modoCadastroTopico === 'massa' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-                            Colem vários (Em Massa)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Formulário Único com Prioridade -->
-                <div x-show="modoCadastroTopico === 'unico'" class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                    <div class="sm:col-span-6">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Novo Assunto / Tópico</label>
-                        <input type="text" x-model="novoTopicoTexto" placeholder="Ex: Princípio da Legalidade..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-full">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
-                        <select x-model="novoTopicoTipo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <option value="topico">Principal</option>
-                            <option value="subtopico">Subtópico</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Prioridade</label>
-                        <select x-model="novoTopicoPrioridade" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <option value="alta">🔥 Alta Frequência</option>
-                            <option value="media">⚖️ Média Frequência</option>
-                            <option value="baixa">🔹 Baixa Frequência</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-12 flex justify-end pt-1">
-                        <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition w-full sm:w-auto">Adicionar Assunto</button>
-                    </div>
-                </div>
-
-                <!-- Inclusão em massa com separador por Ponto Final '.' -->
-                <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
-                        <textarea x-model="textoTopicosMassa" rows="4" placeholder="Exemplo:
-1. Princípios Constitucionais. 2. Limitações ao Poder de Tributar. 3. Crédito Tributário." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500"></textarea>
-                    </div>
-                    <div class="flex justify-end">
-                        <button @click="adicionarTopicosEmMassaPontoFinal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">Cadastrar Assuntos</button>
-                    </div>
-                </div>
-
-                <!-- Tabela de Tópicos -->
-                <div class="overflow-x-auto rounded-xl border border-slate-700">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
-                                <th class="p-4">Tópico / Conteúdo</th>
-                                <th class="p-4 w-36">Prioridade</th>
-                                <th class="p-4 w-36">Status</th>
-                                <th class="p-4 w-32 text-center">Tipo</th>
-                                <th class="p-4 w-32 text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-700/50 text-sm">
-                            <template x-for="(topico, index) in (topicosPorMateria[selectedMat] || [])" :key="index">
-                                <tr class="transition"
-                                    :class="{
-                                        'hover:bg-slate-700/25 bg-slate-900/20 border-l-4 border-blue-500': topico.tipo !== 'subtopico',
-                                        'hover:bg-slate-700/25 bg-purple-950/20 border-l-4 border-purple-500': topico.tipo === 'subtopico'
-                                    }">
-                                    <td class="p-4 text-slate-200" :class="topico.tipo === 'subtopico' ? 'pl-8' : ''">
-                                        <div x-show="topicoEditandoIndex !== index" class="font-medium flex items-center gap-2">
-                                            <span x-show="topico.tipo === 'subtopico'" class="text-purple-400 text-xs font-bold">↳</span>
-                                            <span x-text="topico.conteudo"></span>
-                                        </div>
-                                        <div x-show="topicoEditandoIndex === index" class="flex gap-2">
-                                            <input type="text" x-model="topicoTextoEmEdicao" class="bg-slate-900 border border-blue-500 rounded-lg px-3 py-1 text-sm text-white w-full focus:outline-none">
-                                            <button @click="salvarEdicaoTopico(selectedMat, index)" class="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition" title="Salvar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                    <td class="p-4">
-                                        <!-- Badge / Alternador de Prioridade -->
-                                        <span @click="togglePrioridadeTopico(selectedMat, index)" 
-                                              class="px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer border inline-block transition hover:opacity-80"
-                                              :class="{
-                                                  'bg-rose-500/10 text-rose-400 border-rose-500/30': topico.prioridade === 'alta',
-                                                  'bg-amber-500/10 text-amber-400 border-amber-500/30': topico.prioridade === 'media',
-                                                  'bg-slate-700/40 text-slate-300 border-slate-600': !topico.prioridade || topico.prioridade === 'baixa'
-                                              }"
-                                              x-text="topico.prioridade === 'alta' ? '🔥 Alta' : (topico.prioridade === 'media' ? '⚖️ Média' : '🔹 Baixa')"
-                                              title="Clique para alternar prioridade"></span>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer"
-                                              @click="toggleStatus(selectedMat, index)"
-                                              :class="{
-                                                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': topico.status === 'CONCLUÍDO',
-                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': topico.status === 'ESTUDANDO',
-                                                  'bg-slate-700/50 text-slate-400 border border-slate-600': topico.status === 'ESTUDAR'
-                                              }" x-text="topico.status"></span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <button @click="toggleTipoTopico(selectedMat, index)" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition border"
-                                                :class="topico.tipo === 'subtopico' ? 'bg-purple-500/10 text-purple-300 border-purple-500/30 hover:bg-purple-500/20' : 'bg-blue-500/10 text-blue-300 border-blue-500/30 hover:bg-blue-500/20'"
-                                                title="Clique para alternar entre Tópico e Subtópico">
-                                            <span x-text="topico.tipo === 'subtopico' ? 'Subtópico' : 'Principal'"></span>
-                                        </button>
-                                    </td>
-                                    <td class="p-4 text-center flex items-center justify-center gap-1">
-                                        <!-- Botão Editar -->
-                                        <button @click="iniciarEdicaoTopico(index, topico.conteudo)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Editar Assunto">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                                        </button>
-                                        <!-- Botão Mudar Status -->
-                                        <button @click="toggleStatus(selectedMat, index)" class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition" title="Mudar Status">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                                        </button>
-                                        <!-- Botão Excluir -->
-                                        <button @click="removerTopico(selectedMat, index)" class="p-2 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Tópico">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB: QUESTÕES & REGISTRO -->
-        <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <!-- Formulário flexível de registro -->
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/80 shadow-sm space-y-4">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Data (DD/MM/AAAA)</label>
-                        <input type="text" x-model="novaQuestao.data" placeholder="23/10/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Semana / Ciclo</label>
-                        <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Matéria (Opcional se houver assunto)</label>
-                        <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <option value="">-- Sem Matéria Específica --</option>
-                            <template x-for="mat in materias" :key="mat.nome">
-                                <option :value="mat.nome" x-text="mat.nome"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Assunto (Opcional se houver matéria)</label>
-                        <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Total de Questões</label>
-                        <input type="number" x-model.number="novaQuestao.qtd" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Acertos</label>
-                        <input type="number" x-model.number="novaQuestao.acertos" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Anotação de Gargalo / Ponto Fraco</label>
-                        <input type="text" x-model="novaQuestao.gargalo" placeholder="Ex: Dificuldade na Anterioridade..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                    </div>
-                </div>
-                <div class="flex justify-end pt-2">
-                    <button @click="adicionarQuestao()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">Salvar Registro</button>
-                </div>
+            <!-- Total Disciplines -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-medium text-slate-400">Disciplinas Cadastradas</span>
+                <i data-lucide="book-open" class="w-4 h-4 text-indigo-400"></i>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-2xl font-extrabold text-slate-100" x-text="materias.length"></span>
+                <span class="text-xs text-slate-400">matérias</span>
+              </div>
+              <div class="text-xs text-indigo-400/80 font-medium">Edital de Auditor</div>
             </div>
 
-            <!-- Exibição Hierárquica: Data -> Matéria -> Assuntos -->
-            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-sm space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
-                    <div>
-                        <h3 class="font-bold flex items-center gap-2 text-lg"><i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> Histórico por Data & Matéria</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Selecione por data, abra a matéria e veja os assuntos estudados.</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-medium text-slate-400">Exibir:</label>
-                        <select x-model="filtroDiasQuestoes" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                            <option value="0">Todo o Período</option>
-                            <option value="7">Últimos 7 dias</option>
-                            <option value="15">Últimos 15 dias</option>
-                            <option value="30">Últimos 30 dias</option>
-                        </select>
-                    </div>
-                </div>
+          </div>
 
-                <!-- Lista Nível 1: Data -->
-                <div class="space-y-4">
-                    <template x-for="(materiasNaData, dataKey) in questoesAgrupadasPorDataEMateria" :key="dataKey">
-                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 space-y-3">
-                            <div class="flex justify-between items-center border-b border-slate-700/80 pb-2.5">
-                                <h4 class="font-bold text-amber-400 text-base flex items-center gap-2">
-                                    <i data-lucide="clock" class="w-4 h-4"></i> <span x-text="formatarDataDD_MM_AA(dataKey)"></span>
-                                </h4>
-                            </div>
-
-                            <!-- Lista Nível 2: Matéria -->
-                            <div class="space-y-2">
-                                <template x-for="(questoesDoAssunto, matName) in materiasNaData" :key="matName">
-                                    <div class="bg-slate-800/90 border border-slate-700/60 rounded-xl overflow-hidden">
-                                        <div class="p-3.5 cursor-pointer flex justify-between items-center hover:bg-slate-700/40 transition" @click="toggleDataMateriaExpandida(dataKey + '_' + matName)">
-                                            <div class="flex items-center gap-2 font-bold text-blue-400 text-sm">
-                                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="isDataMateriaExpandida(dataKey + '_' + matName) ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
-                                                <span x-text="matName"></span>
-                                                <span class="text-xs text-slate-400 font-normal" x-text="'(' + questoesDoAssunto.length + ' itens)'"></span>
-                                            </div>
-                                            <div class="text-xs text-slate-300 font-medium flex gap-3">
-                                                <span>Qtd: <strong class="text-white" x-text="somarQtdMat(questoesDoAssunto)"></strong></span>
-                                                <span>Acertos: <strong class="text-emerald-400" x-text="somarAcertosMat(questoesDoAssunto)"></strong></span>
-                                                <span>%: <strong class="text-blue-400" x-text="calcularPorcentagemMat(questoesDoAssunto) + '%'"></strong></span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Lista Nível 3: Assuntos Estudados -->
-                                        <div x-show="isDataMateriaExpandida(dataKey + '_' + matName)" x-collapse class="border-t border-slate-700/60 p-4 bg-slate-900/90">
-                                            <div class="overflow-x-auto">
-                                                <table class="w-full text-left text-xs">
-                                                    <thead>
-                                                        <tr class="text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                                                            <th class="pb-2">Semana</th>
-                                                            <th class="pb-2">Assunto Estudado</th>
-                                                            <th class="pb-2 text-center">Qtd</th>
-                                                            <th class="pb-2 text-center">Acertos</th>
-                                                            <th class="pb-2 text-center">%</th>
-                                                            <th class="pb-2">Gargalo</th>
-                                                            <th class="pb-2 text-center">Ações</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="divide-y divide-slate-800/50">
-                                                        <template x-for="q in questoesDoAssunto" :key="q.id">
-                                                            <tr class="hover:bg-slate-800/40">
-                                                                <td class="py-2 text-slate-400" x-text="q.semana"></td>
-                                                                <td class="py-2 text-slate-200">
-                                                                    <div x-show="questaoEditandoId !== q.id" class="font-semibold text-slate-200" x-text="q.assunto || 'Geral'"></div>
-                                                                    <div x-show="questaoEditandoId === q.id" class="flex gap-1.5">
-                                                                        <input type="text" x-model="questaoTextoAssuntoEdicao" class="bg-slate-900 border border-blue-500 rounded px-2 py-0.5 text-xs text-white focus:outline-none">
-                                                                        <button @click="salvarEdicaoAssuntoQuestao(q.id)" class="p-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="py-2 text-center text-slate-300" x-text="q.qtd"></td>
-                                                                <td class="py-2 text-center text-emerald-400 font-medium" x-text="q.acertos"></td>
-                                                                <td class="py-2 text-center font-bold" :class="(q.acertos/q.qtd) >= 0.8 ? 'text-emerald-400' : 'text-rose-400'" x-text="q.qtd > 0 ? ((q.acertos / q.qtd) * 100).toFixed(1) + '%' : '0%'"></td>
-                                                                <td class="py-2 text-rose-300 italic" x-text="q.gargalo || '-'"></td>
-                                                                <td class="py-2 text-center flex justify-center gap-1">
-                                                                    <button @click="iniciarEdicaoAssuntoQuestao(q.id, q.assunto)" class="p-1 text-slate-400 hover:text-white rounded" title="Editar Assunto">
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                                                                    </button>
-                                                                    <button @click="removerQuestaoPorId(q.id)" class="p-1 text-rose-400 hover:bg-rose-500/10 rounded" title="Excluir">
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                        </template>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                    <template x-if="Object.keys(questoesAgrupadasPorDataEMateria).length === 0">
-                        <p class="text-center text-slate-500 text-sm py-6">Nenhum registro de questão encontrado para este período.</p>
-                    </template>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB: GARGALOS POR DISCIPLINA -->
-        <section x-show="activeTab === 'gargalos'" class="space-y-6">
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-sm">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i> Painel de Gargalos por Matéria
-                </h3>
-                <p class="text-xs text-slate-400 mt-1">Clique na disciplina para expandir os gargalos anotados.</p>
+          <!-- Fixed Sticky Notes / Lembretes -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="pin" class="w-4 h-4 text-amber-400"></i>
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Lembretes Fixados</h3>
+              </div>
             </div>
 
-            <!-- Grid de 3 colunas -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <template x-for="(gargalosDaMat, matName) in gargalosAgrupadosPorMateria" :key="matName">
-                    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-3 self-start">
-                        <div class="flex justify-between items-center cursor-pointer border-b border-slate-700 pb-3" @click="toggleGargaloMatExpandida(matName)">
-                            <h4 class="font-bold text-blue-400 text-sm flex items-center gap-2">
-                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="gargaloMatExpandida === matName ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
-                                <span x-text="matName"></span>
-                            </h4>
-                            <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-semibold" x-text="gargalosDaMat.length"></span>
-                        </div>
-
-                        <!-- Ocultos por padrão -->
-                        <div x-show="gargaloMatExpandida === matName" x-collapse class="space-y-2.5 pt-1">
-                            <template x-for="g in gargalosDaMat" :key="g.id">
-                                <div class="flex items-start gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
-                                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloResolvido(g.id)" class="mt-0.5 w-3.5 h-3.5 text-emerald-600 bg-slate-800 border-slate-600 rounded cursor-pointer">
-                                    <div class="flex-grow space-y-1">
-                                        <div class="flex justify-between text-[11px]">
-                                            <span class="font-semibold text-slate-300" x-text="g.assunto || 'Geral'"></span>
-                                            <span class="text-slate-500 font-mono" x-text="formatarDataDD_MM_AA(g.data)"></span>
-                                        </div>
-                                        <p class="text-xs transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-            </div>
-            <template x-if="Object.keys(gargalosAgrupadosPorMateria).length === 0">
-                <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-8 text-center text-slate-500">
-                    Nenhum gargalo registrado até o momento.
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <template x-for="(note, index) in pinnedNotes" :key="index">
+                <div class="bg-slate-850 border border-slate-700/60 p-3.5 rounded-lg flex justify-between items-start space-x-2 relative group hover:border-slate-600 transition">
+                  <p class="text-xs text-slate-300 leading-relaxed" x-text="note"></p>
+                  <button @click="removePinnedNote(index)" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
                 </div>
+              </template>
+              <div x-show="pinnedNotes.length === 0" class="col-span-full py-4 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-lg">
+                Nenhum lembrete fixado no momento.
+              </div>
+            </div>
+          </div>
+
+          <!-- Subject Progress Breakdown -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
+              <span>Progresso por Matéria</span>
+            </h3>
+
+            <div class="space-y-3">
+              <template x-for="mat in materias" :key="mat.id">
+                <div class="bg-slate-850 border border-slate-800 rounded-lg p-3.5 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
+                      <span class="font-bold text-slate-200" x-text="mat.nome"></span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <span class="text-slate-400 font-mono" x-text="`${calcMateriaCompleted(mat)}/${mat.topicos.length} tópicos`"></span>
+                      <span class="font-bold px-2 py-0.5 rounded text-[11px]"
+                            :class="getProgressBarText(calcMateriaPercent(mat))"
+                            x-text="calcMateriaPercent(mat) + '%'"></span>
+                    </div>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                    <div class="h-full transition-all duration-300 rounded-full"
+                      :class="getProgressBarBg(calcMateriaPercent(mat))"
+                      :style="`width: ${calcMateriaPercent(mat)}%`"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: MATÉRIAS (MAIN FEATURE) ==================== -->
+        <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
+          
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
+              <p class="text-slate-400 text-sm">Organize seu edital. Subtópicos são ocultados por padrão sob os tópicos pai.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+              <button @click="showMateriaModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nova Matéria</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Matérias Selector Tabs -->
+          <div class="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-slate-800">
+            <template x-for="mat in materias" :key="mat.id">
+              <button @click="selectedMateriaId = mat.id"
+                :class="selectedMateriaId === mat.id ? 'bg-slate-800 text-slate-100 border-indigo-500 shadow-sm' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-300 border-transparent'"
+                class="px-4 py-2 rounded-lg text-xs font-medium border flex items-center space-x-2 whitespace-nowrap transition">
+                <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
+                <span x-text="mat.nome"></span>
+                <span class="bg-slate-950 text-slate-400 px-1.5 py-0.5 rounded text-[10px]" x-text="mat.topicos.length"></span>
+              </button>
             </template>
-        </section>
+          </div>
 
-        <!-- TAB: CRONOGRAMA -->
-        <section x-show="activeTab === 'cronograma'" class="space-y-6">
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700/80 shadow-sm space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-400"></i> <span x-text="cicloEmEdicaoIndex !== null ? 'Editar Ciclo do Cronograma' : 'Criar Novo Ciclo no Cronograma'"></span>
-                    </h3>
-                    <button x-show="cicloEmEdicaoIndex !== null" @click="cancelarEdicaoCiclo()" class="text-xs text-rose-400 hover:underline">Cancelar Edição</button>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Active Subject Details -->
+          <template x-if="getSelectedMateria()">
+            <div class="space-y-6">
+              
+              <!-- Subject Toolbar & Add Input -->
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                  <div class="flex items-center space-x-3">
+                    <span class="w-4 h-4 rounded-full" :style="`background-color: ${getSelectedMateria().cor}`"></span>
+                    <h3 class="text-lg font-bold text-slate-100" x-text="getSelectedMateria().nome"></h3>
+                    <button @click="deleteMateria(getSelectedMateria().id)" class="text-slate-500 hover:text-rose-400 transition" title="Excluir Matéria">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+
+                  <!-- Quick Stats for Active Subject -->
+                  <div class="flex items-center space-x-4 text-xs text-slate-400">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Nome da Semana / Ciclo</label>
-                        <input type="text" x-model="novoCiclo.semana" placeholder="Ex: SEMANA 5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                      <span>Progresso: </span>
+                      <span class="font-bold text-slate-200" x-text="calcMateriaPercent(getSelectedMateria()) + '%'"></span>
                     </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Matérias / Tópicos (separados por vírgula)</label>
-                        <div class="flex gap-2">
-                            <input type="text" x-model="novoCiclo.materiasTexto" placeholder="Ex: Direito Tributário, Auditoria, TI" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <button @click="salvarCiclo()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shrink-0" x-text="cicloEmEdicaoIndex !== null ? 'Atualizar' : 'Adicionar'"></button>
-                        </div>
+                    <div class="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div class="h-full rounded-full transition-all"
+                        :class="getProgressBarBg(calcMateriaPercent(getSelectedMateria()))"
+                        :style="`width: ${calcMateriaPercent(getSelectedMateria())}%`"></div>
                     </div>
+                  </div>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <template x-for="(sem, index) in cronogramaSemanas" :key="index">
-                    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                                <h4 class="font-bold text-blue-400" x-text="sem.semana"></h4>
-                                <div class="flex items-center gap-1">
-                                    <button @click="carregarCicloParaEdicao(index)" class="p-1 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition" title="Editar Ciclo">
-                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                    </button>
-                                    <button @click="removerCiclo(index)" class="p-1 hover:bg-rose-500/10 text-rose-400 rounded-lg transition" title="Excluir Ciclo">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <ul class="space-y-2 text-sm text-slate-300">
-                                <template x-for="m in sem.materias">
-                                    <li class="flex items-start gap-2">
-                                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i>
-                                        <span x-text="m"></span>
-                                    </li>
-                                </template>
-                            </ul>
+                <!-- Add Topico Form -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-300">Adicionar Tópicos ao Edital</label>
+                    <span class="text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa de múltiplos tópicos!</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <input type="text" x-model="newTopicText" @keydown.enter="addTopicToSelectedMateria()"
+                      placeholder="Ex: 1. Direito Tributário. 1.1 Vigência da Lei. 1.2 Aplicação."
+                      class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                    <button @click="addTopicToSelectedMateria()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                      <span>Adicionar</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TOPICS LIST WITH ACCORDION/HIERARCHY SUBTOPICS -->
+              <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                
+                <div class="px-4 py-3 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span>Estrutura de Conteúdo (Sanfona de Subtópicos)</span>
+                  <div class="flex space-x-2">
+                    <button @click="expandAllTopics(true)" class="hover:text-slate-200 transition">Expandir Todos</button>
+                    <span>•</span>
+                    <button @click="expandAllTopics(false)" class="hover:text-slate-200 transition">Recolher Todos</button>
+                  </div>
+                </div>
+
+                <div class="divide-y divide-slate-800/60">
+                  <template x-for="(group, gIdx) in getGroupedTopics(getSelectedMateria())" :key="group.parent ? group.parent.id : 'orphans-' + gIdx">
+                    <div class="bg-slate-900">
+                      
+                      <!-- PARENT TOPIC ITEM -->
+                      <template x-if="group.parent">
+                        <div class="p-3.5 flex items-center justify-between hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
+                          
+                          <!-- Left: Expand Toggle + Topic Name + Priority -->
+                          <div class="flex items-center space-x-3 flex-1 min-w-0 pr-4">
+                            <!-- Toggle Collapse Button -->
+                            <button @click="group.parent.expandido = !group.parent.expandido; saveToSupabase()"
+                              class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0">
+                              <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
+                            </button>
+
+                            <!-- Checkbox Completed -->
+                            <input type="checkbox" :checked="group.parent.concluido" @change="toggleTopicStatus(group.parent.id)"
+                              class="w-4 h-4 rounded border-slate-700 text-indigo-600 focus:ring-0 bg-slate-950 cursor-pointer">
+
+                            <!-- Title -->
+                            <span :class="group.parent.concluido ? 'line-through text-slate-500' : 'text-slate-200 font-medium'"
+                                  class="text-xs truncate cursor-pointer"
+                                  @click="group.parent.expandido = !group.parent.expandido; saveToSupabase()"
+                                  x-text="group.parent.nome"></span>
+
+                            <!-- Priority Tag -->
+                            <button @click="cyclePriority(group.parent)" class="shrink-0 text-[10px] px-2 py-0.5 rounded border transition"
+                              :class="getPriorityBadgeClass(group.parent.prioridade)">
+                              <span x-text="getPriorityLabel(group.parent.prioridade)"></span>
+                            </button>
+                            
+                            <!-- Subtopic Count Badge -->
+                            <span x-show="group.children.length > 0" class="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded font-mono">
+                              <span x-text="group.children.length"></span> subtópicos
+                            </span>
+                          </div>
+
+                          <!-- Right Actions -->
+                          <div class="flex items-center space-x-2 shrink-0">
+                            <!-- Indent/Type Toggle (Parent <-> Sub) -->
+                            <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                              <i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <!-- Delete -->
+                            <button @click="deleteTopic(group.parent.id)" title="Excluir" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                          </div>
+
                         </div>
+                      </template>
+
+                      <!-- SUBTOPICS CONTAINER (X-COLLAPSE) -->
+                      <template x-if="group.parent">
+                        <div x-show="group.parent.expandido" x-collapse class="bg-slate-950/60 border-t border-b border-slate-800/40 divide-y divide-slate-800/30">
+                          <template x-for="child in group.children" :key="child.id">
+                            <div class="py-2.5 pl-12 pr-4 flex items-center justify-between hover:bg-slate-800/30 transition">
+                              
+                              <div class="flex items-center space-x-3 flex-1 min-w-0 pr-4">
+                                <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
+                                
+                                <input type="checkbox" :checked="child.concluido" @change="toggleTopicStatus(child.id)"
+                                  class="w-3.5 h-3.5 rounded border-slate-700 text-indigo-600 focus:ring-0 bg-slate-950 cursor-pointer">
+
+                                <span :class="child.concluido ? 'line-through text-slate-500' : 'text-slate-300'"
+                                      class="text-xs truncate" x-text="child.nome"></span>
+
+                                <!-- Priority Tag -->
+                                <button @click="cyclePriority(child)" class="shrink-0 text-[10px] px-2 py-0.5 rounded border transition"
+                                  :class="getPriorityBadgeClass(child.prioridade)">
+                                  <span x-text="getPriorityLabel(child.prioridade)"></span>
+                                </button>
+                              </div>
+
+                              <div class="flex items-center space-x-2 shrink-0">
+                                <!-- Indent/Type Toggle (Sub -> Parent) -->
+                                <button @click="toggleTopicType(child.id)" title="Transformar em Tópico Principal" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                                  <i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button @click="deleteTopic(child.id)" title="Excluir" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                              </div>
+
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+
+                      <!-- ORPHAN SUBTOPICS (If subtopics appear before any parent topic) -->
+                      <template x-if="!group.parent && group.children.length > 0">
+                        <div class="divide-y divide-slate-800/40 bg-slate-950/40">
+                          <template x-for="orphan in group.children" :key="orphan.id">
+                            <div class="py-2.5 px-4 flex items-center justify-between hover:bg-slate-800/30 transition">
+                              <div class="flex items-center space-x-3 flex-1 min-w-0 pr-4">
+                                <span class="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20">Sem Pai</span>
+                                <input type="checkbox" :checked="orphan.concluido" @change="toggleTopicStatus(orphan.id)"
+                                  class="w-3.5 h-3.5 rounded border-slate-700 text-indigo-600 focus:ring-0 bg-slate-950 cursor-pointer">
+                                <span :class="orphan.concluido ? 'line-through text-slate-500' : 'text-slate-300'"
+                                      class="text-xs truncate" x-text="orphan.nome"></span>
+                              </div>
+                              <div class="flex items-center space-x-2 shrink-0">
+                                <button @click="toggleTopicType(orphan.id)" title="Promover a Pai" class="text-slate-500 hover:text-indigo-400 p-1 transition">
+                                  <i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button @click="deleteTopic(orphan.id)" title="Excluir" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+
                     </div>
-                </template>
+                  </template>
+
+                  <!-- Empty Topics State -->
+                  <div x-show="getSelectedMateria().topicos.length === 0" class="p-8 text-center text-slate-500 text-xs">
+                    Nenhum tópico cadastrado nesta matéria ainda. Insira acima!
+                  </div>
+                </div>
+
+              </div>
+
             </div>
-        </section>
+          </template>
 
-    </main>
+        </div>
 
-    <!-- FOOTER -->
-    <footer class="bg-slate-800/80 border-t border-slate-700/80 py-6 mt-12 text-center text-sm text-slate-400">
-        <p>Sistema de Controle de Estudos — Foco ISS Caruaru & Concursos Fiscais 2026</p>
-    </footer>
+        <!-- ==================== TAB 3: QUESTÕES ==================== -->
+        <div x-show="activeTab === 'questoes'" x-cloak class="space-y-6">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Questões e Performance</h2>
+              <p class="text-slate-400 text-sm">Monitore sua taxa de acerto e anote os motivos de erros.</p>
+            </div>
+            <button @click="showQuestaoModal = true" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Novo Treino de Questões</span>
+            </button>
+          </div>
 
-    <!-- SCRIPT DE INTEGRAÇÃO SUPABASE & LÓGICA -->
-    <script>
-        // CONFIGURAÇÃO DO SUPABASE
-        const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          <!-- Questions Table / History -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 bg-slate-850 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <span class="text-xs font-bold text-slate-200">Histórico de Baterias</span>
+              
+              <!-- Filter by Subject -->
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-slate-400">Filtrar Matéria:</span>
+                <select x-model="questoesFilterMateria" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+                  <option value="todas">Todas as Matérias</option>
+                  <template x-for="m in materias" :key="m.id">
+                    <option :value="m.nome" x-text="m.nome"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
 
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('appData', () => ({
-                activeTab: 'dashboard',
-                syncStatus: '☁️ Sincronizando...',
-                lembreteFixado: 'Coloque aqui seu objetivo diário!',
-                matExpandidaDashboard: null,
-                dataMateriaExpandidaMap: {},
-                gargaloMatExpandida: null,
+            <div class="divide-y divide-slate-800/80">
+              <template x-for="q in getFilteredQuestoes()" :key="q.id">
+                <div class="p-4 hover:bg-slate-850/40 transition space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-xs font-bold text-slate-200" x-text="q.materia"></span>
+                      <span class="text-slate-600">•</span>
+                      <span class="text-xs text-slate-400" x-text="q.assunto || 'Geral'"></span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs">
+                      <span class="text-slate-400" x-text="formatDate(q.data)"></span>
+                      <span class="font-bold px-2 py-0.5 rounded"
+                            :class="getProgressBarText(calcQuestaoPercent(q))"
+                            x-text="`${q.acertos}/${q.total} (${calcQuestaoPercent(q)}%)`"></span>
+                      <button @click="deleteQuestao(q.id)" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </div>
 
-                filtroDiasQuestoes: '0',
+                  <!-- Bottleneck / Note Text -->
+                  <template x-if="q.anotacao">
+                    <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 text-xs text-amber-300/90 flex items-start space-x-2">
+                      <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+                      <span x-text="q.anotacao"></span>
+                    </div>
+                  </template>
+                </div>
+              </template>
 
-                topicoEditandoIndex: null,
-                topicoTextoEmEdicao: '',
-                questaoEditandoId: null,
-                questaoTextoAssuntoEdicao: '',
+              <div x-show="getFilteredQuestoes().length === 0" class="p-8 text-center text-slate-500 text-xs">
+                Nenhum registro de questões encontrado.
+              </div>
+            </div>
+          </div>
 
-                materias: [
-                    { nome: 'D. TRIBUTÁRIO' },
-                    { nome: 'AUDITORIA' },
-                    { nome: 'CONTABILIDADE GERAL' },
-                    { nome: 'CONTABILIDADE PÚBLICA' },
-                    { nome: 'TECNOLOGIA DA INFORMAÇÃO' },
-                    { nome: 'FINANÇAS PÚBLICAS' },
-                    { nome: 'DIREITO CONSTITUCIONAL' },
-                    { nome: 'DIREITO ADMINISTRATIVO' },
-                    { nome: 'PORTUGUÊS' },
-                    { nome: 'RLM' },
-                    { nome: 'DIREITO FINANCEIRO' },
-                    { nome: 'ESTATÍSTICA' }
-                ],
-                nuevaMateria: '',
+        </div>
 
-                selectedMat: 'D. TRIBUTÁRIO',
-                modoCadastroTopico: 'unico',
-                novoTopicoTexto: '',
-                novoTopicoTipo: 'topico',
-                novoTopicoPrioridade: 'alta',
-                textoTopicosMassa: '',
-                topicosPorMateria: {
-                    'D. TRIBUTÁRIO': [
-                        { conteudo: '1. O Sistema Tributário Brasileiro', status: 'CONCLUÍDO', tipo: 'topico', prioridade: 'alta' },
-                        { conteudo: 'Os princípios constitucionais tributários', status: 'CONCLUÍDO', tipo: 'subtopico', prioridade: 'alta' }
-                    ]
-                },
+        <!-- ==================== TAB 4: GARGALOS ==================== -->
+        <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
+              <p class="text-slate-400 text-sm">Lista de pontos fracos e checklists de revisão para sanar lacunas.</p>
+            </div>
+            <button @click="showGargaloModal = true" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Adicionar Gargalo</span>
+            </button>
+          </div>
 
-                novaQuestao: { data: '23/10/2026', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
-                questoesRegistro: [
-                    { id: 1, semana: 'SEMANA 1', data: '23/10/2026', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Anterioridade Nonagesimal', resolvido: false }
-                ],
+          <!-- Bottlenecks Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="g in gargalos" :key="g.id">
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 flex flex-col justify-between shadow-sm">
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20" x-text="g.materia"></span>
+                    <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <h4 class="font-bold text-slate-100 text-sm" x-text="g.titulo"></h4>
+                  <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
+                </div>
 
-                novoCiclo: { semana: '', materiasTexto: '' },
-                cicloEmEdicaoIndex: null,
-                cronogramaSemanas: [
-                    { semana: 'SEMANA 1', materias: ['Direito Tributário', 'Direito Constitucional', 'Contabilidade Pública'] }
-                ],
+                <!-- Resolution Check -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                  <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" :checked="g.resolvido" @change="toggleGargaloStatus(g.id)"
+                      class="w-4 h-4 rounded border-slate-700 text-emerald-600 focus:ring-0 bg-slate-950">
+                    <span :class="g.resolvido ? 'line-through text-emerald-400' : 'text-slate-300'">
+                      <span x-text="g.resolvido ? 'Sanado / Resolvido' : 'Pendente de Revisão'"></span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </template>
 
-                async init() {
-                    await this.carregarDadosDaNuvem();
-                    this.$nextTick(() => { lucide.createIcons(); });
-                },
+            <div x-show="gargalos.length === 0" class="col-span-full py-12 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+              Nenhum gargalo registrado. Excelente progresso!
+            </div>
+          </div>
 
-                // LÓGICA DE CORES DA BARRA DE PROGRESSO
-                obterCorStatusProgresso(porcentagem) {
-                    if (porcentagem < 50) {
-                        return { bg: 'bg-rose-500', text: 'text-rose-400' };
-                    } else if (porcentagem <= 74) {
-                        return { bg: 'bg-amber-500', text: 'text-amber-400' };
-                    } else {
-                        return { bg: 'bg-emerald-500', text: 'text-emerald-400' };
-                    }
-                },
+        </div>
 
-                // LER DADOS DO SUPABASE
-                async carregarDadosDaNuvem() {
-                    try {
-                        this.syncStatus = '⏳ Carregando...';
-                        const { data, error } = await supabaseClient
-                            .from('dados_usuario')
-                            .select('*')
-                            .eq('id', 'dados_auditor');
+        <!-- ==================== TAB 5: CRONOGRAMA ==================== -->
+        <div x-show="activeTab === 'cronograma'" x-cloak class="space-y-6">
+          
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-100">Ciclo de Estudos Semanal</h2>
+            <p class="text-slate-400 text-sm">Planejamento e distribuição de carga horária por disciplina.</p>
+          </div>
 
-                        if (error) throw error;
+          <!-- Schedule Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+            <template x-for="(dia, idx) in diasSemana" :key="idx">
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-3 flex flex-col justify-between min-h-[160px]">
+                <div class="space-y-2">
+                  <div class="text-xs font-bold text-slate-300 pb-1 border-b border-slate-800 text-center" x-text="dia"></div>
+                  
+                  <div class="space-y-1.5">
+                    <template x-for="(item, iIdx) in cronograma[dia]" :key="iIdx">
+                      <div class="bg-slate-850 border border-slate-800 rounded p-1.5 text-[11px] flex justify-between items-center group">
+                        <span class="text-slate-200 font-medium truncate" x-text="item"></span>
+                        <button @click="removeFromCronograma(dia, iIdx)" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition">
+                          <i data-lucide="x" class="w-3 h-3"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
 
-                        if (data && data.length > 0 && data[0].conteudo) {
-                            const payload = data[0].conteudo;
-                            if (payload.lembreteFixado !== undefined) this.lembreteFixado = payload.lembreteFixado;
-                            if (payload.materias) this.materias = payload.materias;
-                            if (payload.topicosPorMateria) this.topicosPorMateria = payload.topicosPorMateria;
-                            if (payload.questoesRegistro) this.questoesRegistro = payload.questoesRegistro;
-                            if (payload.cronogramaSemanas) this.cronogramaSemanas = payload.cronogramaSemanas;
-                        } else {
-                            await this.salvarTudoNaNuvem();
-                        }
-                        this.syncStatus = '☁️ Nuvem Sincronizada';
-                    } catch (err) {
-                        console.error('Erro ao buscar dados no Supabase:', err);
-                        this.syncStatus = '❌ Erro ao Sincronizar';
-                    }
-                },
+                <button @click="addCronogramaItem(dia)" class="w-full text-center py-1 bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-indigo-400 rounded text-[11px] border border-slate-800 transition">
+                  + Adicionar
+                </button>
+              </div>
+            </template>
+          </div>
 
-                // GRAVAR DADOS NO SUPABASE
-                async salvarTudoNaNuvem() {
-                    try {
-                        this.syncStatus = '⏳ Guardando...';
-                        const payload = {
-                            lembreteFixado: this.lembreteFixado,
-                            materias: this.materias,
-                            topicosPorMateria: this.topicosPorMateria,
-                            questoesRegistro: this.questoesRegistro,
-                            cronogramaSemanas: this.cronogramaSemanas
-                        };
+        </div>
 
-                        const { error } = await supabaseClient
-                            .from('dados_usuario')
-                            .upsert({
-                                id: 'dados_auditor',
-                                conteudo: payload,
-                                atualizado_em: new Date()
-                            });
+      </main>
+    </div>
+  </div>
 
-                        if (error) throw error;
-                        this.syncStatus = '☁️ Nuvem Sincronizada';
-                    } catch (err) {
-                        console.error('Erro ao gravar no Supabase:', err);
-                        this.syncStatus = '❌ Erro ao Sincronizar';
-                    }
-                },
+  <!-- ==================== MODALS ==================== -->
 
-                // Formatação para DD/MM/AAAA (DIA/MÊS/ANO)
-                formatarDataDD_MM_AA(strData) {
-                    if(!strData) return '23/10/2026';
-                    let limpo = strData.toString().replace(/\D/g, '');
-                    if(limpo.length === 8) {
-                        if(limpo.startsWith('20')) {
-                            return limpo.substring(6,8) + '/' + limpo.substring(4,6) + '/' + limpo.substring(0,4);
-                        } else {
-                            return limpo.substring(0,2) + '/' + limpo.substring(2,4) + '/' + limpo.substring(4,8);
-                        }
-                    }
-                    if(limpo.length === 6) {
-                        return limpo.substring(0,2) + '/' + limpo.substring(2,4) + '/20' + limpo.substring(4,6);
-                    }
-                    if(strData.includes('-')) {
-                        let partes = strData.split('-');
-                        if(partes.length === 3) {
-                            return partes[2] + '/' + partes[1] + '/' + partes[0];
-                        }
-                    }
-                    return strData;
-                },
+  <!-- Modal: Nova Matéria -->
+  <div x-show="showMateriaModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Nova Matéria</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Nome da Disciplina</label>
+          <input type="text" x-model="modalMateriaNome" placeholder="Ex: Auditoria Contábil" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Cor Etiqueta</label>
+          <input type="color" x-model="modalMateriaCor" class="w-full h-9 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showMateriaModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveNewMateria()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
+      </div>
+    </div>
+  </div>
 
-                adicionarTopicosEmMassaPontoFinal() {
-                    if(!this.textoTopicosMassa.trim()) return;
-                    let lista = this.textoTopicosMassa.split('.').map(item => item.trim()).filter(item => item !== '');
-                    if(!this.topicosPorMateria[this.selectedMat]) {
-                        this.topicosPorMateria[this.selectedMat] = [];
-                    }
-                    lista.forEach(item => {
-                        this.topicosPorMateria[this.selectedMat].push({ conteudo: item, status: 'ESTUDAR', tipo: 'topico', prioridade: 'alta' });
-                    });
-                    this.textoTopicosMassa = '';
-                    this.salvarTudoNaNuvem();
-                },
+  <!-- Modal: Novo Treino Questões -->
+  <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Registrar Questões</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Matéria</label>
+          <select x-model="modalQuestaoMateria" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            <template x-for="m in materias" :key="m.id">
+              <option :value="m.nome" x-text="m.nome"></option>
+            </template>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Assunto / Tópico</label>
+          <input type="text" x-model="modalQuestaoAssunto" placeholder="Ex: Lançamento Tributário" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Total Questões</label>
+            <input type="number" x-model.number="modalQuestaoTotal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Acertos</label>
+            <input type="number" x-model.number="modalQuestaoAcertos" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalos</label>
+          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Motivo dos erros..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showQuestaoModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveNewQuestao()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Registrar</button>
+      </div>
+    </div>
+  </div>
 
-                iniciarEdicaoAssuntoQuestao(id, assuntoAtual) {
-                    this.questaoEditandoId = id;
-                    this.questaoTextoAssuntoEdicao = assuntoAtual || '';
-                },
+  <!-- Modal: Novo Gargalo -->
+  <div x-show="showGargaloModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Adicionar Gargalo</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Matéria</label>
+          <select x-model="modalGargaloMateria" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            <template x-for="m in materias" :key="m.id">
+              <option :value="m.nome" x-text="m.nome"></option>
+            </template>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Título do Gargalo</label>
+          <input type="text" x-model="modalGargaloTitulo" placeholder="Ex: Decoreba de Prazos de Recursos" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Descrição</label>
+          <textarea x-model="modalGargaloDesc" rows="3" placeholder="Detalhes do que precisa revisar..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showGargaloModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveNewGargalo()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Criar</button>
+      </div>
+    </div>
+  </div>
 
-                salvarEdicaoAssuntoQuestao(id) {
-                    let q = this.questoesRegistro.find(item => item.id === id);
-                    if(q) {
-                        q.assunto = this.questaoTextoAssuntoEdicao.trim();
-                    }
-                    this.questaoEditandoId = null;
-                    this.questaoTextoAssuntoEdicao = '';
-                    this.salvarTudoNaNuvem();
-                },
+  <!-- Modal: Novo Lembrete Fixado -->
+  <div x-show="showFixNoteModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Novo Lembrete Fixado</h3>
+      <div>
+        <textarea x-model="modalNoteText" rows="3" placeholder="Digite seu lembrete ou meta da semana..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showFixNoteModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="savePinnedNote()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Fixar Lembrete</button>
+      </div>
+    </div>
+  </div>
 
-                toggleDataMateriaExpandida(key) {
-                    this.dataMateriaExpandidaMap[key] = !this.dataMateriaExpandidaMap[key];
-                },
+  <!-- Application Logic & Supabase Sync -->
+  <script>
+    const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
+    const ROW_ID = 'dados_auditor';
 
-                isDataMateriaExpandida(key) {
-                    return !!this.dataMateriaExpandidaMap[key];
-                },
+    let supabaseClient = null;
+    try {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(e) {
+      console.warn("Supabase init error:", e);
+    }
 
-                toggleGargaloMatExpandida(mat) {
-                    this.gargaloMatExpandida = (this.gargaloMatExpandida === mat ? null : mat);
-                },
+    function appData() {
+      return {
+        activeTab: 'materias',
+        syncing: false,
+        lastSync: false,
 
-                iniciarEdicaoTopico(index, textoAtual) {
-                    this.topicoEditandoIndex = index;
-                    this.topicoTextoEmEdicao = textoAtual;
-                },
+        // Navigation Config
+        tabs: [
+          { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+          { id: 'materias', label: 'Matérias', icon: 'book-open' },
+          { id: 'questoes', label: 'Questões', icon: 'target' },
+          { id: 'gargalos', label: 'Gargalos', icon: 'alert-triangle' },
+          { id: 'cronograma', label: 'Cronograma', icon: 'calendar' }
+        ],
 
-                salvarEdicaoTopico(mat, index) {
-                    if(this.topicoTextoEmEdicao.trim() !== '') {
-                        this.topicosPorMateria[mat][index].conteudo = this.topicoTextoEmEdicao.trim();
-                    }
-                    this.topicoEditandoIndex = null;
-                    this.topicoTextoEmEdicao = '';
-                    this.salvarTudoNaNuvem();
-                },
+        // App Main Data State
+        materias: [
+          {
+            id: 'mat_1',
+            nome: 'Direito Tributário',
+            cor: '#3b82f6',
+            topicos: [
+              { id: 't1', nome: '1. Sistema Tributário Nacional', eSubtopico: false, concluido: true, prioridade: 'alta', expandido: false },
+              { id: 't2', nome: '1.1 Princípios Constitucionais Tributários', eSubtopico: true, concluido: true, prioridade: 'alta', expandido: false },
+              { id: 't3', nome: '1.2 Imunidades Tributárias', eSubtopico: true, concluido: false, prioridade: 'alta', expandido: false },
+              { id: 't4', nome: '2. Obrigação Tributária', eSubtopico: false, concluido: false, prioridade: 'media', expandido: false },
+              { id: 't5', nome: '2.1 Fato Gerador e Sujeito Passivo', eSubtopico: true, concluido: false, prioridade: 'media', expandido: false }
+            ]
+          },
+          {
+            id: 'mat_2',
+            nome: 'Auditoria Fiscal',
+            cor: '#10b981',
+            topicos: [
+              { id: 't6', nome: '1. Normas de Auditoria', eSubtopico: false, concluido: false, prioridade: 'alta', expandido: false },
+              { id: 't7', nome: '1.1 Planejamento e Risco', eSubtopico: true, concluido: false, prioridade: 'alta', expandido: false }
+            ]
+          }
+        ],
+        selectedMateriaId: 'mat_1',
+        newTopicText: '',
 
-                toggleTipoTopico(mat, index) {
-                    if(!this.topicosPorMateria[mat]) return;
-                    let t = this.topicosPorMateria[mat][index];
-                    t.tipo = (t.tipo === 'subtopico' ? 'topico' : 'subtopico');
-                    this.salvarTudoNaNuvem();
-                },
+        pinnedNotes: [
+          'Meta semanal: Fechar os subtópicos de Imunidades Tributárias e resolver 50 questões da Cebraspe.',
+          'Revisar fórmula de Amostragem em Auditoria na sexta-feira.'
+        ],
 
-                togglePrioridadeTopico(mat, index) {
-                    if(!this.topicosPorMateria[mat]) return;
-                    let t = this.topicosPorMateria[mat][index];
-                    if(!t.prioridade || t.prioridade === 'baixa') {
-                        t.prioridade = 'alta';
-                    } else if(t.prioridade === 'alta') {
-                        t.prioridade = 'media';
-                    } else {
-                        t.prioridade = 'baixa';
-                    }
-                    this.salvarTudoNaNuvem();
-                },
+        questoes: [
+          { id: 'q1', materia: 'Direito Tributário', assunto: 'Imunidades', total: 20, acertos: 16, anotacao: 'Atenção com imunidade recíproca em empresas públicas prestadoras de serviço público.', data: new Date().toISOString() }
+        ],
+        questoesFilterMateria: 'todas',
 
-                adicionarMateria() {
-                    let nome = this.nuevaMateria.trim().toUpperCase();
-                    if(nome && !this.materias.some(m => m.nome === nome)) {
-                        this.materias.push({ nome: nome });
-                        this.topicosPorMateria[nome] = [];
-                        this.selectedMat = nome;
-                        this.nuevaMateria = '';
-                        this.salvarTudoNaNuvem();
-                    }
-                },
+        gargalos: [
+          { id: 'g1', materia: 'Auditoria Fiscal', titulo: 'Amostragem Estatística (MUS vs Clássica)', descricao: 'Dificuldade nos cálculos do tamanho da amostra.', resolvido: false }
+        ],
 
-                editarNomeMateria(nomeAntigo) {
-                    let novoNome = prompt('Editar nome da matéria:', nomeAntigo);
-                    if(novoNome && novoNome.trim() !== '' && novoNome !== nomeAntigo) {
-                        novoNome = novoNome.trim().toUpperCase();
-                        let idx = this.materias.findIndex(m => m.nome === nomeAntigo);
-                        if(idx !== -1) {
-                            this.materias[idx].nome = novoNome;
-                            this.topicosPorMateria[novoNome] = this.topicosPorMateria[nomeAntigo] || [];
-                            delete this.topicosPorMateria[nomeAntigo];
-                            this.selectedMat = novoNome;
-                            this.salvarTudoNaNuvem();
-                        }
-                    }
-                },
+        diasSemana: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
+        cronograma: {
+          'Segunda': ['Direito Tributário', 'Contabilidade Geral'],
+          'Terça': ['Auditoria Fiscal', 'Legislação Tributária'],
+          'Quarta': ['Direito Administrativo', 'TI / Banco de Dados'],
+          'Quinta': ['Direito Tributário', 'Raciocínio Lógico'],
+          'Sexta': ['Contabilidade Avançada', 'Auditoria'],
+          'Sábado': ['Simulado de Questões', 'Revisão de Gargalos'],
+          'Domingo': ['Descanso / Leitura de Legislação']
+        },
 
-                adicionarTopico() {
-                    let texto = this.novoTopicoTexto.trim();
-                    if(texto) {
-                        if(!this.topicosPorMateria[this.selectedMat]) {
-                            this.topicosPorMateria[this.selectedMat] = [];
-                        }
-                        this.topicosPorMateria[this.selectedMat].push({ 
-                            conteudo: texto, 
-                            status: 'ESTUDAR', 
-                            tipo: this.novoTopicoTipo || 'topico',
-                            prioridade: this.novoTopicoPrioridade || 'alta'
-                        });
-                        this.novoTopicoTexto = '';
-                        this.novoTopicoTipo = 'topico';
-                        this.novoTopicoPrioridade = 'alta';
-                        this.salvarTudoNaNuvem();
-                    }
-                },
+        // Modals Logic & Models
+        showMateriaModal: false,
+        modalMateriaNome: '',
+        modalMateriaCor: '#6366f1',
 
-                removerTopico(mat, index) {
-                    if(this.topicosPorMateria[mat]) {
-                        this.topicosPorMateria[mat].splice(index, 1);
-                        this.salvarTudoNaNuvem();
-                    }
-                },
+        showQuestaoModal: false,
+        modalQuestaoMateria: '',
+        modalQuestaoAssunto: '',
+        modalQuestaoTotal: 10,
+        modalQuestaoAcertos: 8,
+        modalQuestaoAnotacao: '',
 
-                toggleStatus(mat, index) {
-                    if(!this.topicosPorMateria[mat]) return;
-                    let t = this.topicosPorMateria[mat][index];
-                    if(t.status === 'ESTUDAR') t.status = 'ESTUDANDO';
-                    else if(t.status === 'ESTUDANDO') t.status = 'CONCLUÍDO';
-                    else t.status = 'ESTUDAR';
-                    this.salvarTudoNaNuvem();
-                },
+        showGargaloModal: false,
+        modalGargaloMateria: '',
+        modalGargaloTitulo: '',
+        modalGargaloDesc: '',
 
-                adicionarQuestao() {
-                    if(!this.novaQuestao.materia && !this.novaQuestao.assunto) {
-                        alert('Preencha ao menos a Matéria ou o Assunto.');
-                        return;
-                    }
-                    this.questoesRegistro.unshift({
-                        id: Date.now(),
-                        semana: this.novaQuestao.semana,
-                        data: this.formatarDataDD_MM_AA(this.novaQuestao.data),
-                        materia: this.novaQuestao.materia || 'Geral',
-                        assunto: this.novaQuestao.assunto || 'Geral',
-                        qtd: Number(this.novaQuestao.qtd) || 0,
-                        acertos: Number(this.novaQuestao.acertos) || 0,
-                        gargalo: this.novaQuestao.gargalo,
-                        timestamp: Date.now(),
-                        resolvido: false
-                    });
-                    this.novaQuestao.assunto = '';
-                    this.novaQuestao.gargalo = '';
-                    this.salvarTudoNaNuvem();
-                },
+        showFixNoteModal: false,
+        modalNoteText: '',
 
-                removerQuestaoPorId(id) {
-                    let idx = this.questoesRegistro.findIndex(q => q.id === id);
-                    if(idx !== -1) {
-                        this.questoesRegistro.splice(idx, 1);
-                        this.salvarTudoNaNuvem();
-                    }
-                },
+        // Initialization
+        initApp() {
+          this.loadFromSupabase();
+          this.$watch('materias', () => this.saveToSupabase(), { deep: true });
+          this.$watch('questoes', () => this.saveToSupabase(), { deep: true });
+          this.$watch('gargalos', () => this.saveToSupabase(), { deep: true });
+          this.$watch('pinnedNotes', () => this.saveToSupabase(), { deep: true });
+          this.$watch('cronograma', () => this.saveToSupabase(), { deep: true });
 
-                toggleGargaloResolvido(id) {
-                    let item = this.questoesRegistro.find(q => q.id === id);
-                    if(item) {
-                        item.resolvido = !item.resolvido;
-                        this.salvarTudoNaNuvem();
-                    }
-                },
+          this.$nextTick(() => {
+            if (window.lucide) window.lucide.createIcons();
+          });
+        },
 
-                salvarCiclo() {
-                    let sem = this.novoCiclo.semana.trim().toUpperCase();
-                    let mats = this.novoCiclo.materiasTexto.split(',').map(m => m.trim()).filter(m => m);
-                    if(!sem || mats.length === 0) return;
+        // ==================== SUPABASE SYNC ====================
+        async loadFromSupabase() {
+          if (!supabaseClient) return;
+          this.syncing = true;
+          try {
+            const { data, error } = await supabaseClient
+              .from('dados_auditor')
+              .select('conteudo')
+              .eq('id', ROW_ID)
+              .single();
 
-                    if(this.cicloEmEdicaoIndex !== null) {
-                        this.cronogramaSemanas[this.cicloEmEdicaoIndex] = { semana: sem, materias: mats };
-                        this.cicloEmEdicaoIndex = null;
-                    } else {
-                        this.cronogramaSemanas.push({ semana: sem, materias: mats });
-                    }
-                    this.novoCiclo.semana = '';
-                    this.novoCiclo.materiasTexto = '';
-                    this.salvarTudoNaNuvem();
-                },
+            if (data && data.conteudo) {
+              const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
+              if (loaded.materias) this.materias = loaded.materias;
+              if (loaded.questoes) this.questoes = loaded.questoes;
+              if (loaded.gargalos) this.gargalos = loaded.gargalos;
+              if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
+              if (loaded.cronograma) this.cronograma = loaded.cronograma;
+              if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
+              this.lastSync = true;
+            }
+          } catch(e) {
+            console.log("Aviso ao carregar do Supabase:", e);
+          } finally {
+            this.syncing = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
 
-                carregarCicloParaEdicao(index) {
-                    let c = this.cronogramaSemanas[index];
-                    this.novoCiclo.semana = c.semana;
-                    this.novoCiclo.materiasTexto = c.materias.join(', ');
-                    this.cicloEmEdicaoIndex = index;
-                },
+        async saveToSupabase() {
+          if (!supabaseClient) return;
+          this.syncing = true;
+          try {
+            const payload = {
+              materias: this.materias,
+              questoes: this.questoes,
+              gargalos: this.gargalos,
+              pinnedNotes: this.pinnedNotes,
+              cronograma: this.cronograma
+            };
 
-                cancelarEdicaoCiclo() {
-                    this.cicloEmEdicaoIndex = null;
-                    this.novoCiclo.semana = '';
-                    this.novoCiclo.materiasTexto = '';
-                },
+            await supabaseClient
+              .from('dados_auditor')
+              .upsert({ id: ROW_ID, conteudo: payload });
 
-                removerCiclo(index) {
-                    this.cronogramaSemanas.splice(index, 1);
-                    this.salvarTudoNaNuvem();
-                },
+            this.lastSync = true;
+          } catch(e) {
+            console.log("Aviso ao salvar no Supabase:", e);
+          } finally {
+            this.syncing = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
 
-                calcularProgressoMatéria(matName) {
-                    let topicos = this.topicosPorMateria[matName] || [];
-                    if(topicos.length === 0) return 0;
-                    let concluidos = topicos.filter(t => t.status === 'CONCLUÍDO').length;
-                    return Math.round((concluidos / topicos.length) * 100);
-                },
+        // ==================== TOPIC GROUPING & ACCORDION (MATÉRIAS) ====================
+        getSelectedMateria() {
+          return this.materias.find(m => m.id === this.selectedMateriaId) || this.materias[0];
+        },
 
-                get questoesAgrupadasPorDataEMateria() {
-                    let dias = Number(this.filtroDiasQuestoes);
-                    let limiteTimestamp = dias > 0 ? Date.now() - (dias * 24 * 60 * 60 * 1000) : 0;
+        // Groups topics into Parents and their respective Subtopics (Hierarchy)
+        getGroupedTopics(materia) {
+          if (!materia || !materia.topicos) return [];
+          const groups = [];
+          let currentGroup = null;
 
-                    let listaFiltrada = this.questoesRegistro.filter(q => {
-                        if(dias === 0) return true;
-                        let ts = q.timestamp || Date.now();
-                        return ts >= limiteTimestamp;
-                    });
+          materia.topicos.forEach(t => {
+            if (!t.eSubtopico) {
+              // Main Parent Topic
+              currentGroup = { parent: t, children: [] };
+              groups.push(currentGroup);
+            } else {
+              // Subtopic belongs to immediate preceding parent topic
+              if (currentGroup) {
+                currentGroup.children.push(t);
+              } else {
+                // Orphan subtopic (no parent before it)
+                groups.push({ parent: null, children: [t] });
+              }
+            }
+          });
 
-                    let porData = {};
-                    listaFiltrada.forEach(q => {
-                        let dKey = this.formatarDataDD_MM_AA(q.data) || '23/10/2026';
-                        let mKey = q.materia || 'Geral';
+          return groups;
+        },
 
-                        if(!porData[dKey]) porData[dKey] = {};
-                        if(!porData[dKey][mKey]) porData[dKey][mKey] = [];
-                        porData[dKey][mKey].push(q);
-                    });
-                    return porData;
-                },
+        expandAllTopics(status) {
+          const mat = this.getSelectedMateria();
+          if (mat) {
+            mat.topicos.forEach(t => {
+              if (!t.eSubtopico) t.expandido = status;
+            });
+            this.saveToSupabase();
+          }
+        },
 
-                somarQtdMat(lista) { return lista.reduce((a, b) => a + (Number(b.qtd)||0), 0); },
-                somarAcertosMat(lista) { return lista.reduce((a, b) => a + (Number(b.acertos)||0), 0); },
-                calcularPorcentagemMat(lista) {
-                    let q = this.somarQtdMat(lista);
-                    let a = this.somarAcertosMat(lista);
-                    return q > 0 ? ((a / q) * 100).toFixed(1) : 0;
-                },
+        addTopicToSelectedMateria() {
+          if (!this.newTopicText.trim()) return;
+          const mat = this.getSelectedMateria();
+          if (!mat) return;
 
-                get gargalosAgrupadosPorMateria() {
-                    let agrupado = {};
-                    this.questoesRegistro.forEach(q => {
-                        if(q.gargalo && q.gargalo.trim() !== '') {
-                            let matKey = q.materia || 'Geral';
-                            if(!agrupado[matKey]) agrupado[matKey] = [];
-                            agrupado[matKey].push(q);
-                        }
-                    });
-                    return agrupado;
-                },
+          // Mass insert split by period '.'
+          const rawItems = this.newTopicText.split('.').map(s => s.trim()).filter(Boolean);
 
-                get stats() {
-                    let totalQ = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.qtd) || 0), 0);
-                    let totalA = this.questoesRegistro.reduce((acc, curr) => acc + (Number(curr.acertos) || 0), 0);
-                    let totalE = totalQ - totalA;
-                    let media = totalQ > 0 ? ((totalA / totalQ) * 100).toFixed(1) : 0;
-                    return {
-                        totalQuestao: totalQ,
-                        totalAcertos: totalA,
-                        totalErros: totalE,
-                        mediaAproveitamento: media
-                    };
-                }
-            }));
-        });
-        document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { lucide.createIcons(); }, 100); });
-    </script>
+          rawItems.forEach(item => {
+            // Check if item looks like subtopic (e.g., 1.1 or ends with indented feel)
+            const isSub = /^\d+\.\d+/.test(item);
+            mat.topicos.push({
+              id: 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              nome: item,
+              eSubtopico: isSub,
+              concluido: false,
+              prioridade: 'media',
+              expandido: false
+            });
+          });
+
+          this.newTopicText = '';
+          this.saveToSupabase();
+        },
+
+        toggleTopicStatus(topicId) {
+          const mat = this.getSelectedMateria();
+          if (!mat) return;
+          const t = mat.topicos.find(item => item.id === topicId);
+          if (t) {
+            t.concluido = !t.concluido;
+            this.saveToSupabase();
+          }
+        },
+
+        toggleTopicType(topicId) {
+          const mat = this.getSelectedMateria();
+          if (!mat) return;
+          const t = mat.topicos.find(item => item.id === topicId);
+          if (t) {
+            t.eSubtopico = !t.eSubtopico;
+            this.saveToSupabase();
+          }
+        },
+
+        deleteTopic(topicId) {
+          const mat = this.getSelectedMateria();
+          if (!mat) return;
+          mat.topicos = mat.topicos.filter(t => t.id !== topicId);
+          this.saveToSupabase();
+        },
+
+        cyclePriority(topic) {
+          const priorities = ['alta', 'media', 'baixa'];
+          const currentIdx = priorities.indexOf(topic.prioridade || 'media');
+          const nextIdx = (currentIdx + 1) % priorities.length;
+          topic.prioridade = priorities[nextIdx];
+          this.saveToSupabase();
+        },
+
+        getPriorityLabel(priority) {
+          switch(priority) {
+            case 'alta': return '🔥 Alta Frequência';
+            case 'media': return '⚖️ Média Frequência';
+            case 'baixa': return '🔹 Baixa Frequência';
+            default: return '⚖️ Média Frequência';
+          }
+        },
+
+        getPriorityBadgeClass(priority) {
+          switch(priority) {
+            case 'alta': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+            case 'media': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+            case 'baixa': return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+            default: return 'bg-slate-800 text-slate-400 border-slate-700';
+          }
+        },
+
+        // ==================== MATÉRIAS CRUD ====================
+        saveNewMateria() {
+          if (!this.modalMateriaNome.trim()) return;
+          const newMat = {
+            id: 'mat_' + Date.now(),
+            nome: this.modalMateriaNome.trim(),
+            cor: this.modalMateriaCor || '#6366f1',
+            topicos: []
+          };
+          this.materias.push(newMat);
+          this.selectedMateriaId = newMat.id;
+          this.modalMateriaNome = '';
+          this.showMateriaModal = false;
+          this.saveToSupabase();
+        },
+
+        deleteMateria(matId) {
+          this.materias = this.materias.filter(m => m.id !== matId);
+          if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
+          this.saveToSupabase();
+        },
+
+        // ==================== METRICS & CALCULATIONS ====================
+        calcMateriaCompleted(mat) {
+          if (!mat || !mat.topicos) return 0;
+          return mat.topicos.filter(t => t.concluido).length;
+        },
+
+        calcMateriaPercent(mat) {
+          if (!mat || !mat.topicos || mat.topicos.length === 0) return 0;
+          const done = this.calcMateriaCompleted(mat);
+          return Math.round((done / mat.topicos.length) * 100);
+        },
+
+        countCompletedTopics() {
+          return this.materias.reduce((acc, m) => acc + this.calcMateriaCompleted(m), 0);
+        },
+
+        countTotalTopics() {
+          return this.materias.reduce((acc, m) => acc + (m.topicos ? m.topicos.length : 0), 0);
+        },
+
+        calcOverallProgress() {
+          const total = this.countTotalTopics();
+          if (total === 0) return 0;
+          return Math.round((this.countCompletedTopics() / total) * 100);
+        },
+
+        calcTotalQuestions() {
+          return this.questoes.reduce((acc, q) => acc + (q.total || 0), 0);
+        },
+
+        calcTotalRights() {
+          return this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
+        },
+
+        calcOverallAccuracy() {
+          const total = this.calcTotalQuestions();
+          if (total === 0) return 0;
+          return Math.round((this.calcTotalRights() / total) * 100);
+        },
+
+        countActiveBottlenecks() {
+          return this.gargalos.filter(g => !g.resolvido).length;
+        },
+
+        // Dynamic Progress Color Logic
+        getProgressBarBg(percentage) {
+          if (percentage < 50) return 'bg-rose-500';
+          if (percentage < 75) return 'bg-amber-500';
+          return 'bg-emerald-500';
+        },
+
+        getProgressBarText(percentage) {
+          if (percentage < 50) return 'text-rose-400 bg-rose-500/10 border border-rose-500/20';
+          if (percentage < 75) return 'text-amber-400 bg-amber-500/10 border border-amber-500/20';
+          return 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+        },
+
+        // ==================== QUESTÕES & GARGALOS CRUD ====================
+        saveNewQuestao() {
+          if (!this.modalQuestaoMateria) return;
+          this.questoes.unshift({
+            id: 'q_' + Date.now(),
+            materia: this.modalQuestaoMateria,
+            assunto: this.modalQuestaoAssunto,
+            total: Number(this.modalQuestaoTotal) || 0,
+            acertos: Number(this.modalQuestaoAcertos) || 0,
+            anotacao: this.modalQuestaoAnotacao,
+            data: new Date().toISOString()
+          });
+          this.showQuestaoModal = false;
+          this.modalQuestaoAssunto = '';
+          this.modalQuestaoAnotacao = '';
+          this.saveToSupabase();
+        },
+
+        deleteQuestao(qId) {
+          this.questoes = this.questoes.filter(q => q.id !== qId);
+          this.saveToSupabase();
+        },
+
+        getFilteredQuestoes() {
+          if (this.questoesFilterMateria === 'todas') return this.questoes;
+          return this.questoes.filter(q => q.materia === this.questoesFilterMateria);
+        },
+
+        calcQuestaoPercent(q) {
+          if (!q.total) return 0;
+          return Math.round((q.acertos / q.total) * 100);
+        },
+
+        saveNewGargalo() {
+          if (!this.modalGargaloMateria || !this.modalGargaloTitulo) return;
+          this.gargalos.unshift({
+            id: 'g_' + Date.now(),
+            materia: this.modalGargaloMateria,
+            titulo: this.modalGargaloTitulo,
+            descricao: this.modalGargaloDesc,
+            resolvido: false
+          });
+          this.showGargaloModal = false;
+          this.modalGargaloTitulo = '';
+          this.modalGargaloDesc = '';
+          this.saveToSupabase();
+        },
+
+        toggleGargaloStatus(gId) {
+          const g = this.gargalos.find(item => item.id === gId);
+          if (g) {
+            g.resolvido = !g.resolvido;
+            this.saveToSupabase();
+          }
+        },
+
+        deleteGargalo(gId) {
+          this.gargalos = this.gargalos.filter(g => g.id !== gId);
+          this.saveToSupabase();
+        },
+
+        // ==================== PINNED NOTES & CRONOGRAMA ====================
+        savePinnedNote() {
+          if (!this.modalNoteText.trim()) return;
+          this.pinnedNotes.push(this.modalNoteText.trim());
+          this.modalNoteText = '';
+          this.showFixNoteModal = false;
+          this.saveToSupabase();
+        },
+
+        removePinnedNote(index) {
+          this.pinnedNotes.splice(index, 1);
+          this.saveToSupabase();
+        },
+
+        addCronogramaItem(dia) {
+          const text = prompt(`Adicionar matéria/atividade para ${dia}:`);
+          if (text && text.trim()) {
+            if (!this.cronograma[dia]) this.cronograma[dia] = [];
+            this.cronograma[dia].push(text.trim());
+            this.saveToSupabase();
+          }
+        },
+
+        removeFromCronograma(dia, index) {
+          this.cronograma[dia].splice(index, 1);
+          this.saveToSupabase();
+        },
+
+        formatDate(isoStr) {
+          if (!isoStr) return '';
+          const d = new Date(isoStr);
+          return d.toLocaleDateString('pt-BR');
+        }
+      }
+    }
+  </script>
 </body>
 </html>
