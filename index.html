@@ -846,7 +846,7 @@
           this.syncing = true;
           try {
             const { data } = await supabaseClient
-              .from('dados_auditor')
+              .from('dadosauditor')
               .select('conteudo')
               .eq('id', ROW_ID)
               .single();
@@ -871,7 +871,7 @@
           if (!supabaseClient || this.syncing) return;
           try {
             const { data } = await supabaseClient
-              .from('dados_auditor')
+              .from('dadosauditor')
               .select('conteudo')
               .eq('id', ROW_ID)
               .single();
@@ -899,7 +899,7 @@
           this.syncing = true;
           try {
             const { error } = await supabaseClient
-              .from('dados_auditor')
+              .from('dadosauditor')
               .upsert({ id: ROW_ID, conteudo: payload });
 
             if (error) throw error;
