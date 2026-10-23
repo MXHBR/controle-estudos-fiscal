@@ -23,7 +23,6 @@
     <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <!-- REQUISITO 7: Retornar ao ícone anterior de Capelo -->
                 <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/30">
                     <i data-lucide="graduation-cap" class="w-7 h-7"></i>
                 </div>
@@ -210,7 +209,7 @@
                     <button @click="adicionarTopico()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition h-[38px] shrink-0">Adicionar</button>
                 </div>
 
-                <!-- REQUISITO 5: Inclusão em massa com separador por Ponto Final '.' -->
+                <!-- Inclusão em massa com separador por Ponto Final '.' -->
                 <div x-show="modoCadastroTopico === 'massa'" class="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Copie e cole o texto com os assuntos (separados por ponto final `.`):</label>
@@ -274,14 +273,13 @@
 
         <!-- TAB: QUESTÕES & REGISTRO -->
         <section x-show="activeTab === 'questoes'" class="space-y-6">
-            <!-- REQUISITO 3: Formulário com campos flexíveis de Matéria e/ou Assunto -->
+            <!-- Formulário flexível de registro -->
             <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i> Registrar Desempenho em Questões
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <!-- REQUISITO 1: Formato de Data DD/MM/AA -->
                         <label class="block text-xs font-medium text-slate-400 mb-1">Data (DD/MM/AA)</label>
                         <input type="text" x-model="novaQuestao.data" placeholder="23/10/26" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
@@ -290,7 +288,6 @@
                         <input type="text" x-model="novaQuestao.semana" placeholder="Ex: SEMANA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <!-- REQUISITO 3: Matéria opcional ou selecionável -->
                         <label class="block text-xs font-medium text-slate-400 mb-1">Matéria (Opcional se houver assunto)</label>
                         <select x-model="novaQuestao.materia" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                             <option value="">-- Sem Matéria Específica --</option>
@@ -300,7 +297,6 @@
                         </select>
                     </div>
                     <div>
-                        <!-- REQUISITO 3: Assunto opcional ou digitável -->
                         <label class="block text-xs font-medium text-slate-400 mb-1">Assunto (Opcional se houver matéria)</label>
                         <input type="text" x-model="novaQuestao.assunto" placeholder="Ex: Princípios / Geral" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
@@ -322,7 +318,7 @@
                 </div>
             </div>
 
-            <!-- REQUISITO 2 e 4: Exibição Agrupada por Data -> Matéria -> Assuntos com Edição Inline -->
+            <!-- Exibição Hierárquica: Data -> Matéria -> Assuntos -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -340,21 +336,20 @@
                     </div>
                 </div>
 
-                <!-- Estrutura Nível 1: Blocos de Data -->
+                <!-- Lista Nível 1: Data -->
                 <div class="space-y-4">
                     <template x-for="(materiasNaData, dataKey) in questoesAgrupadasPorDataEMateria" :key="dataKey">
                         <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 space-y-3">
                             <div class="flex justify-between items-center border-b border-slate-700/80 pb-2.5">
                                 <h4 class="font-bold text-amber-400 text-base flex items-center gap-2">
-                                    <i data-lucide="clock" class="w-4 h-4"></i> <span x-text="dataKey"></span>
+                                    <i data-lucide="clock" class="w-4 h-4"></i> <span x-text="formatarDataDD/MM/AA(dataKey)"></span>
                                 </h4>
                             </div>
 
-                            <!-- Estrutura Nível 2: Matérias dentro da Data -->
+                            <!-- Lista Nível 2: Matéria -->
                             <div class="space-y-2">
                                 <template x-for="(questoesDoAssunto, matName) in materiasNaData" :key="matName">
                                     <div class="bg-slate-800/90 border border-slate-700/60 rounded-xl overflow-hidden">
-                                        <!-- Clique na matéria para exibir assuntos -->
                                         <div class="p-3.5 cursor-pointer flex justify-between items-center hover:bg-slate-700/40 transition" @click="toggleDataMateriaExpandida(dataKey + '_' + matName)">
                                             <div class="flex items-center gap-2 font-bold text-blue-400 text-sm">
                                                 <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="isDataMateriaExpandida(dataKey + '_' + matName) ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
@@ -368,7 +363,7 @@
                                             </div>
                                         </div>
 
-                                        <!-- Estrutura Nível 3: Tabela de Assuntos Estudados -->
+                                        <!-- Lista Nível 3: Assuntos Estudados -->
                                         <div x-show="isDataMateriaExpandida(dataKey + '_' + matName)" x-collapse class="border-t border-slate-700/60 p-4 bg-slate-900/90">
                                             <div class="overflow-x-auto">
                                                 <table class="w-full text-left text-xs">
@@ -387,7 +382,6 @@
                                                         <template x-for="q in questoesDoAssunto" :key="q.id">
                                                             <tr class="hover:bg-slate-800/40">
                                                                 <td class="py-2 text-slate-400" x-text="q.semana"></td>
-                                                                <!-- REQUISITO 4: Edição do Assunto na própria tabela -->
                                                                 <td class="py-2 text-slate-200">
                                                                     <div x-show="questaoEditandoId !== q.id" class="font-semibold text-slate-200" x-text="q.assunto || 'Geral'"></div>
                                                                     <div x-show="questaoEditandoId === q.id" class="flex gap-1.5">
@@ -427,7 +421,7 @@
             </div>
         </section>
 
-        <!-- TAB: GARGALOS POR DISCIPLINA (REQUISITO 6: Grid de 3 Colunas + Ocultos ao Clicar) -->
+        <!-- TAB: GARGALOS POR DISCIPLINA (Grid de 3 colunas, ocultos até clicar na matéria) -->
         <section x-show="activeTab === 'gargalos'" class="space-y-6">
             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm">
                 <h3 class="text-lg font-bold flex items-center gap-2">
@@ -436,11 +430,10 @@
                 <p class="text-xs text-slate-400 mt-1">Clique na disciplina para expandir os gargalos anotados.</p>
             </div>
 
-            <!-- Grid de até 3 colunas por fileira -->
+            <!-- Grid de 3 colunas -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <template x-for="(gargalosDaMat, matName) in gargalosAgrupadosPorMateria" :key="matName">
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm space-y-3 self-start">
-                        <!-- Cabeçalho Clicável da Matéria -->
                         <div class="flex justify-between items-center cursor-pointer border-b border-slate-700 pb-3" @click="toggleGargaloMatExpandida(matName)">
                             <h4 class="font-bold text-blue-400 text-sm flex items-center gap-2">
                                 <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="gargaloMatExpandida === matName ? 'rotate-90 text-blue-400' : 'text-slate-500'"></i>
@@ -449,7 +442,7 @@
                             <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-semibold" x-text="gargalosDaMat.length"></span>
                         </div>
 
-                        <!-- Ocultos por padrão: exibidos somente ao clicar -->
+                        <!-- Ocultos por padrão -->
                         <div x-show="gargaloMatExpandida === matName" x-collapse class="space-y-2.5 pt-1">
                             <template x-for="g in gargalosDaMat" :key="g.id">
                                 <div class="flex items-start gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
@@ -457,7 +450,7 @@
                                     <div class="flex-grow space-y-1">
                                         <div class="flex justify-between text-[11px]">
                                             <span class="font-semibold text-slate-300" x-text="g.assunto || 'Geral'"></span>
-                                            <span class="text-slate-500 font-mono" x-text="qDataFormatada(g.data)"></span>
+                                            <span class="text-slate-500 font-mono" x-text="formatarDataDD_MM_AA(g.data)"></span>
                                         </div>
                                         <p class="text-xs transition-all" :class="g.resolvido ? 'line-through text-slate-500' : 'text-rose-200 font-medium'" x-text="g.gargalo"></p>
                                     </div>
@@ -546,13 +539,11 @@
 
                 filtroDiasQuestoes: '0',
 
-                // Edição de Tópicos e Questões
                 topicoEditandoIndex: null,
                 topicoTextoEmEdicao: '',
                 questaoEditandoId: null,
                 questaoTextoAssuntoEdicao: '',
 
-                // Matérias
                 materias: JSON.parse(localStorage.getItem('fisc_materias')) || [
                     { nome: 'D. TRIBUTÁRIO' },
                     { nome: 'AUDITORIA' },
@@ -569,7 +560,6 @@
                 ],
                 nuevaMateria: '',
 
-                // Tópicos
                 selectedMat: 'D. TRIBUTÁRIO',
                 modoCadastroTopico: 'unico',
                 novoTopicoTexto: '',
@@ -581,13 +571,11 @@
                     ]
                 },
 
-                // REQUISITO 1: Data em formato padrão DD/MM/AA
                 novaQuestao: { data: '23/10/26', semana: 'SEMANA 1', materia: 'D. TRIBUTÁRIO', assunto: '', qtd: 10, acertos: 8, gargalo: '' },
                 questoesRegistro: JSON.parse(localStorage.getItem('fisc_questoes')) || [
                     { id: 1, semana: 'SEMANA 1', data: '23/10/26', materia: 'D. TRIBUTÁRIO', assunto: 'Princípios', qtd: 5, acertos: 3, gargalo: 'Anterioridade Nonagesimal', resolvido: false }
                 ],
 
-                // Cronograma
                 novoCiclo: { semana: '', materiasTexto: '' },
                 cicloEmEdicaoIndex: null,
                 cronogramaSemanas: JSON.parse(localStorage.getItem('fisc_cronograma')) || [
@@ -604,12 +592,29 @@
                     this.$nextTick(() => { lucide.createIcons(); });
                 },
 
-                qDataFormatada(val) {
-                    if(!val) return '23/10/26';
-                    return val.includes('/') ? val : val;
+                // Formatação estricta para DD/MM/AA
+                formatarDataDD_MM_AA(strData) {
+                    if(!strData) return '23/10/26';
+                    let limpo = strData.toString().replace(/\D/g, '');
+                    if(limpo.length === 8) { // YYYYMMDD ou DDMMYYYY
+                        if(limpo.startsWith('20')) { // YYYYMMDD
+                            return limpo.substring(6,8) + '/' + limpo.substring(4,6) + '/' + limpo.substring(2,4);
+                        } else { // DDMMYYYY
+                            return limpo.substring(0,2) + '/' + limpo.substring(2,4) + '/' + limpo.substring(6,8);
+                        }
+                    }
+                    if(limpo.length === 6) { // DDMMAA
+                        return limpo.substring(0,2) + '/' + limpo.substring(2,4) + '/' + limpo.substring(4,6);
+                    }
+                    if(strData.includes('-')) { // YYYY-MM-DD
+                        let partes = strData.split('-');
+                        if(partes.length === 3) {
+                            return partes[2] + '/' + partes[1] + '/' + partes[0].slice(-2);
+                        }
+                    }
+                    return strData;
                 },
 
-                // REQUISITO 5: Cadastro em massa separado por Ponto Final '.'
                 adicionarTopicosEmMassaPontoFinal() {
                     if(!this.textoTopicosMassa.trim()) return;
                     let lista = this.textoTopicosMassa.split('.').map(item => item.trim()).filter(item => item !== '');
@@ -622,7 +627,6 @@
                     this.textoTopicosMassa = '';
                 },
 
-                // REQUISITO 4: Métodos para editar o assunto de questões diretamente
                 iniciarEdicaoAssuntoQuestao(id, assuntoAtual) {
                     this.questaoEditandoId = id;
                     this.questaoTextoAssuntoEdicao = assuntoAtual || '';
@@ -637,7 +641,6 @@
                     this.questaoTextoAssuntoEdicao = '';
                 },
 
-                // Controle de Expansão na Aba Questões (Data -> Matéria)
                 toggleDataMateriaExpandida(key) {
                     this.dataMateriaExpandidaMap[key] = !this.dataMateriaExpandidaMap[key];
                 },
@@ -712,7 +715,6 @@
                     else t.status = 'ESTUDAR';
                 },
 
-                // REQUISITO 3: Permite registrar por Matéria, por Assunto, ou por ambos
                 adicionarQuestao() {
                     if(!this.novaQuestao.materia && !this.novaQuestao.assunto) {
                         alert('Preencha ao menos a Matéria ou o Assunto.');
@@ -721,7 +723,7 @@
                     this.questoesRegistro.unshift({
                         id: Date.now(),
                         semana: this.novaQuestao.semana,
-                        data: this.novaQuestao.data || '23/10/26',
+                        data: this.formatarDataDD_MM_AA(this.novaQuestao.data),
                         materia: this.novaQuestao.materia || 'Geral',
                         assunto: this.novaQuestao.assunto || 'Geral',
                         qtd: Number(this.novaQuestao.qtd) || 0,
@@ -783,7 +785,6 @@
                     return Math.round((concluidos / topicos.length) * 100);
                 },
 
-                // REQUISITO 2: Agrupamento em 3 Níveis: Data -> Matéria -> Questões/Assuntos
                 get questoesAgrupadasPorDataEMateria() {
                     let dias = Number(this.filtroDiasQuestoes);
                     let limiteTimestamp = dias > 0 ? Date.now() - (dias * 24 * 60 * 60 * 1000) : 0;
@@ -796,7 +797,7 @@
 
                     let porData = {};
                     listaFiltrada.forEach(q => {
-                        let dKey = q.data || 'Sem Data';
+                        let dKey = this.formatarDataDD_MM_AA(q.data) || '23/10/26';
                         let mKey = q.materia || 'Geral';
 
                         if(!porData[dKey]) porData[dKey] = {};
