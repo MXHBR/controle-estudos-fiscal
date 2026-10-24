@@ -27,9 +27,6 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Chart.js for Dashboards -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -74,7 +71,7 @@
 
         <nav class="p-3 space-y-1">
           <template x-for="tab in tabs" :key="tab.id">
-            <button @click="activeTab = tab.id"
+            <button @click="setActiveTab(tab.id)"
               :class="activeTab === tab.id ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150">
               <i :data-lucide="tab.icon" class="w-4 h-4"></i>
@@ -86,7 +83,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.5</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.6</span>
       </div>
     </aside>
 
@@ -102,7 +99,7 @@
         </div>
         <div class="flex space-x-1">
           <template x-for="tab in tabs" :key="tab.id">
-            <button @click="activeTab = tab.id"
+            <button @click="setActiveTab(tab.id)"
               :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'"
               class="p-2 rounded-lg transition">
               <i :data-lucide="tab.icon" class="w-4 h-4"></i>
@@ -179,17 +176,6 @@
                 <span class="text-xs text-slate-400">matérias</span>
               </div>
               <div class="text-xs text-indigo-400/80 font-medium">Edital de Auditor</div>
-            </div>
-          </div>
-
-          <!-- GRÁFICO DE PIZZA: QUESTÕES POR MATÉRIA -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-400"></i>
-              <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Distribuição de Questões por Matéria</h3>
-            </div>
-            <div class="relative w-full h-72 flex justify-center items-center">
-              <canvas id="questionsPieChart"></canvas>
             </div>
           </div>
 
@@ -345,7 +331,7 @@
                 </div>
               </div>
 
-              <!-- LISTA DE TÓPICOS E SUBTÓPICOS COM BOTÕES DE AÇÃO CORRIGIDOS -->
+              <!-- LISTA DE TÓPICOS E SUBTÓPICOS -->
               <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
                 <div class="px-4 py-3 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
                   <span>Estrutura de Conteúdo</span>
@@ -972,6 +958,7 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
     const ROW_ID = 'dados_auditor';
     const LOCAL_KEY = 'auditor_fiscal_safe_v3';
+    const TAB_KEY = 'auditor_fiscal_active_tab';
 
     let supabaseClient = null;
     try {
@@ -979,8 +966,6 @@
     } catch(e) {
       console.warn("Supabase init error:", e);
     }
-
-    let questionsChartInstance = null;
 
     function formatTextCase(str, isSubtopic) {
       if (!str) return '';
@@ -994,7 +979,7 @@
 
     function appData() {
       return {
-        activeTab: 'dashboard',
+        activeTab: localStorage.getItem(TAB_KEY) || 'dashboard',
         syncing: false,
         lastSync: false,
         isLoaded: false,
@@ -1070,7 +1055,17 @@
         showFixNoteModal: false,
         modalNoteText: '',
 
+        setActiveTab(tabId) {
+          this.activeTab = tabId;
+          localStorage.setItem(TAB_KEY, tabId);
+        },
+
         async initApp() {
+          const savedTab = localStorage.getItem(TAB_KEY);
+          if (savedTab && this.tabs.some(t => t.id === savedTab)) {
+            this.activeTab = savedTab;
+          }
+
           const local = localStorage.getItem(LOCAL_KEY);
           if (local) {
             try {
@@ -1107,7 +1102,6 @@
             if (this.isLoaded) {
               this.syncExistingQuestionsToEstudos();
               this.saveAll();
-              this.renderQuestionsChart();
             }
           }, { deep: true });
           this.$watch('estudos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
@@ -1115,15 +1109,14 @@
           this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           
           this.$watch('activeTab', (tab) => {
+            localStorage.setItem(TAB_KEY, tab);
             this.$nextTick(() => { 
               if (window.lucide) window.lucide.createIcons();
-              if (tab === 'dashboard') this.renderQuestionsChart();
             });
           });
 
           this.$nextTick(() => {
             if (window.lucide) window.lucide.createIcons();
-            this.renderQuestionsChart();
           });
         },
 
@@ -1203,7 +1196,6 @@
             this.syncing = false;
             this.$nextTick(() => { 
               if (window.lucide) window.lucide.createIcons(); 
-              this.renderQuestionsChart();
             });
           }
         },
@@ -1228,7 +1220,6 @@
                 this.lastSync = true;
                 this.$nextTick(() => { 
                   if (window.lucide) window.lucide.createIcons(); 
-                  this.renderQuestionsChart();
                 });
               }
             }
@@ -1261,65 +1252,8 @@
             const [movedItem] = this.materias.splice(fromIndex, 1);
             this.materias.splice(toIndex, 0, movedItem);
             this.saveAll();
-            this.renderQuestionsChart();
           }
           this.draggedMateriaId = null;
-        },
-
-        renderQuestionsChart() {
-          const canvas = document.getElementById('questionsPieChart');
-          if (!canvas) return;
-          const ctx = canvas.getContext('2d');
-
-          const labels = this.materias.map(m => m.nome);
-          const dataVals = this.materias.map(m => this.calcMatQuestions(m));
-          const bgColors = this.materias.map(m => m.cor || '#6366f1');
-
-          if (questionsChartInstance) {
-            questionsChartInstance.destroy();
-          }
-
-          questionsChartInstance = new Chart(ctx, {
-            type: 'pie',
-            data: {
-              labels: labels,
-              datasets: [{
-                data: dataVals,
-                backgroundColor: bgColors,
-                borderWidth: 1,
-                borderColor: '#0f172a'
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom',
-                  labels: {
-                    color: '#94a3b8',
-                    font: { size: 11 },
-                    boxWidth: 12
-                  }
-                },
-                tooltip: {
-                  callbacks: {
-                    label: (context) => {
-                      const matName = context.label;
-                      const mat = this.materias.find(m => m.nome === matName);
-                      const totalQ = context.raw || 0;
-                      const acc = mat ? this.calcMatAccuracy(mat) : 0;
-                      return [
-                        ` Matéria: ${matName}`,
-                        ` Total de Questões: ${totalQ}`,
-                        ` Percentual de Acerto: ${acc}%`
-                      ];
-                    }
-                  }
-                }
-              }
-            }
-          });
         },
 
         calcMatQuestions(mat) {
@@ -1554,7 +1488,6 @@
           this.showEstudoModal = false;
           this.editingEstudoId = null;
           this.saveAll();
-          this.renderQuestionsChart();
         },
 
         deleteEstudoRecord(id) {
@@ -1564,7 +1497,6 @@
           }
           this.estudos = this.estudos.filter(e => e.id !== id);
           this.saveAll();
-          this.renderQuestionsChart();
         },
 
         calcItemPercent(item) {
@@ -1590,198 +1522,173 @@
           return this.materias.filter(m => m.nome.toLowerCase().includes(query));
         },
 
-        getGroupedQuestionsByDate() {
-          let list = this.getQuestionsByPeriod();
-          if (this.questoesFilterMateria !== 'todas') {
-            list = list.filter(q => q.materia === this.questoesFilterMateria);
-          }
-          list.sort((a, b) => new Date(b.data) - new Date(a.data));
-
-          const groupsMap = {};
-          list.forEach(q => {
-            const dStr = q.data || new Date().toISOString().split('T')[0];
-            if (!groupsMap[dStr]) {
-              groupsMap[dStr] = {
-                date: dStr,
-                dayOfWeek: this.getDayOfWeekShort(dStr),
-                items: []
-              };
-            }
-            groupsMap[dStr].items.push(q);
-          });
-          return Object.values(groupsMap);
+        getSelectedMateria() {
+          return this.materias.find(m => m.id === this.selectedMateriaId) || this.materias[0] || null;
         },
 
-        getDayOfWeekShort(dateStr) {
-          const parts = dateStr.split('-');
-          let d;
-          if (parts.length === 3) {
-            d = new Date(parts[0], parts[1] - 1, parts[2]);
+        openAddMateriaModal() {
+          this.editingMateriaId = null;
+          this.modalMateriaNome = '';
+          this.modalMateriaCor = '#6366f1';
+          this.showMateriaModal = true;
+        },
+
+        openEditMateriaModal(mat) {
+          this.editingMateriaId = mat.id;
+          this.modalMateriaNome = mat.nome;
+          this.modalMateriaCor = mat.cor || '#6366f1';
+          this.showMateriaModal = true;
+        },
+
+        saveMateriaModal() {
+          if (!this.modalMateriaNome.trim()) return;
+          const name = this.modalMateriaNome.trim();
+
+          if (this.editingMateriaId) {
+            const mat = this.materias.find(m => m.id === this.editingMateriaId);
+            if (mat) {
+              const oldName = mat.nome;
+              mat.nome = name;
+              mat.cor = this.modalMateriaCor;
+
+              this.questoes.forEach(q => { if (q.materia === oldName) q.materia = name; });
+              this.estudos.forEach(e => { if (e.materia === oldName) e.materia = name; });
+              this.gargalos.forEach(g => { if (g.materia === oldName) g.materia = name; });
+            }
           } else {
-            d = new Date(dateStr);
+            const newId = 'mat_' + Date.now();
+            this.materias.push({
+              id: newId,
+              nome: name,
+              cor: this.modalMateriaCor,
+              topicos: []
+            });
+            this.selectedMateriaId = newId;
           }
-          const days = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-          return days[d.getDay()] || '';
-        },
 
-        getGargalosGroupedByMateria(isResolved) {
-          const filtered = this.gargalos.filter(g => !!g.resolvido === isResolved);
-          const map = {};
-
-          this.materias.forEach(m => {
-            map[m.nome] = { materia: m.nome, cor: m.cor || '#6366f1', items: [] };
-          });
-
-          filtered.forEach(g => {
-            if (!map[g.materia]) {
-              map[g.materia] = { materia: g.materia, cor: '#6366f1', items: [] };
-            }
-            map[g.materia].items.push(g);
-          });
-
-          return Object.values(map).filter(group => group.items.length > 0);
-        },
-
-        getResolvedGargalosGroupedByMateriaAndDate() {
-          const resolved = this.gargalos.filter(g => g.resolvido);
-          const map = {};
-
-          this.materias.forEach(m => {
-            map[m.nome] = { materia: m.nome, cor: m.cor || '#6366f1', dateMap: {} };
-          });
-
-          resolved.forEach(g => {
-            const matName = g.materia || 'Geral';
-            if (!map[matName]) {
-              map[matName] = { materia: matName, cor: '#6366f1', dateMap: {} };
-            }
-            const dConclusao = g.dataConclusao || new Date().toISOString().split('T')[0];
-            if (!map[matName].dateMap[dConclusao]) {
-              map[matName].dateMap[dConclusao] = {
-                date: dConclusao,
-                dayOfWeek: this.getDayOfWeekShort(dConclusao),
-                items: []
-              };
-            }
-            map[matName].dateMap[dConclusao].items.push(g);
-          });
-
-          const result = [];
-          Object.values(map).forEach(mObj => {
-            const dateGroups = Object.values(mObj.dateMap);
-            if (dateGroups.length > 0) {
-              dateGroups.sort((a, b) => new Date(b.date) - new Date(a.date));
-              result.push({
-                materia: mObj.materia,
-                cor: mObj.cor,
-                dateGroups: dateGroups
-              });
-            }
-          });
-          return result;
-        },
-
-        openResolveGargaloModal(gId) {
-          this.resolvingGargaloId = gId;
-          this.modalResolveData = new Date().toISOString().split('T')[0];
-          this.showResolveGargaloModal = true;
-        },
-
-        confirmResolveGargalo() {
-          if (!this.resolvingGargaloId || !this.modalResolveData) return;
-          const g = this.gargalos.find(item => item.id === this.resolvingGargaloId);
-          if (g) {
-            g.resolvido = true;
-            g.dataConclusao = this.modalResolveData;
-            this.saveAll();
-          }
-          this.showResolveGargaloModal = false;
-          this.resolvingGargaloId = null;
-        },
-
-        openAddGargaloModal() {
-          this.modalGargaloMateria = this.materias[0] ? this.materias[0].nome : '';
-          this.modalGargaloTitulo = '';
-          this.modalGargaloDesc = '';
-          this.showGargaloModal = true;
-        },
-
-        saveNewGargalo() {
-          if (!this.modalGargaloMateria || !this.modalGargaloTitulo) return;
-          this.gargalos.unshift({
-            id: 'g_' + Date.now(),
-            questaoId: null,
-            materia: this.modalGargaloMateria,
-            titulo: this.modalGargaloTitulo.trim(),
-            descricao: this.modalGargaloDesc ? this.modalGargaloDesc.trim() : '',
-            resolvido: false,
-            dataCriacao: new Date().toISOString().split('T')[0],
-            dataConclusao: null
-          });
-          this.showGargaloModal = false;
-          this.modalGargaloTitulo = '';
-          this.modalGargaloDesc = '';
+          this.showMateriaModal = false;
           this.saveAll();
         },
 
-        getSelectedMateria() { return this.materias.find(m => m.id === this.selectedMateriaId) || this.materias[0]; },
-        getGroupedTopics(materia) {
-          if (!materia || !materia.topicos) return [];
-          const groups = [];
-          let currentGroup = null;
-          materia.topicos.forEach(t => {
-            if (!t.eSubtopico) {
-              currentGroup = { parent: t, children: [] };
-              groups.push(currentGroup);
-            } else {
-              if (currentGroup) currentGroup.children.push(t);
-              else groups.push({ parent: null, children: [t] });
-            }
-          });
-          return groups;
-        },
-        expandAllTopics(status) {
-          const mat = this.getSelectedMateria();
-          if (mat) {
-            mat.topicos.forEach(t => { if (!t.eSubtopico) t.expandido = status; });
-            this.saveAll();
+        deleteMateria(matId) {
+          if (this.materias.length <= 1) {
+            alert('Você precisa ter ao menos uma matéria cadastrada!');
+            return;
           }
+          const mat = this.materias.find(m => m.id === matId);
+          if (!mat) return;
+
+          this.materias = this.materias.filter(m => m.id !== matId);
+          if (this.selectedMateriaId === matId) {
+            this.selectedMateriaId = this.materias[0].id;
+          }
+          this.saveAll();
         },
+
         addTopicToSelectedMateria() {
           if (!this.newTopicText.trim()) return;
           const mat = this.getSelectedMateria();
           if (!mat) return;
-          const rawItems = this.newTopicText.split('.').map(s => s.trim()).filter(Boolean);
-          rawItems.forEach(item => {
-            const isSub = /^\d+\.\d+/.test(item);
+
+          const rawStr = this.newTopicText.trim();
+          const items = rawStr.split('.').map(s => s.trim()).filter(Boolean);
+
+          items.forEach(txt => {
+            const isSub = /^\d+\.\d+/.test(txt) || /^[a-z]\)/i.test(txt);
             mat.topicos.push({
-              id: 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-              nome: formatTextCase(item, isSub),
+              id: 'top_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              nome: formatTextCase(txt, isSub),
               eSubtopico: isSub,
               status: 'estudar',
               prioridade: 'media',
-              expandido: false
+              expandido: true
             });
           });
+
           this.newTopicText = '';
           this.saveAll();
-          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
         },
-        cycleStatus(topic) {
-          const states = ['estudar', 'estudando', 'concluido'];
-          topic.status = states[(states.indexOf(topic.status || 'estudar') + 1) % states.length];
+
+        getGroupedTopics(mat) {
+          if (!mat || !mat.topicos) return [];
+          const grouped = [];
+          let currentParent = null;
+
+          mat.topicos.forEach(t => {
+            if (!t.eSubtopico) {
+              currentParent = { parent: t, children: [] };
+              grouped.push(currentParent);
+            } else {
+              if (currentParent) {
+                currentParent.children.push(t);
+              } else {
+                grouped.push({ parent: null, children: [t] });
+              }
+            }
+          });
+
+          return grouped;
+        },
+
+        expandAllTopics(expand) {
+          const mat = this.getSelectedMateria();
+          if (!mat) return;
+          mat.topicos.forEach(t => { t.expandido = expand; });
           this.saveAll();
         },
+
+        cycleStatus(topic) {
+          const statuses = ['estudar', 'revisar', 'concluido'];
+          const nextIdx = (statuses.indexOf(topic.status || 'estudar') + 1) % statuses.length;
+          topic.status = statuses[nextIdx];
+          this.saveAll();
+        },
+
         getStatusLabel(status) {
-          if (status === 'estudando') return '🟡 Estudando';
-          if (status === 'concluido') return '🟢 Concluído';
-          return '⚪ Estudar';
+          if (status === 'concluido') return 'Concluído';
+          if (status === 'revisar') return 'Revisar';
+          return 'Estudar';
         },
+
         getStatusBadgeClass(status) {
-          if (status === 'estudando') return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
           if (status === 'concluido') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-          return 'bg-slate-800 text-slate-300 border-slate-700';
+          if (status === 'revisar') return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+          return 'bg-slate-800 text-slate-400 border-slate-700';
         },
+
+        cyclePriority(topic) {
+          const priorities = ['baixa', 'media', 'alta'];
+          const nextIdx = (priorities.indexOf(topic.prioridade || 'media') + 1) % priorities.length;
+          topic.prioridade = priorities[nextIdx];
+          this.saveAll();
+        },
+
+        getPriorityLabel(priority) {
+          if (priority === 'alta') return 'Alta Prioridade';
+          if (priority === 'baixa') return 'Baixa Prioridade';
+          return 'Média Prioridade';
+        },
+
+        getPriorityBadgeClass(priority) {
+          if (priority === 'alta') return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+          if (priority === 'baixa') return 'bg-slate-800 text-slate-500 border-slate-750';
+          return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        },
+
+        openEditTopicModal(topic) {
+          this.editingTopicObj = topic;
+          this.modalTopicText = topic.nome;
+          this.showEditTopicModal = true;
+        },
+
+        saveEditedTopic() {
+          if (this.editingTopicObj && this.modalTopicText.trim()) {
+            this.editingTopicObj.nome = formatTextCase(this.modalTopicText.trim(), this.editingTopicObj.eSubtopico);
+            this.saveAll();
+          }
+          this.showEditTopicModal = false;
+        },
+
         toggleTopicType(topicId) {
           const mat = this.getSelectedMateria();
           if (!mat) return;
@@ -1790,124 +1697,63 @@
             t.eSubtopico = !t.eSubtopico;
             t.nome = formatTextCase(t.nome, t.eSubtopico);
             this.saveAll();
-            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
           }
         },
+
         deleteTopic(topicId) {
           const mat = this.getSelectedMateria();
           if (!mat) return;
           mat.topicos = mat.topicos.filter(t => t.id !== topicId);
           this.saveAll();
         },
-        cyclePriority(topic) {
-          const priorities = ['alta', 'media', 'baixa'];
-          topic.prioridade = priorities[(priorities.indexOf(topic.prioridade || 'media') + 1) % priorities.length];
-          this.saveAll();
-        },
-        getPriorityLabel(priority) {
-          if (priority === 'alta') return '🔥 Alta';
-          if (priority === 'baixa') return '🔹 Baixa';
-          return '⚖️ Média';
-        },
-        getPriorityBadgeClass(priority) {
-          if (priority === 'alta') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-          if (priority === 'baixa') return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-          return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        },
-        openEditTopicModal(topic) {
-          this.editingTopicObj = topic;
-          this.modalTopicText = topic.nome;
-          this.showEditTopicModal = true;
-        },
-        saveEditedTopic() {
-          if (!this.editingTopicObj || !this.modalTopicText.trim()) return;
-          this.editingTopicObj.nome = formatTextCase(this.modalTopicText.trim(), this.editingTopicObj.eSubtopico);
-          this.showEditTopicModal = false;
-          this.editingTopicObj = null;
-          this.saveAll();
-        },
-        openAddMateriaModal() {
-          this.editingMateriaId = null;
-          this.modalMateriaNome = '';
-          this.modalMateriaCor = '#6366f1';
-          this.showMateriaModal = true;
-        },
-        openEditMateriaModal(materia) {
-          this.editingMateriaId = materia.id;
-          this.modalMateriaNome = materia.nome;
-          this.modalMateriaCor = materia.cor || '#6366f1';
-          this.showMateriaModal = true;
-        },
-        saveMateriaModal() {
-          if (!this.modalMateriaNome.trim()) return;
-          if (this.editingMateriaId) {
-            const mat = this.materias.find(m => m.id === this.editingMateriaId);
-            if (mat) {
-              const oldName = mat.nome;
-              mat.nome = this.modalMateriaNome.trim();
-              mat.cor = this.modalMateriaCor;
-              this.questoes.forEach(q => { if (q.materia === oldName) q.materia = mat.nome; });
-              this.estudos.forEach(e => { if (e.materia === oldName) e.materia = mat.nome; });
-              this.gargalos.forEach(g => { if (g.materia === oldName) g.materia = mat.nome; });
-            }
-          } else {
-            const newMat = {
-              id: 'mat_' + Date.now(),
-              nome: this.modalMateriaNome.trim(),
-              cor: this.modalMateriaCor || '#6366f1',
-              topicos: []
-            };
-            this.materias.push(newMat);
-            this.selectedMateriaId = newMat.id;
-          }
-          this.showMateriaModal = false;
-          this.editingMateriaId = null;
-          this.saveAll();
-          this.renderQuestionsChart();
-        },
-        deleteMateria(matId) {
-          this.materias = this.materias.filter(m => m.id !== matId);
-          if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
-          this.saveAll();
-          this.renderQuestionsChart();
-        },
-        calcMateriaCompleted(mat) {
-          if (!mat || !mat.topicos) return 0;
-          return mat.topicos.filter(t => t.status === 'concluido').length;
-        },
-        calcMateriaPercent(mat) {
-          if (!mat || !mat.topicos || mat.topicos.length === 0) return 0;
-          return Math.round((this.calcMateriaCompleted(mat) / mat.topicos.length) * 100);
-        },
-        countCompletedTopics() { return this.materias.reduce((acc, m) => acc + this.calcMateriaCompleted(m), 0); },
-        countTotalTopics() { return this.materias.reduce((acc, m) => acc + (m.topicos ? m.topicos.length : 0), 0); },
+
         calcOverallProgress() {
           const total = this.countTotalTopics();
-          return total === 0 ? 0 : Math.round((this.countCompletedTopics() / total) * 100);
+          if (total === 0) return 0;
+          return Math.round((this.countCompletedTopics() / total) * 100);
         },
-        getQuestionsByPeriod() {
-          if (this.questoesPeriodFilter === 'total') return this.questoes;
-          const now = new Date();
-          const days = parseInt(this.questoesPeriodFilter, 10);
-          const limitDate = new Date();
-          limitDate.setDate(now.getDate() - days);
-          return this.questoes.filter(q => new Date(q.data) >= limitDate);
+
+        countTotalTopics() {
+          return this.materias.reduce((acc, m) => acc + m.topicos.length, 0);
         },
+
+        countCompletedTopics() {
+          return this.materias.reduce((acc, m) => {
+            return acc + m.topicos.filter(t => t.status === 'concluido').length;
+          }, 0);
+        },
+
+        calcOverallAccuracy() {
+          const total = this.calcTotalQuestions();
+          if (total === 0) return 0;
+          return Math.round((this.calcTotalRights() / total) * 100);
+        },
+
         calcTotalQuestions() {
-          const qTotal = this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.total || 0), 0);
+          const qTotal = this.questoes.reduce((acc, q) => acc + (q.total || 0), 0);
           const eTotal = this.estudos.reduce((acc, e) => acc + (e.total || 0), 0);
           return Math.max(qTotal, eTotal);
         },
+
         calcTotalRights() {
-          const qRights = this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const qRights = this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
           const eRights = this.estudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
           return Math.max(qRights, eRights);
         },
-        calcOverallAccuracy() {
-          const total = this.calcTotalQuestions();
-          return total === 0 ? 0 : Math.round((this.calcTotalRights() / total) * 100);
+
+        countActiveBottlenecks() {
+          return this.gargalos.filter(g => !g.resolvido).length;
         },
-        countActiveBottlenecks() { return this.gargalos.filter(g => !g.resolvido).length; },
+
+        calcMateriaCompleted(mat) {
+          return mat.topicos.filter(t => t.status === 'concluido').length;
+        },
+
+        calcMateriaPercent(mat) {
+          if (!mat.topicos || mat.topicos.length === 0) return 0;
+          return Math.round((this.calcMateriaCompleted(mat) / mat.topicos.length) * 100);
+        },
+
         openAddQuestaoModal() {
           this.editingQuestaoId = null;
           this.modalQuestaoData = new Date().toISOString().split('T')[0];
@@ -1918,23 +1764,25 @@
           this.modalQuestaoAnotacao = '';
           this.showQuestaoModal = true;
         },
+
         openEditQuestaoModal(q) {
           this.editingQuestaoId = q.id;
           this.modalQuestaoData = q.data || new Date().toISOString().split('T')[0];
           this.modalQuestaoMateria = q.materia;
-          this.modalQuestaoAssunto = q.assunto;
-          this.modalQuestaoTotal = q.total;
-          this.modalQuestaoAcertos = q.acertos;
+          this.modalQuestaoAssunto = q.assunto || '';
+          this.modalQuestaoTotal = q.total || 0;
+          this.modalQuestaoAcertos = q.acertos || 0;
           this.modalQuestaoAnotacao = q.anotacao || '';
           this.showQuestaoModal = true;
         },
+
         saveQuestaoModal() {
           if (!this.modalQuestaoMateria) return;
           const dataQ = this.modalQuestaoData || new Date().toISOString().split('T')[0];
           const anotacaoText = this.modalQuestaoAnotacao ? this.modalQuestaoAnotacao.trim() : '';
 
           if (this.editingQuestaoId) {
-            const q = this.questoes.find(item => item.id === this.editingQuestaoId);
+            const q = this.questoes.find(x => x.id === this.editingQuestaoId);
             if (q) {
               q.data = dataQ;
               q.materia = this.modalQuestaoMateria;
@@ -1943,45 +1791,46 @@
               q.acertos = Number(this.modalQuestaoAcertos) || 0;
               q.anotacao = anotacaoText;
 
-              const estItem = this.estudos.find(e => e.questaoId === q.id);
-              if (estItem) {
-                estItem.data = dataQ;
-                estItem.materia = this.modalQuestaoMateria;
-                estItem.assunto = this.modalQuestaoAssunto;
-                estItem.total = q.total;
-                estItem.acertos = q.acertos;
-                estItem.anotacao = anotacaoText;
+              const est = this.estudos.find(e => e.questaoId === q.id);
+              if (est) {
+                est.data = dataQ;
+                est.materia = this.modalQuestaoMateria;
+                est.assunto = this.modalQuestaoAssunto;
+                est.total = q.total;
+                est.acertos = q.acertos;
+                est.anotacao = anotacaoText;
               }
             }
           } else {
-            const newQId = 'q_' + Date.now();
-            this.questoes.push({
-              id: newQId,
+            const qId = 'q_' + Date.now();
+            const newQ = {
+              id: qId,
+              data: dataQ,
               materia: this.modalQuestaoMateria,
               assunto: this.modalQuestaoAssunto,
               total: Number(this.modalQuestaoTotal) || 0,
               acertos: Number(this.modalQuestaoAcertos) || 0,
               anotacao: anotacaoText,
-              data: dataQ,
               showNote: false
-            });
+            };
+            this.questoes.unshift(newQ);
 
             this.estudos.unshift({
-              id: 'est_q_' + newQId,
-              questaoId: newQId,
+              id: 'est_q_' + qId,
+              questaoId: qId,
               data: dataQ,
               materia: this.modalQuestaoMateria,
               tipo: 'Resolução de Questões',
               assunto: this.modalQuestaoAssunto,
-              total: Number(this.modalQuestaoTotal) || 0,
-              acertos: Number(this.modalQuestaoAcertos) || 0,
+              total: newQ.total,
+              acertos: newQ.acertos,
               anotacao: anotacaoText
             });
 
             if (anotacaoText) {
               this.gargalos.unshift({
                 id: 'g_' + Date.now(),
-                questaoId: newQId,
+                questaoId: qId,
                 materia: this.modalQuestaoMateria,
                 titulo: this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`,
                 descricao: anotacaoText,
@@ -1991,49 +1840,181 @@
               });
             }
           }
+
           this.showQuestaoModal = false;
           this.editingQuestaoId = null;
           this.saveAll();
-          this.renderQuestionsChart();
         },
+
         deleteQuestao(qId) {
           this.questoes = this.questoes.filter(q => q.id !== qId);
           this.estudos = this.estudos.filter(e => e.questaoId !== qId);
           this.saveAll();
-          this.renderQuestionsChart();
         },
+
         calcQuestaoPercent(q) {
           if (!q.total) return 0;
           return Math.round((q.acertos / q.total) * 100);
         },
-        deleteGargalo(gId) {
-          this.gargalos = this.gargalos.filter(g => g.id !== gId);
+
+        getGroupedQuestionsByDate() {
+          let list = [...this.questoes];
+
+          if (this.questoesFilterMateria !== 'todas') {
+            list = list.filter(q => q.materia === this.questoesFilterMateria);
+          }
+
+          if (this.questoesPeriodFilter !== 'total') {
+            const limitDays = Number(this.questoesPeriodFilter);
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - limitDays);
+            list = list.filter(q => new Date(q.data) >= cutoff);
+          }
+
+          const groups = {};
+          list.forEach(q => {
+            const d = q.data || 'Sem Data';
+            if (!groups[d]) {
+              groups[d] = {
+                date: d,
+                dayOfWeek: this.getDayOfWeekShort(d),
+                items: []
+              };
+            }
+            groups[d].items.push(q);
+          });
+
+          return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
+        },
+
+        getDayOfWeekShort(dateStr) {
+          if (!dateStr || dateStr === 'Sem Data') return '';
+          const parts = dateStr.split('-');
+          if (parts.length < 3) return '';
+          const d = new Date(parts[0], parts[1] - 1, parts[2]);
+          const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+          return days[d.getDay()];
+        },
+
+        formatDate(dateStr) {
+          if (!dateStr) return '';
+          const parts = dateStr.split('-');
+          if (parts.length < 3) return dateStr;
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        },
+
+        openAddGargaloModal() {
+          this.modalGargaloMateria = this.materias[0] ? this.materias[0].nome : '';
+          this.modalGargaloTitulo = '';
+          this.modalGargaloDesc = '';
+          this.showGargaloModal = true;
+        },
+
+        saveNewGargalo() {
+          if (!this.modalGargaloMateria || !this.modalGargaloTitulo.trim()) return;
+
+          this.gargalos.unshift({
+            id: 'g_' + Date.now(),
+            questaoId: null,
+            materia: this.modalGargaloMateria,
+            titulo: this.modalGargaloTitulo.trim(),
+            descricao: this.modalGargaloDesc.trim(),
+            resolvido: false,
+            dataCriacao: new Date().toISOString().split('T')[0],
+            dataConclusao: null
+          });
+
+          this.showGargaloModal = false;
           this.saveAll();
         },
+
+        getGargalosGroupedByMateria(isResolved) {
+          const filtered = this.gargalos.filter(g => g.resolvido === isResolved);
+          const groups = {};
+
+          filtered.forEach(g => {
+            if (!groups[g.materia]) {
+              groups[g.materia] = {
+                materia: g.materia,
+                cor: this.getMateriaColor(g.materia),
+                items: []
+              };
+            }
+            groups[g.materia].items.push(g);
+          });
+
+          return Object.values(groups);
+        },
+
+        getResolvedGargalosGroupedByMateriaAndDate() {
+          const resolved = this.gargalos.filter(g => g.resolvido);
+          const matGroups = {};
+
+          resolved.forEach(g => {
+            if (!matGroups[g.materia]) {
+              matGroups[g.materia] = {
+                materia: g.materia,
+                cor: this.getMateriaColor(g.materia),
+                dateMap: {}
+              };
+            }
+
+            const dConcl = g.dataConclusao || g.dataCriacao || 'Sem Data';
+            if (!matGroups[g.materia].dateMap[dConcl]) {
+              matGroups[g.materia].dateMap[dConcl] = {
+                date: dConcl,
+                dayOfWeek: this.getDayOfWeekShort(dConcl),
+                items: []
+              };
+            }
+
+            matGroups[g.materia].dateMap[dConcl].items.push(g);
+          });
+
+          return Object.values(matGroups).map(mG => {
+            const dateGroupsArr = Object.values(mG.dateMap).sort((a, b) => b.date.localeCompare(a.date));
+            return {
+              materia: mG.materia,
+              cor: mG.cor,
+              dateGroups: dateGroupsArr
+            };
+          });
+        },
+
+        openResolveGargaloModal(id) {
+          this.resolvingGargaloId = id;
+          this.modalResolveData = new Date().toISOString().split('T')[0];
+          this.showResolveGargaloModal = true;
+        },
+
+        confirmResolveGargalo() {
+          if (!this.resolvingGargaloId) return;
+          const g = this.gargalos.find(x => x.id === this.resolvingGargaloId);
+          if (g) {
+            g.resolvido = true;
+            g.dataConclusao = this.modalResolveData || new Date().toISOString().split('T')[0];
+            this.saveAll();
+          }
+          this.showResolveGargaloModal = false;
+          this.resolvingGargaloId = null;
+        },
+
+        deleteGargalo(id) {
+          this.gargalos = this.gargalos.filter(g => g.id !== id);
+          this.saveAll();
+        },
+
         savePinnedNote() {
           if (!this.modalNoteText.trim()) return;
-          this.pinnedNotes.push(this.modalNoteText.trim());
+          this.pinnedNotes.unshift(this.modalNoteText.trim());
           this.modalNoteText = '';
           this.showFixNoteModal = false;
           this.saveAll();
         },
+
         removePinnedNote(index) {
           this.pinnedNotes.splice(index, 1);
           this.saveAll();
-        },
-        formatDate(dateStr) {
-          if (!dateStr) return '';
-          const parts = dateStr.split('-');
-          if (parts.length === 3) {
-            const anoCurto = parts[0].slice(-2);
-            return `${parts[2]}/${parts[1]}/${anoCurto}`;
-          }
-          const d = new Date(dateStr);
-          if (isNaN(d)) return dateStr;
-          const dia = String(d.getDate()).padStart(2, '0');
-          const mes = String(d.getMonth() + 1).padStart(2, '0');
-          const anoCurto = String(d.getFullYear()).slice(-2);
-          return `${dia}/${mes}/${anoCurto}`;
         }
       }
     }
