@@ -86,7 +86,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.4</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.5</span>
       </div>
     </aside>
 
@@ -316,8 +316,8 @@
                   <div class="flex items-center space-x-3">
                     <span class="w-4 h-4 rounded-full" :style="`background-color: ${getSelectedMateria().cor}`"></span>
                     <h3 class="text-lg font-bold text-slate-100" x-text="getSelectedMateria().nome"></h3>
-                    <button @click="openEditMateriaModal(getSelectedMateria())" class="text-slate-500 hover:text-indigo-400 transition p-1" title="Editar"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                    <button @click="deleteMateria(getSelectedMateria().id)" class="text-slate-500 hover:text-rose-400 transition p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button @click="openEditMateriaModal(getSelectedMateria())" class="text-slate-500 hover:text-indigo-400 transition p-1" title="Editar Matéria"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                    <button @click="deleteMateria(getSelectedMateria().id)" class="text-slate-500 hover:text-rose-400 transition p-1" title="Excluir Matéria"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                   </div>
                   <div class="flex items-center space-x-4 text-xs text-slate-400">
                     <div>
@@ -345,7 +345,7 @@
                 </div>
               </div>
 
-              <!-- TOPICS LIST -->
+              <!-- LISTA DE TÓPICOS E SUBTÓPICOS COM BOTÕES DE AÇÃO CORRIGIDOS -->
               <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
                 <div class="px-4 py-3 bg-slate-850 border-b border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
                   <span>Estrutura de Conteúdo</span>
@@ -359,8 +359,9 @@
                 <div class="divide-y divide-slate-800/60">
                   <template x-for="(group, gIdx) in getGroupedTopics(getSelectedMateria())" :key="group.parent ? group.parent.id : 'orphans-' + gIdx">
                     <div class="bg-slate-900">
+                      <!-- TÓPICO PRINCIPAL -->
                       <template x-if="group.parent">
-                        <div class="p-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
+                        <div class="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
                           <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <button @click="group.parent.expandido = !group.parent.expandido; saveAll()" class="p-1 rounded hover:bg-slate-800 text-slate-400 transition shrink-0">
                               <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
@@ -373,17 +374,20 @@
                               <span x-text="getPriorityLabel(group.parent.prioridade)"></span>
                             </button>
                           </div>
-                          <div class="flex items-center space-x-2 shrink-0 ml-auto">
-                            <button @click="openEditTopicModal(group.parent)" title="Editar" class="text-slate-500 hover:text-indigo-400 p-1 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                            <button @click="toggleTopicType(group.parent.id)" title="Transformar" class="text-slate-500 hover:text-indigo-400 p-1 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
-                            <button @click="deleteTopic(group.parent.id)" title="Excluir" class="text-slate-500 hover:text-rose-400 p-1 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                          <!-- Botões de Ação do Tópico -->
+                          <div class="flex items-center space-x-2 shrink-0">
+                            <button @click="openEditTopicModal(group.parent)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                            <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
+                            <button @click="deleteTopic(group.parent.id)" title="Excluir Assunto" class="text-slate-400 hover:text-rose-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                           </div>
                         </div>
                       </template>
+
+                      <!-- SUBTÓPICOS -->
                       <template x-if="group.parent">
                         <div x-show="group.parent.expandido" x-collapse class="bg-slate-950/60 border-t border-b border-slate-800/40 divide-y divide-slate-800/30">
                           <template x-for="child in group.children" :key="child.id">
-                            <div class="py-2.5 pl-8 sm:pl-12 pr-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-slate-800/30 transition">
+                            <div class="py-2.5 pl-8 sm:pl-12 pr-4 flex items-center justify-between gap-3 hover:bg-slate-800/30 transition">
                               <div class="flex items-center space-x-3 flex-1 min-w-0">
                                 <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
                                 <button @click="cycleStatus(child)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition" :class="getStatusBadgeClass(child.status)">
@@ -391,10 +395,11 @@
                                 </button>
                                 <span :class="child.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'" class="text-xs truncate" x-text="child.nome"></span>
                               </div>
-                              <div class="flex items-center space-x-2 shrink-0 ml-auto">
-                                <button @click="openEditTopicModal(child)" title="Editar" class="text-slate-500 hover:text-indigo-400 p-1 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                <button @click="toggleTopicType(child.id)" title="Transformar" class="text-slate-500 hover:text-indigo-400 p-1 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
-                                <button @click="deleteTopic(child.id)" title="Excluir" class="text-slate-500 hover:text-rose-400 p-1 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                              <!-- Botões de Ação do Subtópico -->
+                              <div class="flex items-center space-x-2 shrink-0">
+                                <button @click="openEditTopicModal(child)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                <button @click="toggleTopicType(child.id)" title="Promover a Tópico" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
+                                <button @click="deleteTopic(child.id)" title="Excluir Subtópico" class="text-slate-400 hover:text-rose-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                               </div>
                             </div>
                           </template>
@@ -402,6 +407,7 @@
                       </template>
                     </div>
                   </template>
+                  
                   <div x-show="getSelectedMateria().topicos.length === 0" class="p-8 text-center text-slate-500 text-xs">
                     Nenhum tópico cadastrado nesta matéria ainda. Insira acima!
                   </div>
@@ -424,7 +430,6 @@
             </button>
           </div>
 
-          <!-- MINI CARDS DOS ÚLTIMOS 7 DIAS -->
           <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             <template x-for="dayObj in getLast7DaysCards()" :key="dayObj.dateStr">
               <div class="bg-slate-900 border rounded-xl p-3 flex flex-col justify-between space-y-2.5 transition"
@@ -646,7 +651,6 @@
             </button>
           </div>
 
-          <!-- MINI CARDS DINÂMICOS (PADRÃO: ÚLTIMOS 30 DIAS / OPÇÕES: 7, 15, 30 OU PERSONALIZADO) -->
           <div class="space-y-3 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
               <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
@@ -672,7 +676,6 @@
               </div>
             </div>
 
-            <!-- Grid dos Mini Cards (clique para selecionar o dia no card central) -->
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-72 overflow-y-auto pr-1">
               <template x-for="dayObj in getCronogramaMiniCards()" :key="dayObj.dateStr">
                 <div @click="selectedCronogramaDateFilter = dayObj.dateStr"
@@ -701,7 +704,6 @@
             </div>
           </div>
 
-          <!-- CARD CENTRAL DE ESTUDOS (EXIBE OS REGISTROS DO DIA SELECIONADO NO MINI CARD) -->
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
@@ -964,7 +966,7 @@
     </div>
   </div>
 
-  <!-- Application Logic -->
+  <!-- Lógica do Aplicativo -->
   <script>
     const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
@@ -1085,7 +1087,6 @@
           
           this.syncExistingQuestionsToEstudos();
 
-          // Define o dia de hoje como padrão inicial no cronograma se nenhum estiver selecionado
           if (!this.selectedCronogramaDateFilter) {
             const todayStr = new Date().toISOString().split('T')[0];
             this.selectedCronogramaDateFilter = todayStr;
@@ -1095,7 +1096,13 @@
 
           setInterval(() => { this.backgroundSync(); }, 5000);
 
-          this.$watch('materias', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('materias', () => { 
+            if (this.isLoaded) {
+              this.saveAll();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          }, { deep: true });
+          
           this.$watch('questoes', () => { 
             if (this.isLoaded) {
               this.syncExistingQuestionsToEstudos();
@@ -1108,9 +1115,10 @@
           this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           
           this.$watch('activeTab', (tab) => {
-            if (tab === 'dashboard') {
-              this.$nextTick(() => { this.renderQuestionsChart(); });
-            }
+            this.$nextTick(() => { 
+              if (window.lucide) window.lucide.createIcons();
+              if (tab === 'dashboard') this.renderQuestionsChart();
+            });
           });
 
           this.$nextTick(() => {
@@ -1757,6 +1765,7 @@
           });
           this.newTopicText = '';
           this.saveAll();
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
         },
         cycleStatus(topic) {
           const states = ['estudar', 'estudando', 'concluido'];
@@ -1781,6 +1790,7 @@
             t.eSubtopico = !t.eSubtopico;
             t.nome = formatTextCase(t.nome, t.eSubtopico);
             this.saveAll();
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
           }
         },
         deleteTopic(topicId) {
