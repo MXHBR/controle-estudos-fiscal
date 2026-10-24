@@ -83,7 +83,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.9</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.0</span>
       </div>
     </aside>
 
@@ -408,6 +408,33 @@
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>Novo Treino de Questões</span>
             </button>
+          </div>
+
+          <!-- MINI CARDS DOS ÚLTIMOS 7 DIAS -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <template x-for="dayObj in getLast7DaysCards()" :key="dayObj.dateStr">
+              <div class="bg-slate-900 border rounded-xl p-3 flex flex-col justify-between space-y-2.5 transition"
+                   :class="dayObj.isToday ? 'border-indigo-500 bg-indigo-600/10 shadow-md shadow-indigo-500/10' : 'border-slate-800'">
+                
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                  <span class="text-[10px] font-bold font-mono tracking-wider uppercase" :class="dayObj.isToday ? 'text-indigo-400' : 'text-slate-400'" x-text="dayObj.dayOfWeek"></span>
+                  <span class="text-[10px] text-slate-500 font-mono" x-text="dayObj.formattedDate"></span>
+                </div>
+
+                <div class="space-y-1.5 min-h-[50px] flex flex-col justify-center">
+                  <template x-if="dayObj.materias.length > 0">
+                    <div class="flex flex-wrap gap-1">
+                      <template x-for="mName in dayObj.materias" :key="mName">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-slate-800 text-slate-200 border border-slate-700 truncate max-w-full" x-text="mName"></span>
+                      </template>
+                    </div>
+                  </template>
+                  <template x-if="dayObj.materias.length === 0">
+                    <span class="text-[11px] text-slate-500 italic text-center block">Sem registros</span>
+                  </template>
+                </div>
+              </div>
+            </template>
           </div>
 
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4 shadow-sm">
@@ -838,7 +865,6 @@
           'Domingo': ['Descanso']
         },
 
-        // Controle do Modal Personalizado de Conclusão de Gargalo
         showResolveGargaloModal: false,
         resolvingGargaloId: null,
         modalResolveData: new Date().toISOString().split('T')[0],
@@ -1006,6 +1032,39 @@
           this.draggedMateriaId = null;
         },
 
+        // Gera os dados dinâmicos para os últimos 7 dias na aba Questões
+        getLast7DaysCards() {
+          const cards = [];
+          const today = new Date();
+          
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(today.getDate() - i);
+            
+            const ano = d.getFullYear();
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const dia = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${ano}-${mes}-${dia}`;
+            
+            const isToday = i === 0;
+            const dayOfWeek = this.getDayOfWeekShort(dateStr);
+            const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
+
+            // Filtra as matérias que tiveram questões registradas nesta exata data
+            const matchedQuestions = this.questoes.filter(q => q.data === dateStr);
+            const materiasSet = [...new Set(matchedQuestions.map(q => q.materia))];
+
+            cards.push({
+              dateStr,
+              dayOfWeek,
+              formattedDate,
+              isToday,
+              materias: materiasSet
+            });
+          }
+          return cards;
+        },
+
         getCustomProgressBarBg(pct) {
           if (pct >= 75) return 'bg-emerald-500';
           if (pct >= 45) return 'bg-amber-500';
@@ -1115,7 +1174,6 @@
           return result;
         },
 
-        // Abre o modal personalizado para escolha da data de conclusão do gargalo
         openResolveGargaloModal(gId) {
           this.resolvingGargaloId = gId;
           this.modalResolveData = new Date().toISOString().split('T')[0];
@@ -1434,7 +1492,6 @@
           this.cronograma[dia].splice(index, 1);
           this.saveAll();
         },
-        // Formata datas no padrão DD/MM/AA
         formatDate(dateStr) {
           if (!dateStr) return '';
           const parts = dateStr.split('-');
