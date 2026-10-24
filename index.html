@@ -86,7 +86,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.6</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.7</span>
       </div>
     </aside>
 
@@ -376,7 +376,10 @@
                             </button>
                           </div>
                           <!-- Botões de Ação do Tópico -->
-                          <div class="flex items-center space-x-2 shrink-0">
+                          <div class="flex items-center space-x-1 shrink-0">
+                            <button @click="openAddSubtopicModal(group.parent)" title="Adicionar Subtópicos" class="text-slate-400 hover:text-emerald-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
+                            <button @click="moveGroup(group.parent.id, 'up')" title="Mover para Cima" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+                            <button @click="moveGroup(group.parent.id, 'down')" title="Mover para Baixo" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
                             <button @click="openEditTopicModal(group.parent)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
                             <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
                             <button @click="deleteTopic(group.parent.id)" title="Excluir Assunto" class="text-slate-400 hover:text-rose-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
@@ -397,7 +400,9 @@
                                 <span :class="child.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'" class="text-xs truncate" x-text="child.nome"></span>
                               </div>
                               <!-- Botões de Ação do Subtópico -->
-                              <div class="flex items-center space-x-2 shrink-0">
+                              <div class="flex items-center space-x-1 shrink-0">
+                                <button @click="moveSubtopic(child.id, 'up')" title="Mover Subtópico para Cima" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+                                <button @click="moveSubtopic(child.id, 'down')" title="Mover Subtópico para Baixo" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
                                 <button @click="openEditTopicModal(child)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
                                 <button @click="toggleTopicType(child.id)" title="Promover a Tópico" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
                                 <button @click="deleteTopic(child.id)" title="Excluir Subtópico" class="text-slate-400 hover:text-rose-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
@@ -798,6 +803,23 @@
     </div>
   </div>
 
+  <!-- Modal Adicionar Subtópicos em Massa -->
+  <div x-show="showSubtopicModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Adicionar Subtópicos</h3>
+      <p class="text-xs text-slate-400">Insira os subtópicos separados por ponto final (.) para inserção automática:</p>
+      <div class="space-y-3">
+        <div>
+          <textarea x-model="modalSubtopicText" rows="4" placeholder="Ex: 1.1 Conceito. 1.2 Classificação. 1.3 Aplicação." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showSubtopicModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveSubtopicsModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
   <div x-show="showEstudoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingEstudoId ? 'Editar Registro de Estudo' : 'Novo Registro de Estudo'"></h3>
@@ -1037,6 +1059,10 @@
         showResolveGargaloModal: false,
         resolvingGargaloId: null,
         modalResolveData: new Date().toISOString().split('T')[0],
+
+        showSubtopicModal: false,
+        activeParentTopicForSub: null,
+        modalSubtopicText: '',
 
         showEstudoModal: false,
         editingEstudoId: null,
@@ -1728,6 +1754,98 @@
             });
           });
           this.newTopicText = '';
+          this.saveAll();
+          this.refreshIcons();
+        },
+
+        openAddSubtopicModal(parentTopic) {
+          this.activeParentTopicForSub = parentTopic;
+          this.modalSubtopicText = '';
+          this.showSubtopicModal = true;
+        },
+
+        saveSubtopicsModal() {
+          if (!this.activeParentTopicForSub || !this.modalSubtopicText.trim()) {
+            this.showSubtopicModal = false;
+            return;
+          }
+          const mat = this.getSelectedMateria();
+          if (!mat || !mat.topicos) return;
+
+          const parentIndex = mat.topicos.findIndex(t => t.id === this.activeParentTopicForSub.id);
+          if (parentIndex === -1) return;
+
+          let insertIndex = parentIndex + 1;
+          while (insertIndex < mat.topicos.length && mat.topicos[insertIndex].eSubtopico) {
+            insertIndex++;
+          }
+
+          const rawItems = this.modalSubtopicText.split('.').map(s => s.trim()).filter(Boolean);
+          const newItems = rawItems.map(item => ({
+            id: 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            nome: formatTextCase(item, true),
+            eSubtopico: true,
+            status: 'estudar',
+            prioridade: 'media',
+            expandido: false
+          }));
+
+          mat.topicos.splice(insertIndex, 0, ...newItems);
+          this.activeParentTopicForSub.expandido = true;
+          this.showSubtopicModal = false;
+          this.activeParentTopicForSub = null;
+          this.modalSubtopicText = '';
+          this.saveAll();
+          this.refreshIcons();
+        },
+
+        moveGroup(topicId, direction) {
+          const mat = this.getSelectedMateria();
+          if (!mat || !mat.topicos) return;
+          const groups = this.getGroupedTopics(mat);
+          const idx = groups.findIndex(g => g.parent && g.parent.id === topicId);
+          if (idx === -1) return;
+
+          const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+          if (targetIdx < 0 || targetIdx >= groups.length) return;
+
+          const temp = groups[idx];
+          groups[idx] = groups[targetIdx];
+          groups[targetIdx] = temp;
+
+          const newTopicos = [];
+          groups.forEach(g => {
+            if (g.parent) newTopicos.push(g.parent);
+            if (g.children) g.children.forEach(c => newTopicos.push(c));
+          });
+          mat.topicos = newTopicos;
+          this.saveAll();
+          this.refreshIcons();
+        },
+
+        moveSubtopic(childId, direction) {
+          const mat = this.getSelectedMateria();
+          if (!mat || !mat.topicos) return;
+          const groups = this.getGroupedTopics(mat);
+
+          for (let g of groups) {
+            const cIdx = g.children.findIndex(c => c.id === childId);
+            if (cIdx !== -1) {
+              const targetIdx = direction === 'up' ? cIdx - 1 : cIdx + 1;
+              if (targetIdx < 0 || targetIdx >= g.children.length) return;
+              const temp = g.children[cIdx];
+              g.children[cIdx] = g.children[targetIdx];
+              g.children[targetIdx] = temp;
+              break;
+            }
+          }
+
+          const newTopicos = [];
+          groups.forEach(g => {
+            if (g.parent) newTopicos.push(g.parent);
+            if (g.children) g.children.forEach(c => newTopicos.push(c));
+          });
+          mat.topicos = newTopicos;
           this.saveAll();
           this.refreshIcons();
         },
