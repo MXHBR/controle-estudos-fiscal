@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.1</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.2</span>
       </div>
     </aside>
 
@@ -146,18 +146,30 @@
               </div>
             </div>
 
-            <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
+            <!-- Card Interativo de Acerto vs Total de Questões -->
+            <div @click="showAccuracyPercent = !showAccuracyPercent" class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm cursor-pointer hover:border-indigo-500/50 transition group" title="Clique para alternar entre Total e Percentual">
               <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400">Taxa de Acerto Geral</span>
-                <i data-lucide="target" class="w-4 h-4 text-sky-400"></i>
+                <span class="text-xs font-medium text-slate-400" x-text="showAccuracyPercent ? 'Taxa de Acerto Geral' : 'Total de Questões Realizadas'"></span>
+                <i data-lucide="target" class="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform"></i>
               </div>
               <div class="flex items-baseline space-x-2">
-                <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
-                <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
+                <template x-if="!showAccuracyPercent">
+                  <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-extrabold text-slate-100" x-text="calcTotalQuestions()"></span>
+                    <span class="text-xs text-slate-400">questões</span>
+                  </div>
+                </template>
+                <template x-if="showAccuracyPercent">
+                  <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
+                    <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
+                  </div>
+                </template>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
                 <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallAccuracy())" :style="`width: ${calcOverallAccuracy()}%`"></div>
               </div>
+              <div class="text-[10px] text-indigo-400/80 text-right font-medium">Clique para alternar visualização</div>
             </div>
 
             <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
@@ -172,38 +184,79 @@
               <div class="text-xs text-amber-400/80 font-medium">Revisão prioritária</div>
             </div>
 
+            <!-- Card de Tempo de Jornada de Estudos -->
             <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
               <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400">Disciplinas Cadastradas</span>
-                <i data-lucide="book-open" class="w-4 h-4 text-indigo-400"></i>
+                <span class="text-xs font-medium text-slate-400">Tempo de Jornada</span>
+                <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
               </div>
               <div class="flex items-baseline space-x-2">
-                <span class="text-2xl font-extrabold text-slate-100" x-text="materias.length"></span>
-                <span class="text-xs text-slate-400">matérias</span>
+                <span class="text-2xl font-extrabold text-slate-100" x-text="calcStudyStreak().days + ' dias'"></span>
+                <span class="text-xs text-slate-400" x-text="`(~${calcStudyStreak().weeks} sem.)`"></span>
               </div>
-              <div class="text-xs text-indigo-400/80 font-medium">Edital de Auditor</div>
+              <div class="text-xs text-indigo-400/80 font-medium">Desde o 1º registro</div>
             </div>
           </div>
 
-          <!-- Lembretes Fixados -->
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-5 shadow-sm backdrop-blur-sm">
-            <div class="flex items-center justify-between mb-4">
+          <!-- Lembretes Fixados & Contagem Regressiva da Prova (Drag and Drop) -->
+          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-5 shadow-sm backdrop-blur-sm space-y-4">
+            <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2">
                 <i data-lucide="pin" class="w-4 h-4 text-amber-400"></i>
-                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Lembretes Fixados</h3>
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Anotações e Contagem Regressiva</h3>
               </div>
+              <button @click="openEditExamModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Configurar Prova</span>
+              </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Card Fixo de Contagem Regressiva para a Prova -->
+              <div class="bg-gradient-to-br from-indigo-950/90 via-slate-900 to-slate-900 border border-indigo-500/50 p-4 rounded-xl flex flex-col justify-between space-y-3 shadow-md relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-28 h-28 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-1.5">
+                    <i data-lucide="flag" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span x-text="examTitle || 'Próxima Prova'"></span>
+                  </span>
+                  <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded font-mono" x-text="formatDate(examDate)"></span>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-baseline space-x-2">
+                    <span class="text-3xl font-black text-white" x-text="calcExamCountdown().days"></span>
+                    <span class="text-xs text-slate-300 font-semibold">dias restantes</span>
+                  </div>
+                  <div class="text-xs text-indigo-300 font-mono" x-text="`(~${calcExamCountdown().weeks} semanas)`"></div>
+                </div>
+                <div class="text-[11px] text-slate-400 italic">Foco total na reta final!</div>
+              </div>
+
+              <!-- Lembretes Arrastáveis (Drag and Drop) -->
               <template x-for="(note, index) in pinnedNotes" :key="index">
-                <div class="bg-slate-850/80 border border-slate-750 p-3.5 rounded-lg flex justify-between items-start space-x-2 relative group hover:border-slate-600 transition">
+                <div 
+                  draggable="true"
+                  @dragstart="draggedNoteIndex = index"
+                  @dragover.prevent
+                  @drop="dropNote(index)"
+                  class="bg-slate-850/80 border border-slate-750 p-4 rounded-xl flex flex-col justify-between space-y-3 relative group hover:border-slate-600 transition cursor-move shadow-sm">
+                  <div class="flex items-center justify-between text-slate-500 border-b border-slate-800/80 pb-1.5">
+                    <div class="flex items-center space-x-1.5">
+                      <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400"></i>
+                      <span class="text-[10px] font-mono text-slate-500" x-text="`Lembrete #${index + 1}`"></span>
+                    </div>
+                    <button @click="removePinnedNote(index)" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition">
+                      <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
                   <p class="text-xs text-slate-300 leading-relaxed" x-text="note"></p>
-                  <button @click="removePinnedNote(index)" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition">
-                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                  </button>
+                  <div class="text-[10px] text-slate-600 italic">Arraste para reorganizar</div>
                 </div>
               </template>
-              <div x-show="pinnedNotes.length === 0" class="col-span-full py-4 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-lg">
-                Nenhum lembrete fixado no momento.
+
+              <div x-show="pinnedNotes.length === 0" class="col-span-2 py-8 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center space-y-1 bg-slate-900/40">
+                <span>Nenhum lembrete adicional cadastrado.</span>
+                <span class="text-[11px] text-slate-600">Clique em "Novo Lembrete" no topo para adicionar.</span>
               </div>
             </div>
           </div>
@@ -431,10 +484,9 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Questões e Performance</h2>
-              <p class="text-slate-400 text-sm">Resoluções agrupadas por data com estatísticas individuais e importação via Excel.</p>
+              <p class="text-slate-400 text-sm">Resoluções agrupadas por data com totais diários e importação via Excel.</p>
             </div>
             
-            <!-- Botões de Ação: Baixar Modelo, Importar Excel, Desfazer e Novo Treino -->
             <div class="flex flex-wrap items-center gap-2">
               <button @click="downloadExcelTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
@@ -447,7 +499,6 @@
               </button>
               <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
 
-              <!-- Botão para Desfazer Última Importação -->
               <button @click="undoLastImport()" x-show="lastImportId" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 <span>Desfazer Última Importação</span>
@@ -514,12 +565,17 @@
             <div class="space-y-6">
               <template x-for="group in getGroupedQuestionsByDate()" :key="group.date">
                 <div class="bg-slate-850/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                  <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <!-- Cabeçalho do Grupo com Total de Questões e Acerto do Dia -->
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
                     <div class="flex items-center space-x-3">
                       <span class="px-2.5 py-1 rounded bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="group.dayOfWeek"></span>
                       <span class="text-sm font-bold text-slate-100 font-mono" x-text="formatDate(group.date)"></span>
                     </div>
-                    <span class="text-xs text-slate-400 font-mono" x-text="`${group.items.length} ${group.items.length === 1 ? 'registro' : 'registros'}`"></span>
+                    <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+                      <span class="bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded text-slate-300" x-text="`Total: ${group.totalQ} questões`"></span>
+                      <span class="font-bold px-2.5 py-0.5 rounded" :class="getCustomProgressBarText(group.accuracy)" x-text="`Acerto Geral: ${group.accuracy}% (${group.totalAcertos}/${group.totalQ})`"></span>
+                      <span class="text-slate-400" x-text="`${group.items.length} ${group.items.length === 1 ? 'registro' : 'registros'}`"></span>
+                    </div>
                   </div>
 
                   <div class="space-y-3">
@@ -563,113 +619,8 @@
           </div>
         </div>
 
-        <!-- ==================== TAB 4: GARGALOS ==================== -->
-        <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
-              <p class="text-slate-400 text-sm">Tarefas de revisão organizadas por matéria e histórico de resolução por data.</p>
-            </div>
-            <button @click="openAddGargaloModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Adicionar Gargalo Manual</span>
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
-              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-              <span>Gargalos Pendentes de Revisão</span>
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <template x-for="matGroup in getGargalosGroupedByMateria(false)" :key="matGroup.materia">
-                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-3 shadow-sm backdrop-blur-sm">
-                  <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
-                    <h4 class="font-bold text-slate-100 text-xs uppercase tracking-wide" x-text="matGroup.materia"></h4>
-                    <span class="ml-auto text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" x-text="matGroup.items.length"></span>
-                  </div>
-
-                  <div class="space-y-2">
-                    <template x-for="g in matGroup.items" :key="g.id">
-                      <div class="bg-slate-850/80 border border-slate-800/80 rounded-lg p-3 space-y-2">
-                        <div class="flex items-start justify-between gap-2">
-                          <span class="font-bold text-xs text-slate-200" x-text="g.titulo"></span>
-                          <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
-                        
-                        <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                          <span class="text-[10px] text-slate-500 font-mono" x-text="formatDate(g.dataCriacao)"></span>
-                          <button @click="openResolveGargaloModal(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
-                            <i data-lucide="check" class="w-3 h-3"></i>
-                            <span>Marcar Concluído</span>
-                          </button>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </div>
-              </template>
-
-              <div x-show="getGargalosGroupedByMateria(false).length === 0" class="col-span-full py-8 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-                Nenhum gargalo pendente no momento. Excelente progresso!
-              </div>
-            </div>
-          </div>
-
-          <div class="space-y-4 pt-6 border-t border-slate-800">
-            <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
-              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-              <span>Gargalos Resolvidos (Agrupados por Matéria e Data)</span>
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <template x-for="matGroup in getResolvedGargalosGroupedByMateriaAndDate()" :key="'res_' + matGroup.materia">
-                <div class="bg-slate-900/80 border border-slate-800/60 rounded-xl p-4 space-y-4 opacity-90 backdrop-blur-sm">
-                  <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
-                    <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide" x-text="matGroup.materia"></h4>
-                  </div>
-
-                  <div class="space-y-3">
-                    <template x-for="dateGroup in matGroup.dateGroups" :key="dateGroup.date">
-                      <div class="bg-slate-850/80 border border-slate-800/70 rounded-lg p-3 space-y-2">
-                        <div class="flex items-center justify-between text-[11px] text-emerald-400 font-mono border-b border-slate-800 pb-1.5">
-                          <span class="font-bold uppercase" x-text="dateGroup.dayOfWeek"></span>
-                          <span x-text="`Concluído em: ${formatDate(dateGroup.date)}`"></span>
-                        </div>
-
-                        <div class="space-y-2">
-                          <template x-for="g in dateGroup.items" :key="g.id">
-                            <div class="bg-slate-900/90 border border-slate-800/50 rounded p-2.5 space-y-1">
-                              <div class="flex items-start justify-between gap-2">
-                                <span class="font-bold text-xs text-slate-300 line-through" x-text="g.titulo"></span>
-                                <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                              </div>
-                              <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
-                              <div class="text-[10px] text-slate-500 font-mono pt-1">
-                                <span x-text="`Criado em: ${formatDate(g.dataCriacao)}`"></span>
-                              </div>
-                            </div>
-                          </template>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </div>
-              </template>
-
-              <div x-show="getResolvedGargalosGroupedByMateriaAndDate().length === 0" class="col-span-full py-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-                Nenhum gargalo resolvido registrado ainda.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ==================== TAB 5: CRONOGRAMA / REGISTRO DE ESTUDOS ==================== -->
-        <div x-show="activeTab === 'cronograma'" x-cloak class="space-y-6">
+        <!-- ==================== TAB 4: ESTUDOS (ANTIGO CRONOGRAMA) ==================== -->
+        <div x-show="activeTab === 'estudos'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Cronograma</h2>
@@ -800,6 +751,111 @@
           </div>
         </div>
 
+        <!-- ==================== TAB 5: GARGALOS ==================== -->
+        <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
+              <p class="text-slate-400 text-sm">Tarefas de revisão organizadas por matéria e histórico de resolução por data.</p>
+            </div>
+            <button @click="openAddGargaloModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Adicionar Gargalo Manual</span>
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              <span>Gargalos Pendentes de Revisão</span>
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <template x-for="matGroup in getGargalosGroupedByMateria(false)" :key="matGroup.materia">
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-3 shadow-sm backdrop-blur-sm">
+                  <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                    <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
+                    <h4 class="font-bold text-slate-100 text-xs uppercase tracking-wide" x-text="matGroup.materia"></h4>
+                    <span class="ml-auto text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" x-text="matGroup.items.length"></span>
+                  </div>
+
+                  <div class="space-y-2">
+                    <template x-for="g in matGroup.items" :key="g.id">
+                      <div class="bg-slate-850/80 border border-slate-800/80 rounded-lg p-3 space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                          <span class="font-bold text-xs text-slate-200" x-text="g.titulo"></span>
+                          <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
+                        
+                        <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                          <span class="text-[10px] text-slate-500 font-mono" x-text="formatDate(g.dataCriacao)"></span>
+                          <button @click="openResolveGargaloModal(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
+                            <i data-lucide="check" class="w-3 h-3"></i>
+                            <span>Marcar Concluído</span>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <div x-show="getGargalosGroupedByMateria(false).length === 0" class="col-span-full py-8 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                Nenhum gargalo pendente no momento. Excelente progresso!
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4 pt-6 border-t border-slate-800">
+            <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span>Gargalos Resolvidos (Agrupados por Matéria e Data)</span>
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <template x-for="matGroup in getResolvedGargalosGroupedByMateriaAndDate()" :key="'res_' + matGroup.materia">
+                <div class="bg-slate-900/80 border border-slate-800/60 rounded-xl p-4 space-y-4 opacity-90 backdrop-blur-sm">
+                  <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                    <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
+                    <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide" x-text="matGroup.materia"></h4>
+                  </div>
+
+                  <div class="space-y-3">
+                    <template x-for="dateGroup in matGroup.dateGroups" :key="dateGroup.date">
+                      <div class="bg-slate-850/80 border border-slate-800/70 rounded-lg p-3 space-y-2">
+                        <div class="flex items-center justify-between text-[11px] text-emerald-400 font-mono border-b border-slate-800 pb-1.5">
+                          <span class="font-bold uppercase" x-text="dateGroup.dayOfWeek"></span>
+                          <span x-text="`Concluído em: ${formatDate(dateGroup.date)}`"></span>
+                        </div>
+
+                        <div class="space-y-2">
+                          <template x-for="g in dateGroup.items" :key="g.id">
+                            <div class="bg-slate-900/90 border border-slate-800/50 rounded p-2.5 space-y-1">
+                              <div class="flex items-start justify-between gap-2">
+                                <span class="font-bold text-xs text-slate-300 line-through" x-text="g.titulo"></span>
+                                <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                              </div>
+                              <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
+                              <div class="text-[10px] text-slate-500 font-mono pt-1">
+                                <span x-text="`Criado em: ${formatDate(g.dataCriacao)}`"></span>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <div x-show="getResolvedGargalosGroupedByMateriaAndDate().length === 0" class="col-span-full py-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                Nenhum gargalo resolvido registrado ainda.
+              </div>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -823,6 +879,27 @@
           <i data-lucide="check" class="w-3.5 h-3.5"></i>
           <span>Confirmar Conclusão</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Configurar Prova -->
+  <div x-show="showExamModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Configurar Próxima Prova</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Nome do Concurso / Prova</label>
+          <input type="text" x-model="modalExamTitle" placeholder="Ex: ISS Caruaru" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Data da Prova</label>
+          <input type="date" x-model="modalExamDate" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showExamModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveExamModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
       </div>
     </div>
   </div>
@@ -1041,7 +1118,6 @@
     function parseExcelDate(val) {
       if (!val) return new Date().toISOString().split('T')[0];
       
-      // Se o Excel repassar como número serial de data
       if (typeof val === 'number') {
         const dateInfo = XLSX.SSF.parse_date_code(val);
         if (dateInfo) {
@@ -1053,8 +1129,6 @@
       }
 
       const str = String(val).trim();
-      
-      // Formato DD/MM/AA ou DD/MM/AAAA
       if (str.includes('/')) {
         const parts = str.split('/');
         if (parts.length === 3) {
@@ -1068,7 +1142,6 @@
         }
       }
 
-      // Formato YYYY-MM-DD
       if (str.includes('-')) {
         return str.split('T')[0];
       }
@@ -1083,13 +1156,21 @@
         lastSync: false,
         isLoaded: false,
         lastImportId: null,
+        showAccuracyPercent: false,
+
+        examTitle: 'ISS Caruaru',
+        examDate: '2026-11-29',
+        showExamModal: false,
+        modalExamTitle: 'ISS Caruaru',
+        modalExamDate: '2026-11-29',
+        draggedNoteIndex: null,
 
         tabs: [
           { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
           { id: 'materias', label: 'Matérias', icon: 'book-open' },
           { id: 'questoes', label: 'Questões', icon: 'target' },
-          { id: 'gargalos', label: 'Gargalos', icon: 'alert-triangle' },
-          { id: 'cronograma', label: 'Cronograma', icon: 'calendar' }
+          { id: 'estudos', label: 'Estudos', icon: 'calendar' },
+          { id: 'gargalos', label: 'Gargalos', icon: 'alert-triangle' }
         ],
 
         materias: [
@@ -1234,6 +1315,8 @@
           if (loaded.estudos) this.estudos = loaded.estudos;
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
           if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
+          if (loaded.examTitle) this.examTitle = loaded.examTitle;
+          if (loaded.examDate) this.examDate = loaded.examDate;
         },
 
         ensureValidSelection() {
@@ -1287,7 +1370,9 @@
             questoes: this.questoes,
             estudos: this.estudos,
             gargalos: this.gargalos,
-            pinnedNotes: this.pinnedNotes
+            pinnedNotes: this.pinnedNotes,
+            examTitle: this.examTitle,
+            examDate: this.examDate
           };
           localStorage.setItem(LOCAL_KEY, JSON.stringify(payload));
           this.saveToSupabase(payload);
@@ -1657,12 +1742,20 @@
               groupsMap[dStr] = {
                 date: dStr,
                 dayOfWeek: this.getDayOfWeekShort(dStr),
-                items: []
+                items: [],
+                totalQ: 0,
+                totalAcertos: 0
               };
             }
             groupsMap[dStr].items.push(q);
+            groupsMap[dStr].totalQ += (q.total || 0);
+            groupsMap[dStr].totalAcertos += (q.acertos || 0);
           });
-          return Object.values(groupsMap);
+
+          return Object.values(groupsMap).map(g => {
+            g.accuracy = g.totalQ > 0 ? Math.round((g.totalAcertos / g.totalQ) * 100) : 0;
+            return g;
+          });
         },
 
         getDayOfWeekShort(dateStr) {
@@ -2095,6 +2188,58 @@
           return total === 0 ? 0 : Math.round((this.calcTotalRights() / total) * 100);
         },
 
+        calcStudyStreak() {
+          let allDates = [];
+          this.questoes.forEach(q => { if (q.data) allDates.push(new Date(q.data)); });
+          this.estudos.forEach(e => { if (e.data) allDates.push(new Date(e.data)); });
+          
+          if (allDates.length === 0) return { days: 0, weeks: 0 };
+          
+          let oldest = new Date(Math.min(...allDates));
+          let today = new Date();
+          oldest.setHours(0,0,0,0);
+          today.setHours(0,0,0,0);
+          
+          let diffTime = today - oldest;
+          let diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
+          let diffWeeks = (diffDays / 7).toFixed(1);
+          
+          return { days: diffDays, weeks: diffWeeks };
+        },
+
+        calcExamCountdown() {
+          if (!this.examDate) return { days: 0, weeks: 0 };
+          let target = new Date(this.examDate + 'T00:00:00');
+          let today = new Date();
+          today.setHours(0,0,0,0);
+          let diffTime = target - today;
+          let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) diffDays = 0;
+          let diffWeeks = (diffDays / 7).toFixed(1);
+          return { days: diffDays, weeks: diffWeeks };
+        },
+
+        openEditExamModal() {
+          this.modalExamTitle = this.examTitle;
+          this.modalExamDate = this.examDate;
+          this.showExamModal = true;
+        },
+
+        saveExamModal() {
+          this.examTitle = this.modalExamTitle.trim() || 'Próxima Prova';
+          this.examDate = this.modalExamDate || '2026-11-29';
+          this.showExamModal = false;
+          this.saveAll();
+        },
+
+        dropNote(targetIndex) {
+          if (this.draggedNoteIndex === null || this.draggedNoteIndex === targetIndex) return;
+          const movedItem = this.pinnedNotes.splice(this.draggedNoteIndex, 1)[0];
+          this.pinnedNotes.splice(targetIndex, 0, movedItem);
+          this.draggedNoteIndex = null;
+          this.saveAll();
+        },
+
         countActiveBottlenecks() { return this.gargalos.filter(g => !g.resolvido).length; },
 
         openAddQuestaoModal() {
@@ -2234,7 +2379,6 @@
           return `${dia}/${mes}/${anoCurto}`;
         },
 
-        // Função para Baixar o Modelo de Excel Padrão
         downloadExcelTemplate() {
           const wsData = [
             ["Data", "Materia", "Assunto", "Total", "Acertos", "Anotacao"],
@@ -2247,7 +2391,6 @@
           XLSX.writeFile(wb, "modelo_importacao_questoes.xlsx");
         },
 
-        // Função para Importar e Processar o Arquivo Excel
         importExcelFile(event) {
           const file = event.target.files[0];
           if (!file) return;
@@ -2286,7 +2429,6 @@
 
                 const newQId = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
-                // 1. Adiciona em Questões
                 this.questoes.push({
                   id: newQId,
                   materia: materiaQ,
@@ -2299,7 +2441,6 @@
                   importId: importBatchId
                 });
 
-                // 2. Adiciona simultaneamente no Cronograma (Estudos)
                 this.estudos.unshift({
                   id: 'est_q_' + newQId,
                   questaoId: newQId,
@@ -2313,7 +2454,6 @@
                   importId: importBatchId
                 });
 
-                // 3. Adiciona em Gargalos se houver anotação
                 if (anotacaoQ) {
                   this.gargalos.unshift({
                     id: 'g_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -2333,7 +2473,7 @@
 
               this.lastImportId = importBatchId;
               this.saveAll();
-              alert(`${importedCount} registros de questões importados com sucesso para o histórico e cronograma!`);
+              alert(`${importedCount} registros importados com sucesso para histórico e estudos!`);
             } catch (err) {
               console.error(err);
               alert("Erro ao processar o arquivo Excel. Verifique se o formato está correto.");
@@ -2344,10 +2484,9 @@
           reader.readAsArrayBuffer(file);
         },
 
-        // Função para cancelar / desfazer a última importação
         undoLastImport() {
           if (!this.lastImportId) return;
-          if (!confirm("Deseja realmente desfazer a última importação? Todos os cards e registros associados a ela serão removidos.")) {
+          if (!confirm("Deseja realmente desfazer a última importação? Todos os cards associados a ela serão removidos.")) {
             return;
           }
 
