@@ -86,7 +86,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.2</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.3</span>
       </div>
     </aside>
 
@@ -655,16 +655,16 @@
             </button>
           </div>
 
-          <!-- MINI CARDS DINÂMICOS COM FILTRO DE INTERVALO (CALENDAR) -->
+          <!-- MINI CARDS DINÂMICOS COM FILTRO DE INTERVALO DE ATÉ 30 DIAS -->
           <div class="space-y-3 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
               <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
                 <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
-                <span>Filtro de Período (Últimos 7 dias ou Intervalo Específico)</span>
+                <span>Filtro de Período (Últimos 7 dias ou Intervalo de até 30 Dias)</span>
               </div>
               <div class="flex items-center space-x-2 text-xs">
                 <button @click="setCronogramaMode('last7')" :class="cronogramaMode === 'last7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1 rounded-lg transition font-medium">Últimos 7 Dias</button>
-                <button @click="cronogramaMode = 'range'" :class="cronogramaMode === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1 rounded-lg transition font-medium">Intervalo de Datas</button>
+                <button @click="cronogramaMode = 'range'" :class="cronogramaMode === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1 rounded-lg transition font-medium">Intervalo (Até 30 Dias)</button>
               </div>
             </div>
 
@@ -674,33 +674,33 @@
                 <input type="date" x-model="cronogramaDateStart" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
               <div class="flex items-center space-x-2">
-                <span class="text-xs text-slate-400">Até (máx 7 dias):</span>
+                <span class="text-xs text-slate-400">Até (máx 30 dias):</span>
                 <input type="date" x-model="cronogramaDateEnd" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
             </div>
 
-            <!-- Grid dos Mini Cards conforme período selecionado -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 pt-1">
+            <!-- Grid dos Mini Cards (com rolagem horizontal ou adaptável para até 30 cards) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-10 gap-2.5 pt-1 max-h-96 overflow-y-auto pr-1">
               <template x-for="dayObj in getCronogramaMiniCards()" :key="dayObj.dateStr">
                 <div @click="selectedCronogramaDateFilter = (selectedCronogramaDateFilter === dayObj.dateStr ? '' : dayObj.dateStr)"
-                     class="bg-slate-850 border rounded-xl p-3 flex flex-col justify-between space-y-2.5 cursor-pointer transition"
+                     class="bg-slate-850 border rounded-xl p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left"
                      :class="selectedCronogramaDateFilter === dayObj.dateStr ? 'border-indigo-500 bg-indigo-600/20 shadow-md shadow-indigo-500/10' : (dayObj.hasRecords ? 'border-indigo-500/50 bg-slate-900 hover:border-indigo-400' : 'border-slate-800 hover:border-slate-700')">
                   
-                  <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-                    <span class="text-[10px] font-bold font-mono tracking-wider uppercase" :class="dayObj.isToday ? 'text-indigo-400' : 'text-slate-400'" x-text="dayObj.dayOfWeek"></span>
-                    <span class="text-[10px] text-slate-500 font-mono" x-text="dayObj.formattedDate"></span>
+                  <div class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+                    <span class="text-[9px] font-bold font-mono tracking-wider uppercase" :class="dayObj.isToday ? 'text-indigo-400' : 'text-slate-400'" x-text="dayObj.dayOfWeek"></span>
+                    <span class="text-[9px] text-slate-500 font-mono" x-text="dayObj.formattedDate"></span>
                   </div>
 
-                  <div class="space-y-1.5 min-h-[50px] flex flex-col justify-center">
+                  <div class="space-y-1 min-h-[40px] flex flex-col justify-center">
                     <template x-if="dayObj.materias.length > 0">
                       <div class="flex flex-wrap gap-1">
                         <template x-for="mName in dayObj.materias" :key="mName">
-                          <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 truncate max-w-full" x-text="mName"></span>
+                          <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 truncate max-w-full" x-text="mName"></span>
                         </template>
                       </div>
                     </template>
                     <template x-if="dayObj.materias.length === 0">
-                      <span class="text-[11px] text-slate-500 italic text-center block">Sem registros</span>
+                      <span class="text-[10px] text-slate-500 italic text-center block">-</span>
                     </template>
                   </div>
                 </div>
@@ -713,10 +713,10 @@
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
                 <i data-lucide="book-open-check" class="w-4 h-4 text-indigo-400"></i>
-                <span x-text="selectedCronogramaDateFilter ? `Registros do dia ${formatDate(selectedCronogramaDateFilter)}` : 'Últimos Registros de Estudos (Centralizados)'"></span>
+                <span x-text="selectedCronogramaDateFilter ? `Registros do dia ${formatDate(selectedCronogramaDateFilter)}` : 'Registros de Estudos (Centralizados)'"></span>
               </h3>
               <template x-if="selectedCronogramaDateFilter">
-                <button @click="selectedCronogramaDateFilter = ''" class="text-xs text-indigo-400 hover:underline">Ver Todos os Recentes</button>
+                <button @click="selectedCronogramaDateFilter = ''" class="text-xs text-indigo-400 hover:underline">Ver Todos do Período</button>
               </template>
             </div>
 
@@ -1037,10 +1037,9 @@
         questoesFilterMateria: 'todas',
         questoesPeriodFilter: 'total',
         gargalos: [],
-        estudos: [], // Registros unificados de estudos (teoria + questões) para o Cronograma
+        estudos: [], 
 
-        // Estados do Cronograma
-        cronogramaMode: 'last7', // 'last7' ou 'range'
+        cronogramaMode: 'last7',
         cronogramaDateStart: new Date().toISOString().split('T')[0],
         cronogramaDateEnd: new Date().toISOString().split('T')[0],
         selectedCronogramaDateFilter: '',
@@ -1095,6 +1094,10 @@
           }
 
           await this.loadFromSupabase();
+          
+          // Sincroniza retroativamente questões existentes que ainda não constavam no cronograma
+          this.syncExistingQuestionsToEstudos();
+
           this.isLoaded = true;
 
           setInterval(() => { this.backgroundSync(); }, 5000);
@@ -1102,6 +1105,7 @@
           this.$watch('materias', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('questoes', () => { 
             if (this.isLoaded) {
+              this.syncExistingQuestionsToEstudos();
               this.saveAll();
               this.renderQuestionsChart();
             }
@@ -1139,6 +1143,26 @@
           if (loaded.estudos) this.estudos = loaded.estudos;
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
           if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
+        },
+
+        syncExistingQuestionsToEstudos() {
+          if (!this.questoes) return;
+          this.questoes.forEach(q => {
+            const exists = this.estudos.some(e => e.questaoId === q.id);
+            if (!exists) {
+              this.estudos.push({
+                id: 'est_q_' + q.id,
+                questaoId: q.id,
+                data: q.data || new Date().toISOString().split('T')[0],
+                materia: q.materia,
+                tipo: 'Resolução de Questões',
+                assunto: q.assunto || '',
+                total: q.total || 0,
+                acertos: q.acertos || 0,
+                anotacao: q.anotacao || ''
+              });
+            }
+          });
         },
 
         saveAll() {
@@ -1302,7 +1326,7 @@
           const listEstudos = this.estudos.filter(e => e.materia === mat.nome);
           const qTotal = list.reduce((acc, q) => acc + (q.total || 0), 0);
           const eTotal = listEstudos.reduce((acc, e) => acc + (e.total || 0), 0);
-          return qTotal + eTotal;
+          return Math.max(qTotal, eTotal);
         },
 
         calcMatRights(mat) {
@@ -1310,7 +1334,7 @@
           const listEstudos = this.estudos.filter(e => e.materia === mat.nome);
           const qRights = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
           const eRights = listEstudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
-          return qRights + eRights;
+          return Math.max(qRights, eRights);
         },
 
         calcMatAccuracy(mat) {
@@ -1356,7 +1380,6 @@
           return cards;
         },
 
-        // Métodos para o Cronograma / Registro de Estudos
         setCronogramaMode(mode) {
           this.cronogramaMode = mode;
           this.selectedCronogramaDateFilter = '';
@@ -1393,7 +1416,7 @@
               });
             }
           } else {
-            // Intervalo de Datas (máximo 7 dias)
+            // Intervalo de Datas (máximo de até 30 dias)
             if (!this.cronogramaDateStart) this.cronogramaDateStart = new Date().toISOString().split('T')[0];
             if (!this.cronogramaDateEnd) this.cronogramaDateEnd = this.cronogramaDateStart;
 
@@ -1401,7 +1424,7 @@
             const limit = new Date(this.cronogramaDateEnd);
             let count = 0;
 
-            while (curr <= limit && count < 7) {
+            while (curr <= limit && count < 30) {
               const ano = curr.getFullYear();
               const mes = String(curr.getMonth() + 1).padStart(2, '0');
               const dia = String(curr.getDate()).padStart(2, '0');
@@ -1434,10 +1457,6 @@
           
           if (this.selectedCronogramaDateFilter) {
             list = list.filter(e => e.data === this.selectedCronogramaDateFilter);
-          } else if (this.cronogramaMode === 'last7') {
-            const miniCards = this.getCronogramaMiniCards();
-            const allowedDates = miniCards.map(c => c.dateStr);
-            list = list.filter(e => allowedDates.includes(e.data));
           } else {
             const miniCards = this.getCronogramaMiniCards();
             const allowedDates = miniCards.map(c => c.dateStr);
@@ -1501,11 +1520,24 @@
               item.total = Number(this.modalEstudoTotal) || 0;
               item.acertos = Number(this.modalEstudoAcertos) || 0;
               item.anotacao = anotacaoText;
+
+              if (item.questaoId) {
+                const q = this.questoes.find(x => x.id === item.questaoId);
+                if (q) {
+                  q.data = dataE;
+                  q.materia = this.modalEstudoMateria;
+                  q.assunto = this.modalEstudoAssunto;
+                  q.total = item.total;
+                  q.acertos = item.acertos;
+                  q.anotacao = anotacaoText;
+                }
+              }
             }
           } else {
             const newId = 'est_' + Date.now();
             this.estudos.unshift({
               id: newId,
+              questaoId: null,
               data: dataE,
               materia: this.modalEstudoMateria,
               tipo: this.modalEstudoTipo,
@@ -1532,11 +1564,17 @@
           this.showEstudoModal = false;
           this.editingEstudoId = null;
           this.saveAll();
+          this.renderQuestionsChart();
         },
 
         deleteEstudoRecord(id) {
+          const item = this.estudos.find(e => e.id === id);
+          if (item && item.questaoId) {
+            this.questoes = this.questoes.filter(q => q.id !== item.questaoId);
+          }
           this.estudos = this.estudos.filter(e => e.id !== id);
           this.saveAll();
+          this.renderQuestionsChart();
         },
 
         calcItemPercent(item) {
@@ -1866,12 +1904,12 @@
         calcTotalQuestions() {
           const qTotal = this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.total || 0), 0);
           const eTotal = this.estudos.reduce((acc, e) => acc + (e.total || 0), 0);
-          return qTotal + eTotal;
+          return Math.max(qTotal, eTotal);
         },
         calcTotalRights() {
           const qRights = this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.acertos || 0), 0);
           const eRights = this.estudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
-          return qRights + eRights;
+          return Math.max(qRights, eRights);
         },
         calcOverallAccuracy() {
           const total = this.calcTotalQuestions();
@@ -1913,7 +1951,6 @@
               q.acertos = Number(this.modalQuestaoAcertos) || 0;
               q.anotacao = anotacaoText;
 
-              // Sincroniza também no Cronograma (estudos)
               const estItem = this.estudos.find(e => e.questaoId === q.id);
               if (estItem) {
                 estItem.data = dataQ;
@@ -1937,9 +1974,8 @@
               showNote: false
             });
 
-            // Adiciona automaticamente no Cronograma (estudos)
             this.estudos.unshift({
-              id: 'est_q_' + Date.now(),
+              id: 'est_q_' + newQId,
               questaoId: newQId,
               data: dataQ,
               materia: this.modalQuestaoMateria,
