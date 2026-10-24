@@ -27,6 +27,9 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Chart.js for Dashboards -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -83,7 +86,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.0</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.1</span>
       </div>
     </aside>
 
@@ -179,6 +182,17 @@
             </div>
           </div>
 
+          <!-- GRÁFICO DE PIZZA: QUESTÕES POR MATÉRIA -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-400"></i>
+              <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Distribuição de Questões por Matéria</h3>
+            </div>
+            <div class="relative w-full h-72 flex justify-center items-center">
+              <canvas id="questionsPieChart"></canvas>
+            </div>
+          </div>
+
           <!-- Lembretes Fixados -->
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
             <div class="flex items-center justify-between mb-4">
@@ -206,7 +220,7 @@
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
             <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
               <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
-              <span>Avanço do Edital por Matéria</span>
+              <span>Avanço do Edital e Desempenho por Matéria</span>
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,8 +236,15 @@
                       <span class="font-bold px-2 py-0.5 rounded text-[11px]" :class="getCustomProgressBarText(calcMateriaPercent(mat))" x-text="calcMateriaPercent(mat) + '%'"></span>
                     </div>
                   </div>
+                  
                   <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800/80">
                     <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
+                  </div>
+
+                  <!-- Métricas de Questões por Matéria -->
+                  <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60 font-mono">
+                    <span x-text="`Questões: ${calcMatQuestions(mat)}`"></span>
+                    <span x-text="`Acerto: ${calcMatAccuracy(mat)}%`" :class="calcMatAccuracy(mat) >= 70 ? 'text-emerald-400 font-bold' : (calcMatAccuracy(mat) >= 50 ? 'text-amber-400 font-bold' : 'text-rose-400 font-bold')"></span>
                   </div>
                 </div>
               </template>
@@ -809,6 +830,8 @@
       console.warn("Supabase init error:", e);
     }
 
+    let questionsChartInstance = null;
+
     function formatTextCase(str, isSubtopic) {
       if (!str) return '';
       if (isSubtopic) {
@@ -910,13 +933,25 @@
           setInterval(() => { this.backgroundSync(); }, 5000);
 
           this.$watch('materias', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
-          this.$watch('questoes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('questoes', () => { 
+            if (this.isLoaded) {
+              this.saveAll();
+              this.renderQuestionsChart();
+            }
+          }, { deep: true });
           this.$watch('gargalos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('cronograma', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          
+          this.$watch('activeTab', (tab) => {
+            if (tab === 'dashboard') {
+              this.$nextTick(() => { this.renderQuestionsChart(); });
+            }
+          });
 
           this.$nextTick(() => {
             if (window.lucide) window.lucide.createIcons();
+            this.renderQuestionsChart();
           });
         },
 
@@ -974,7 +1009,10 @@
             this.lastSync = false;
           } finally {
             this.syncing = false;
-            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            this.$nextTick(() => { 
+              if (window.lucide) window.lucide.createIcons(); 
+              this.renderQuestionsChart();
+            });
           }
         },
 
@@ -996,7 +1034,10 @@
                 this.applyData(loaded);
                 localStorage.setItem(LOCAL_KEY, remoteString);
                 this.lastSync = true;
-                this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+                this.$nextTick(() => { 
+                  if (window.lucide) window.lucide.createIcons(); 
+                  this.renderQuestionsChart();
+                });
               }
             }
           } catch(e) {}
@@ -1028,11 +1069,85 @@
             const [movedItem] = this.materias.splice(fromIndex, 1);
             this.materias.splice(toIndex, 0, movedItem);
             this.saveAll();
+            this.renderQuestionsChart();
           }
           this.draggedMateriaId = null;
         },
 
-        // Gera os dados dinâmicos para os últimos 7 dias na aba Questões
+        // Renderiza ou atualiza o Gráfico de Pizza de Questões por Matéria no Dashboard
+        renderQuestionsChart() {
+          const canvas = document.getElementById('questionsPieChart');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+
+          const labels = this.materias.map(m => m.nome);
+          const dataVals = this.materias.map(m => this.calcMatQuestions(m));
+          const bgColors = this.materias.map(m => m.cor || '#6366f1');
+
+          if (questionsChartInstance) {
+            questionsChartInstance.destroy();
+          }
+
+          questionsChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: dataVals,
+                backgroundColor: bgColors,
+                borderWidth: 1,
+                borderColor: '#0f172a'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    color: '#94a3b8',
+                    font: { size: 11 },
+                    boxWidth: 12
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const matName = context.label;
+                      const mat = this.materias.find(m => m.nome === matName);
+                      const totalQ = context.raw || 0;
+                      const acc = mat ? this.calcMatAccuracy(mat) : 0;
+                      return [
+                        ` Matéria: ${matName}`,
+                        ` Total de Questões: ${totalQ}`,
+                        ` Percentual de Acerto: ${acc}%`
+                      ];
+                    }
+                  }
+                }
+              }
+            }
+          });
+        },
+
+        // Métricas de Questões por Matéria específica
+        calcMatQuestions(mat) {
+          const list = this.questoes.filter(q => q.materia === mat.nome);
+          return list.reduce((acc, q) => acc + (q.total || 0), 0);
+        },
+
+        calcMatRights(mat) {
+          const list = this.questoes.filter(q => q.materia === mat.nome);
+          return list.reduce((acc, q) => acc + (q.acertos || 0), 0);
+        },
+
+        calcMatAccuracy(mat) {
+          const total = this.calcMatQuestions(mat);
+          if (total === 0) return 0;
+          return Math.round((this.calcMatRights(mat) / total) * 100);
+        },
+
         getLast7DaysCards() {
           const cards = [];
           const today = new Date();
@@ -1050,7 +1165,6 @@
             const dayOfWeek = this.getDayOfWeekShort(dateStr);
             const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
 
-            // Filtra as matérias que tiveram questões registradas nesta exata data
             const matchedQuestions = this.questoes.filter(q => q.data === dateStr);
             const materiasSet = [...new Set(matchedQuestions.map(q => q.materia))];
 
@@ -1353,11 +1467,13 @@
           this.showMateriaModal = false;
           this.editingMateriaId = null;
           this.saveAll();
+          this.renderQuestionsChart();
         },
         deleteMateria(matId) {
           this.materias = this.materias.filter(m => m.id !== matId);
           if (this.materias.length > 0) this.selectedMateriaId = this.materias[0].id;
           this.saveAll();
+          this.renderQuestionsChart();
         },
         calcMateriaCompleted(mat) {
           if (!mat || !mat.topicos) return 0;
@@ -1456,10 +1572,12 @@
           this.showQuestaoModal = false;
           this.editingQuestaoId = null;
           this.saveAll();
+          this.renderQuestionsChart();
         },
         deleteQuestao(qId) {
           this.questoes = this.questoes.filter(q => q.id !== qId);
           this.saveAll();
+          this.renderQuestionsChart();
         },
         calcQuestaoPercent(q) {
           if (!q.total) return 0;
