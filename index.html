@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.4</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.5</span>
       </div>
     </aside>
 
@@ -1093,7 +1093,7 @@
     </div>
   </div>
 
-  <!-- Modal Registrar / Editar Treino (Questões) com botões rápidos +1 -->
+  <!-- Modal Registrar / Editar Treino (Questões) com botões rápidos +1 e iniciando em branco -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Treino' : 'Registrar Treino'"></h3>
@@ -1119,14 +1119,14 @@
           <div>
             <label class="text-xs text-slate-400 block mb-1">Total</label>
             <div class="flex items-center space-x-1">
-              <input type="number" x-model.number="modalQuestaoTotal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <input type="number" x-model.number="modalQuestaoTotal" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               <button @click="modalQuestaoTotal = (Number(modalQuestaoTotal)||0) + 1" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 questão">+1</button>
             </div>
           </div>
           <div>
             <label class="text-xs text-slate-400 block mb-1">Acertos</label>
             <div class="flex items-center space-x-1">
-              <input type="number" x-model.number="modalQuestaoAcertos" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <input type="number" x-model.number="modalQuestaoAcertos" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               <button @click="modalQuestaoAcertos = (Number(modalQuestaoAcertos)||0) + 1" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 acerto">+1</button>
             </div>
           </div>
@@ -1285,7 +1285,7 @@
         newTopicText: '',
         questoes: [],
         questoesFilterMateria: 'todas',
-        questoesPeriodFilter: 'total',
+        questoesPeriodFilter: '7',
         gargalos: [],
         estudos: [], 
 
@@ -1324,8 +1324,8 @@
         modalQuestaoData: new Date().toISOString().split('T')[0],
         modalQuestaoMateria: '',
         modalQuestaoAssunto: '',
-        modalQuestaoTotal: 10,
-        modalQuestaoAcertos: 8,
+        modalQuestaoTotal: '',
+        modalQuestaoAcertos: '',
         modalQuestaoAnotacao: '',
         showGargaloModal: false,
         modalGargaloMateria: '',
@@ -2422,8 +2422,8 @@
           this.modalQuestaoData = new Date().toISOString().split('T')[0];
           this.modalQuestaoMateria = this.materias[0] ? this.materias[0].nome : '';
           this.modalQuestaoAssunto = '';
-          this.modalQuestaoTotal = 10;
-          this.modalQuestaoAcertos = 8;
+          this.modalQuestaoTotal = '';
+          this.modalQuestaoAcertos = '';
           this.modalQuestaoAnotacao = '';
           this.showQuestaoModal = true;
         },
