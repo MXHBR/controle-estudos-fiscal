@@ -86,7 +86,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.7</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.8</span>
       </div>
     </aside>
 
@@ -896,7 +896,7 @@
       <div class="space-y-3">
         <div>
           <label class="text-xs text-slate-400 block mb-1">Descrição do Tópico / Subtópico</label>
-          <input type="text" x-model="modalTopicText" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+          <input type="text" x-model="modalTopicText" @keydown.enter="saveEditedTopic()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
       </div>
       <div class="flex justify-end space-x-2 pt-2">
@@ -1912,11 +1912,21 @@
         },
 
         saveEditedTopic() {
-          if (!this.editingTopicObj || !this.modalTopicText.trim()) return;
-          this.editingTopicObj.nome = formatTextCase(this.modalTopicText.trim(), this.editingTopicObj.eSubtopico);
+          if (!this.editingTopicObj || !this.modalTopicText.trim()) {
+            this.showEditTopicModal = false;
+            return;
+          }
+          const mat = this.getSelectedMateria();
+          if (mat && mat.topicos) {
+            const target = mat.topicos.find(t => t.id === this.editingTopicObj.id);
+            if (target) {
+              target.nome = formatTextCase(this.modalTopicText.trim(), target.eSubtopico);
+            }
+          }
           this.showEditTopicModal = false;
           this.editingTopicObj = null;
           this.saveAll();
+          this.refreshIcons();
         },
 
         openAddMateriaModal() {
