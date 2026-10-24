@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.7</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.8</span>
       </div>
     </aside>
 
@@ -500,7 +500,7 @@
           </template>
         </div>
 
-        <!-- ==================== TAB 3: QUESTÕES (AGRUPADAS POR DATA E MATÉRIA + CORREÇÃO GARGALO) ==================== -->
+        <!-- ==================== TAB 3: QUESTÕES (NOVO DESIGN LIMPO, ALINHADO E HIERÁRQUICO) ==================== -->
         <div x-show="activeTab === 'questoes'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -559,7 +559,7 @@
             </template>
           </div>
 
-          <!-- PAINEL PRINCIPAL EM FORMATO DE LISTA LIMPA E AGRUPADA -->
+          <!-- PAINEL PRINCIPAL HIERÁRQUICO E ALINHADO -->
           <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-4 shadow-sm backdrop-blur-sm">
             
             <!-- Barra de Filtros e Resumo Rápido -->
@@ -589,102 +589,90 @@
               </div>
             </div>
 
-            <!-- EXIBIÇÃO AGRUPADA POR DATA -> MATÉRIA -> ASSUNTOS INDIVIDUAIS -->
+            <!-- EXIBIÇÃO AGRUPADA POR DATA -> MATÉRIA -> ASSUNTOS (ALINHamento PERFEITO COM GRID) -->
             <div class="space-y-6">
-              <template x-for="dateGroup in getGroupedQuestionsList()" :key="dateGroup.date">
-                <div class="border border-slate-800/80 rounded-xl bg-slate-950/40 overflow-hidden space-y-0">
+              <template x-for="dayGroup in getGroupedQuestionsList()" :key="dayGroup.date">
+                <div class="border border-slate-800/80 rounded-xl bg-slate-950/40 overflow-hidden shadow-sm">
                   
                   <!-- Cabeçalho da Data -->
-                  <div class="bg-slate-850/90 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
-                    <div class="flex items-center space-x-2.5">
-                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 uppercase" x-text="dateGroup.dayOfWeek"></span>
-                      <span class="font-bold text-slate-200 font-mono text-xs" x-text="formatDate(dateGroup.date)"></span>
+                  <div class="bg-slate-850/90 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 uppercase" x-text="dayGroup.dayOfWeek"></span>
+                      <span class="font-bold text-slate-100 font-mono text-xs" x-text="formatDate(dayGroup.date)"></span>
                     </div>
-                    <span class="text-[11px] text-slate-400 font-mono" x-text="`${dateGroup.totalQ} questões • ${dateGroup.acc}% acerto`"></span>
+                    <div class="flex items-center space-x-3 text-xs font-mono">
+                      <span class="text-slate-400">Total do Dia: <strong class="text-indigo-400" x-text="dayGroup.totalQ + ' qsts'"></strong></span>
+                      <span class="text-slate-500">•</span>
+                      <span class="text-slate-400">Acerto: <strong class="text-emerald-400" x-text="dayGroup.acc + '%'"></strong></span>
+                    </div>
                   </div>
 
-                  <!-- Agrupamento por Matéria na mesma Data -->
-                  <div class="divide-y divide-slate-800/60">
-                    <template x-for="matGroup in dateGroup.materias" :key="matGroup.materia">
-                      <div class="p-3 sm:p-4 space-y-3 bg-slate-900/30">
+                  <!-- Blocos de Matérias dentro do Dia -->
+                  <div class="p-4 space-y-4">
+                    <template x-for="matGroup in dayGroup.materias" :key="matGroup.materia">
+                      <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
                         
-                        <!-- Barra de Matéria -->
-                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
-                          <div class="flex items-center space-x-2">
-                            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
-                            <span class="font-bold text-xs uppercase tracking-wide text-slate-100" x-text="matGroup.materia"></span>
+                        <!-- Cabeçalho da Matéria -->
+                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-2.5">
+                          <div class="flex items-center space-x-2.5">
+                            <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
+                            <span class="font-bold text-xs uppercase tracking-wider text-slate-100" x-text="matGroup.materia"></span>
                           </div>
-                          <div class="flex items-center space-x-2 text-[11px] font-mono">
+                          <div class="flex items-center space-x-3 text-xs font-mono">
                             <span class="text-slate-400" x-text="`${matGroup.totalRights}/${matGroup.totalQ} acertos`"></span>
-                            <span class="px-2 py-0.5 rounded font-bold" :class="getCustomProgressBarText(matGroup.acc)" x-text="`${matGroup.acc}%`"></span>
+                            <span class="px-2 py-0.5 rounded-md font-bold" :class="getCustomProgressBarText(matGroup.acc)" x-text="matGroup.acc + '%'"></span>
                           </div>
                         </div>
 
-                        <!-- Tabela de Assuntos Individuais dentro desta Matéria -->
-                        <div class="overflow-x-auto">
-                          <table class="w-full text-left border-collapse">
-                            <thead>
-                              <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-800/40">
-                                <th class="pb-1.5 px-2">Assunto</th>
-                                <th class="pb-1.5 px-2 text-center">Desempenho</th>
-                                <th class="pb-1.5 px-2 text-center">Taxa</th>
-                                <th class="pb-1.5 px-2 text-center">Gargalo / Anotação</th>
-                                <th class="pb-1.5 px-2 text-right">Ações</th>
-                              </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/30 text-xs">
-                              <template x-for="q in matGroup.items" :key="q.id">
-                                <!-- Linha Principal do Assunto -->
-                                <tr class="hover:bg-slate-850/50 transition">
-                                  <td class="py-2.5 px-2 font-medium text-slate-200">
-                                    <span x-text="q.assunto || 'Geral'"></span>
-                                  </td>
-                                  
-                                  <td class="py-2.5 px-2 text-center font-mono whitespace-nowrap">
-                                    <span class="text-slate-200 font-bold" x-text="q.acertos"></span>
-                                    <span class="text-slate-500" x-text="`/ ${q.total}`"></span>
-                                  </td>
+                        <!-- Lista de Assuntos Individuais com Grid Perfeitamente Alinhado -->
+                        <div class="space-y-2">
+                          <template x-for="q in matGroup.items" :key="q.id">
+                            <div class="bg-slate-850/80 border border-slate-800/60 rounded-lg p-3 hover:border-slate-700 transition space-y-2">
+                              <div class="grid grid-cols-12 items-center gap-3">
+                                <!-- Assunto (Col 1 a 6) -->
+                                <div class="col-span-6 min-w-0">
+                                  <span class="text-xs font-semibold text-slate-200 block truncate" x-text="q.assunto || 'Geral'"></span>
+                                </div>
+                                <!-- Desempenho (Col 7 a 8) -->
+                                <div class="col-span-2 text-center font-mono text-xs">
+                                  <span class="text-slate-200 font-bold" x-text="q.acertos"></span>
+                                  <span class="text-slate-500" x-text="`/ ${q.total}`"></span>
+                                </div>
+                                <!-- Taxa (Col 9) -->
+                                <div class="col-span-1 text-center">
+                                  <span class="px-2 py-0.5 rounded font-bold font-mono text-[10px]" :class="getCustomProgressBarText(calcQuestaoPercent(q))" x-text="calcQuestaoPercent(q) + '%'"></span>
+                                </div>
+                                <!-- Gargalo / Nota (Col 10) -->
+                                <div class="col-span-2 text-center">
+                                  <template x-if="q.anotacao">
+                                    <button @click="q.showNote = !q.showNote" class="inline-flex items-center space-x-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-md transition text-[11px]" title="Ver anotação/gargalo">
+                                      <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                                      <span x-text="q.showNote ? 'Ocultar' : 'Ver Nota'"></span>
+                                    </button>
+                                  </template>
+                                  <template x-if="!q.anotacao">
+                                    <span class="text-slate-600 italic text-[11px]">-</span>
+                                  </template>
+                                </div>
+                                <!-- Ações (Col 11 a 12) -->
+                                <div class="col-span-1 flex items-center justify-end space-x-1">
+                                  <button @click="openEditQuestaoModal(q)" class="p-1 text-slate-400 hover:text-indigo-400 rounded hover:bg-slate-800 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                  <button @click="deleteQuestao(q.id)" class="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                              </div>
 
-                                  <td class="py-2.5 px-2 text-center whitespace-nowrap">
-                                    <span class="px-2 py-0.5 rounded font-bold font-mono text-[10px]" :class="getCustomProgressBarText(calcQuestaoPercent(q))" x-text="calcQuestaoPercent(q) + '%'"></span>
-                                  </td>
-
-                                  <!-- Botão Exibir Gargalo Corrigido -->
-                                  <td class="py-2.5 px-2 text-center">
-                                    <template x-if="q.anotacao">
-                                      <button @click="q.showNote = !q.showNote" class="inline-flex items-center space-x-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-md transition text-[11px]" title="Ver anotação/gargalo">
-                                        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-                                        <span x-text="q.showNote ? 'Ocultar' : 'Ver Nota'"></span>
-                                      </button>
-                                    </template>
-                                    <template x-if="!q.anotacao">
-                                      <span class="text-slate-600 italic">-</span>
-                                    </template>
-                                  </td>
-
-                                  <td class="py-2.5 px-2 text-right whitespace-nowrap">
-                                    <div class="flex items-center justify-end space-x-1">
-                                      <button @click="openEditQuestaoModal(q)" class="p-1 text-slate-400 hover:text-indigo-400 rounded hover:bg-slate-800 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                      <button @click="deleteQuestao(q.id)" class="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                                    </div>
-                                  </td>
-                                </tr>
-
-                                <!-- Linha Expansível do Gargalo CORRIGIDA com x-show -->
-                                <tr x-show="q.anotacao && q.showNote" class="bg-slate-950/80">
-                                  <td colspan="5" class="p-3">
-                                    <div class="bg-slate-900 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-200/90 flex items-start space-x-2.5">
-                                      <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-                                      <div>
-                                        <span class="font-bold text-amber-400 block mb-0.5">Gargalo / Anotação registrada:</span>
-                                        <p x-text="q.anotacao" class="leading-relaxed"></p>
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              </template>
-                            </tbody>
-                          </table>
+                              <!-- Bloco Expansível de Gargalo Funcional -->
+                              <div x-show="q.anotacao && q.showNote" x-collapse class="pt-2 border-t border-slate-800/80">
+                                <div class="bg-slate-950 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-200/90 flex items-start space-x-2.5">
+                                  <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+                                  <div>
+                                    <span class="font-bold text-amber-400 block mb-0.5">Gargalo / Anotação registrada:</span>
+                                    <p x-text="q.anotacao" class="leading-relaxed"></p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </template>
                         </div>
 
                       </div>
@@ -1142,7 +1130,7 @@
     </div>
   </div>
 
-  <!-- Modal Registrar / Editar Treino (Questões) com botões rápidos +1 e x-init de showNote -->
+  <!-- Modal Registrar / Editar Treino (Questões) -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Treino' : 'Registrar Treino'"></h3>
@@ -1899,12 +1887,13 @@
           return list;
         },
 
-        // NOVA LÓGICA DE AGRUPAMENTO: POR DATA -> POR MATÉRIA -> ASSUNTOS INDIVIDUAIS
+        // HIERARQUIA SOLICITADA: AGRUPADO POR DATA -> POR MATÉRIA -> ASSUNTOS INDIVIDUAIS
         getGroupedQuestionsList() {
           const rawList = this.getCleanFilteredQuestionsList();
           const dateMap = {};
 
           rawList.forEach(q => {
+            if (q.showNote === undefined) q.showNote = false;
             const d = q.data || new Date().toISOString().split('T')[0];
             if (!dateMap[d]) {
               dateMap[d] = {
@@ -2775,7 +2764,7 @@
               event.target.value = '';
             }
           };
-          reader.readAsBuffer(file);
+          reader.readAsArrayBuffer(file);
         },
 
         undoLastImport() {
