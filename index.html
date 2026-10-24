@@ -83,7 +83,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.8</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v3.9</span>
       </div>
     </aside>
 
@@ -231,7 +231,7 @@
           </div>
         </div>
 
-        <!-- ==================== TAB 2: MATÉRIAS (COM DRAG & DROP) ==================== -->
+        <!-- ==================== TAB 2: MATÉRIAS ==================== -->
         <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -527,7 +527,7 @@
                         
                         <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
                           <span class="text-[10px] text-slate-500 font-mono" x-text="formatDate(g.dataCriacao)"></span>
-                          <button @click="promptResolveGargalo(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
+                          <button @click="openResolveGargaloModal(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
                             <i data-lucide="check" class="w-3 h-3"></i>
                             <span>Marcar Concluído</span>
                           </button>
@@ -626,6 +626,29 @@
   </div>
 
   <!-- ==================== MODALS ==================== -->
+  
+  <!-- Modal: Conclusão de Gargalo Personalizado -->
+  <div x-show="showResolveGargaloModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-sm space-y-4 shadow-2xl">
+      <div class="flex items-center space-x-2 text-emerald-400">
+        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        <h3 class="font-bold text-slate-100 text-base">Concluir Gargalo</h3>
+      </div>
+      <p class="text-xs text-slate-400">Informe a data em que este gargalo foi concluído:</p>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Data de Conclusão</label>
+        <input type="date" x-model="modalResolveData" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showResolveGargaloModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="confirmResolveGargalo()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>Confirmar Conclusão</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div x-show="showMateriaModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingMateriaId ? 'Editar Matéria' : 'Nova Matéria'"></h3>
@@ -797,7 +820,7 @@
         ],
         selectedMateriaId: 'mat_1',
         materiaSearchQuery: '',
-        draggedMateriaId: null, // Controle do card arrastado
+        draggedMateriaId: null,
         newTopicText: '',
         pinnedNotes: ['Meta semanal: Focar em revisões ativas e questões de concurso.'],
         questoes: [],
@@ -814,6 +837,11 @@
           'Sábado': ['Simulado'],
           'Domingo': ['Descanso']
         },
+
+        // Controle do Modal Personalizado de Conclusão de Gargalo
+        showResolveGargaloModal: false,
+        resolvingGargaloId: null,
+        modalResolveData: new Date().toISOString().split('T')[0],
 
         showMateriaModal: false,
         editingMateriaId: null,
@@ -965,7 +993,6 @@
           }
         },
 
-        // Função de reordenação por Drag & Drop
         dropMateria(targetId) {
           if (!this.draggedMateriaId || this.draggedMateriaId === targetId) return;
           const fromIndex = this.materias.findIndex(m => m.id === this.draggedMateriaId);
@@ -1088,17 +1115,23 @@
           return result;
         },
 
-        promptResolveGargalo(gId) {
-          const hoje = new Date().toISOString().split('T')[0];
-          const dataInput = prompt("Digite a data de conclusão do gargalo (AAAA-MM-DD):", hoje);
-          if (!dataInput) return;
-          
-          const g = this.gargalos.find(item => item.id === gId);
+        // Abre o modal personalizado para escolha da data de conclusão do gargalo
+        openResolveGargaloModal(gId) {
+          this.resolvingGargaloId = gId;
+          this.modalResolveData = new Date().toISOString().split('T')[0];
+          this.showResolveGargaloModal = true;
+        },
+
+        confirmResolveGargalo() {
+          if (!this.resolvingGargaloId || !this.modalResolveData) return;
+          const g = this.gargalos.find(item => item.id === this.resolvingGargaloId);
           if (g) {
             g.resolvido = true;
-            g.dataConclusao = dataInput.trim();
+            g.dataConclusao = this.modalResolveData;
             this.saveAll();
           }
+          this.showResolveGargaloModal = false;
+          this.resolvingGargaloId = null;
         },
 
         openAddGargaloModal() {
@@ -1401,11 +1434,20 @@
           this.cronograma[dia].splice(index, 1);
           this.saveAll();
         },
+        // Formata datas no padrão DD/MM/AA
         formatDate(dateStr) {
           if (!dateStr) return '';
           const parts = dateStr.split('-');
-          if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-          return new Date(dateStr).toLocaleDateString('pt-BR');
+          if (parts.length === 3) {
+            const anoCurto = parts[0].slice(-2);
+            return `${parts[2]}/${parts[1]}/${anoCurto}`;
+          }
+          const d = new Date(dateStr);
+          if (isNaN(d)) return dateStr;
+          const dia = String(d.getDate()).padStart(2, '0');
+          const mes = String(d.getMonth() + 1).padStart(2, '0');
+          const anoCurto = String(d.getFullYear()).slice(-2);
+          return `${dia}/${mes}/${anoCurto}`;
         }
       }
     }
