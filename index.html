@@ -86,7 +86,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.1</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v4.2</span>
       </div>
     </aside>
 
@@ -642,30 +642,139 @@
           </div>
         </div>
 
-        <!-- ==================== TAB 5: CRONOGRAMA ==================== -->
+        <!-- ==================== TAB 5: CRONOGRAMA / REGISTRO DE ESTUDOS ==================== -->
         <div x-show="activeTab === 'cronograma'" x-cloak class="space-y-6">
-          <div>
-            <h2 class="text-2xl font-bold tracking-tight text-slate-100">Ciclo de Estudos Semanal</h2>
-            <p class="text-slate-400 text-sm">Planejamento e distribuição de carga horária por disciplina.</p>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Cronograma</h2>
+              <p class="text-slate-400 text-sm">Acompanhe sessões teóricas e resoluções de questões organizadas por data.</p>
+            </div>
+            <button @click="openAddEstudoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Novo Registro de Estudo</span>
+            </button>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
-            <template x-for="(dia, idx) in diasSemana" :key="idx">
-              <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-3 flex flex-col justify-between min-h-[160px]">
-                <div class="space-y-2">
-                  <div class="text-xs font-bold text-slate-300 pb-1 border-b border-slate-800 text-center" x-text="dia"></div>
-                  <div class="space-y-1.5">
-                    <template x-for="(item, iIdx) in cronograma[dia]" :key="iIdx">
-                      <div class="bg-slate-850 border border-slate-800 rounded p-1.5 text-[11px] flex justify-between items-center group">
-                        <span class="text-slate-200 font-medium truncate" x-text="item"></span>
-                        <button @click="removeFromCronograma(dia, iIdx)" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition"><i data-lucide="x" class="w-3 h-3"></i></button>
+          <!-- MINI CARDS DINÂMICOS COM FILTRO DE INTERVALO (CALENDAR) -->
+          <div class="space-y-3 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
+              <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
+                <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                <span>Filtro de Período (Últimos 7 dias ou Intervalo Específico)</span>
+              </div>
+              <div class="flex items-center space-x-2 text-xs">
+                <button @click="setCronogramaMode('last7')" :class="cronogramaMode === 'last7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1 rounded-lg transition font-medium">Últimos 7 Dias</button>
+                <button @click="cronogramaMode = 'range'" :class="cronogramaMode === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1 rounded-lg transition font-medium">Intervalo de Datas</button>
+              </div>
+            </div>
+
+            <div x-show="cronogramaMode === 'range'" x-cloak class="flex flex-wrap items-center gap-3 pt-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-slate-400">De:</span>
+                <input type="date" x-model="cronogramaDateStart" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-slate-400">Até (máx 7 dias):</span>
+                <input type="date" x-model="cronogramaDateEnd" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              </div>
+            </div>
+
+            <!-- Grid dos Mini Cards conforme período selecionado -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 pt-1">
+              <template x-for="dayObj in getCronogramaMiniCards()" :key="dayObj.dateStr">
+                <div @click="selectedCronogramaDateFilter = (selectedCronogramaDateFilter === dayObj.dateStr ? '' : dayObj.dateStr)"
+                     class="bg-slate-850 border rounded-xl p-3 flex flex-col justify-between space-y-2.5 cursor-pointer transition"
+                     :class="selectedCronogramaDateFilter === dayObj.dateStr ? 'border-indigo-500 bg-indigo-600/20 shadow-md shadow-indigo-500/10' : (dayObj.hasRecords ? 'border-indigo-500/50 bg-slate-900 hover:border-indigo-400' : 'border-slate-800 hover:border-slate-700')">
+                  
+                  <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                    <span class="text-[10px] font-bold font-mono tracking-wider uppercase" :class="dayObj.isToday ? 'text-indigo-400' : 'text-slate-400'" x-text="dayObj.dayOfWeek"></span>
+                    <span class="text-[10px] text-slate-500 font-mono" x-text="dayObj.formattedDate"></span>
+                  </div>
+
+                  <div class="space-y-1.5 min-h-[50px] flex flex-col justify-center">
+                    <template x-if="dayObj.materias.length > 0">
+                      <div class="flex flex-wrap gap-1">
+                        <template x-for="mName in dayObj.materias" :key="mName">
+                          <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 truncate max-w-full" x-text="mName"></span>
+                        </template>
+                      </div>
+                    </template>
+                    <template x-if="dayObj.materias.length === 0">
+                      <span class="text-[11px] text-slate-500 italic text-center block">Sem registros</span>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- CARDS CENTRAIS DE ESTUDOS (EXIBIÇÃO DE REGISTROS AGRUPADOS POR DATA) -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="book-open-check" class="w-4 h-4 text-indigo-400"></i>
+                <span x-text="selectedCronogramaDateFilter ? `Registros do dia ${formatDate(selectedCronogramaDateFilter)}` : 'Últimos Registros de Estudos (Centralizados)'"></span>
+              </h3>
+              <template x-if="selectedCronogramaDateFilter">
+                <button @click="selectedCronogramaDateFilter = ''" class="text-xs text-indigo-400 hover:underline">Ver Todos os Recentes</button>
+              </template>
+            </div>
+
+            <div class="space-y-4 max-w-3xl mx-auto">
+              <template x-for="cardGroup in getCronogramaCardsToDisplay()" :key="cardGroup.date">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 transition hover:border-indigo-500/40">
+                  <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-3">
+                      <span class="px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
+                      <span class="text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
+                    </div>
+                    <span class="text-xs text-slate-400 font-mono bg-slate-800 px-2.5 py-1 rounded-lg" x-text="`${cardGroup.items.length} ${cardGroup.items.length === 1 ? 'registro' : 'registros'}`"></span>
+                  </div>
+
+                  <div class="space-y-4">
+                    <template x-for="item in cardGroup.items" :key="item.id">
+                      <div class="bg-slate-850 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                          <div class="flex items-center space-x-2.5">
+                            <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(item.materia)}`"></span>
+                            <span class="font-bold text-slate-100 text-sm uppercase tracking-wide" x-text="item.materia"></span>
+                            <span class="text-slate-600">•</span>
+                            <span class="text-xs font-semibold text-indigo-300 bg-indigo-600/10 border border-indigo-500/20 px-2 py-0.5 rounded" x-text="item.tipo || 'Teoria & Questões'"></span>
+                          </div>
+
+                          <div class="flex items-center space-x-3 text-xs">
+                            <template x-if="item.total > 0">
+                              <span class="font-bold px-2.5 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
+                            </template>
+                            <button @click="openEditEstudoModal(item)" class="text-slate-500 hover:text-indigo-400 p-1 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                            <button @click="deleteEstudoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                          </div>
+                        </div>
+
+                        <div class="text-xs text-slate-300 font-medium bg-slate-900 border border-slate-800/80 rounded-lg p-2.5">
+                          <span class="text-slate-500 font-normal">Assunto: </span>
+                          <span x-text="item.assunto || 'Geral'"></span>
+                        </div>
+
+                        <template x-if="item.anotacao">
+                          <div class="text-xs text-amber-200/90 bg-slate-950 border border-amber-500/20 rounded-lg p-2.5 space-y-1">
+                            <div class="flex items-center space-x-1.5 text-amber-400 font-semibold">
+                              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                              <span>Anotação / Gargalo</span>
+                            </div>
+                            <p x-text="item.anotacao"></p>
+                          </div>
+                        </template>
                       </div>
                     </template>
                   </div>
                 </div>
-                <button @click="addCronogramaItem(dia)" class="w-full text-center py-1 bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-indigo-400 rounded text-[11px] border border-slate-800 transition">+ Adicionar</button>
+              </template>
+
+              <div x-show="getCronogramaCardsToDisplay().length === 0" class="p-12 text-center text-slate-500 text-xs bg-slate-900 border border-dashed border-slate-800 rounded-2xl">
+                Nenhum registro de estudo encontrado para o período ou filtro selecionado. Clique em "Novo Registro de Estudo" acima!
               </div>
-            </template>
+            </div>
           </div>
         </div>
 
@@ -693,6 +802,57 @@
           <i data-lucide="check" class="w-3.5 h-3.5"></i>
           <span>Confirmar Conclusão</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registro de Estudo / Cronograma -->
+  <div x-show="showEstudoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base" x-text="editingEstudoId ? 'Editar Registro de Estudo' : 'Novo Registro de Estudo'"></h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Data</label>
+          <input type="date" x-model="modalEstudoData" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Matéria</label>
+          <select x-model="modalEstudoMateria" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            <template x-for="m in materias" :key="m.id">
+              <option :value="m.nome" x-text="m.nome"></option>
+            </template>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Tipo de Estudo</label>
+          <select x-model="modalEstudoTipo" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="Teoria & Questões">Teoria & Questões</option>
+            <option value="Estudo Teórico">Estudo Teórico</option>
+            <option value="Resolução de Questões">Resolução de Questões</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Assunto</label>
+          <input type="text" x-model="modalEstudoAssunto" placeholder="Ex: Obrigações Tributárias" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Total de Questões</label>
+            <input type="number" x-model.number="modalEstudoTotal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Acertos</label>
+            <input type="number" x-model.number="modalEstudoAcertos" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalo</label>
+          <textarea x-model="modalEstudoAnotacao" rows="2" placeholder="Pontos importantes ou dúvidas..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showEstudoModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
+        <button @click="saveEstudoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
       </div>
     </div>
   </div>
@@ -877,20 +1037,27 @@
         questoesFilterMateria: 'todas',
         questoesPeriodFilter: 'total',
         gargalos: [],
-        diasSemana: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
-        cronograma: {
-          'Segunda': ['Direito Tributário'],
-          'Terça': ['Auditoria Fiscal'],
-          'Quarta': ['Contabilidade'],
-          'Quinta': ['Legislação'],
-          'Sexta': ['Discursiva'],
-          'Sábado': ['Simulado'],
-          'Domingo': ['Descanso']
-        },
+        estudos: [], // Registros unificados de estudos (teoria + questões) para o Cronograma
+
+        // Estados do Cronograma
+        cronogramaMode: 'last7', // 'last7' ou 'range'
+        cronogramaDateStart: new Date().toISOString().split('T')[0],
+        cronogramaDateEnd: new Date().toISOString().split('T')[0],
+        selectedCronogramaDateFilter: '',
 
         showResolveGargaloModal: false,
         resolvingGargaloId: null,
         modalResolveData: new Date().toISOString().split('T')[0],
+
+        showEstudoModal: false,
+        editingEstudoId: null,
+        modalEstudoData: new Date().toISOString().split('T')[0],
+        modalEstudoMateria: '',
+        modalEstudoTipo: 'Teoria & Questões',
+        modalEstudoAssunto: '',
+        modalEstudoTotal: 0,
+        modalEstudoAcertos: 0,
+        modalEstudoAnotacao: '',
 
         showMateriaModal: false,
         editingMateriaId: null,
@@ -939,9 +1106,9 @@
               this.renderQuestionsChart();
             }
           }, { deep: true });
+          this.$watch('estudos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('gargalos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
-          this.$watch('cronograma', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           
           this.$watch('activeTab', (tab) => {
             if (tab === 'dashboard') {
@@ -969,9 +1136,9 @@
             }
           }
           if (loaded.questoes) this.questoes = loaded.questoes;
+          if (loaded.estudos) this.estudos = loaded.estudos;
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
           if (loaded.pinnedNotes) this.pinnedNotes = loaded.pinnedNotes;
-          if (loaded.cronograma) this.cronograma = loaded.cronograma;
         },
 
         saveAll() {
@@ -979,9 +1146,9 @@
           const payload = {
             materias: this.materias,
             questoes: this.questoes,
+            estudos: this.estudos,
             gargalos: this.gargalos,
-            pinnedNotes: this.pinnedNotes,
-            cronograma: this.cronograma
+            pinnedNotes: this.pinnedNotes
           };
           localStorage.setItem(LOCAL_KEY, JSON.stringify(payload));
           this.saveToSupabase(payload);
@@ -1074,7 +1241,6 @@
           this.draggedMateriaId = null;
         },
 
-        // Renderiza ou atualiza o Gráfico de Pizza de Questões por Matéria no Dashboard
         renderQuestionsChart() {
           const canvas = document.getElementById('questionsPieChart');
           if (!canvas) return;
@@ -1131,21 +1297,31 @@
           });
         },
 
-        // Métricas de Questões por Matéria específica
         calcMatQuestions(mat) {
           const list = this.questoes.filter(q => q.materia === mat.nome);
-          return list.reduce((acc, q) => acc + (q.total || 0), 0);
+          const listEstudos = this.estudos.filter(e => e.materia === mat.nome);
+          const qTotal = list.reduce((acc, q) => acc + (q.total || 0), 0);
+          const eTotal = listEstudos.reduce((acc, e) => acc + (e.total || 0), 0);
+          return qTotal + eTotal;
         },
 
         calcMatRights(mat) {
           const list = this.questoes.filter(q => q.materia === mat.nome);
-          return list.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const listEstudos = this.estudos.filter(e => e.materia === mat.nome);
+          const qRights = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const eRights = listEstudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
+          return qRights + eRights;
         },
 
         calcMatAccuracy(mat) {
           const total = this.calcMatQuestions(mat);
           if (total === 0) return 0;
           return Math.round((this.calcMatRights(mat) / total) * 100);
+        },
+
+        getMateriaColor(mName) {
+          const m = this.materias.find(item => item.nome === mName);
+          return m ? (m.cor || '#6366f1') : '#6366f1';
         },
 
         getLast7DaysCards() {
@@ -1165,8 +1341,9 @@
             const dayOfWeek = this.getDayOfWeekShort(dateStr);
             const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
 
-            const matchedQuestions = this.questoes.filter(q => q.data === dateStr);
-            const materiasSet = [...new Set(matchedQuestions.map(q => q.materia))];
+            const matchedQ = this.questoes.filter(q => q.data === dateStr);
+            const matchedE = this.estudos.filter(e => e.data === dateStr);
+            const materiasSet = [...new Set([...matchedQ.map(q => q.materia), ...matchedE.map(e => e.materia)])];
 
             cards.push({
               dateStr,
@@ -1177,6 +1354,194 @@
             });
           }
           return cards;
+        },
+
+        // Métodos para o Cronograma / Registro de Estudos
+        setCronogramaMode(mode) {
+          this.cronogramaMode = mode;
+          this.selectedCronogramaDateFilter = '';
+        },
+
+        getCronogramaMiniCards() {
+          const cards = [];
+          let startD, endD;
+
+          if (this.cronogramaMode === 'last7') {
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+              const d = new Date();
+              d.setDate(today.getDate() - i);
+              const ano = d.getFullYear();
+              const mes = String(d.getMonth() + 1).padStart(2, '0');
+              const dia = String(d.getDate()).padStart(2, '0');
+              const dateStr = `${ano}-${mes}-${dia}`;
+              const isToday = i === 0;
+              const dayOfWeek = this.getDayOfWeekShort(dateStr);
+              const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
+
+              const matchedQ = this.questoes.filter(q => q.data === dateStr);
+              const matchedE = this.estudos.filter(e => e.data === dateStr);
+              const materiasSet = [...new Set([...matchedQ.map(q => q.materia), ...matchedE.map(e => e.materia)])];
+
+              cards.push({
+                dateStr,
+                dayOfWeek,
+                formattedDate,
+                isToday,
+                hasRecords: materiasSet.length > 0,
+                materias: materiasSet
+              });
+            }
+          } else {
+            // Intervalo de Datas (máximo 7 dias)
+            if (!this.cronogramaDateStart) this.cronogramaDateStart = new Date().toISOString().split('T')[0];
+            if (!this.cronogramaDateEnd) this.cronogramaDateEnd = this.cronogramaDateStart;
+
+            let curr = new Date(this.cronogramaDateStart);
+            const limit = new Date(this.cronogramaDateEnd);
+            let count = 0;
+
+            while (curr <= limit && count < 7) {
+              const ano = curr.getFullYear();
+              const mes = String(curr.getMonth() + 1).padStart(2, '0');
+              const dia = String(curr.getDate()).padStart(2, '0');
+              const dateStr = `${ano}-${mes}-${dia}`;
+              const dayOfWeek = this.getDayOfWeekShort(dateStr);
+              const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
+
+              const matchedQ = this.questoes.filter(q => q.data === dateStr);
+              const matchedE = this.estudos.filter(e => e.data === dateStr);
+              const materiasSet = [...new Set([...matchedQ.map(q => q.materia), ...matchedE.map(e => e.materia)])];
+
+              cards.push({
+                dateStr,
+                dayOfWeek,
+                formattedDate,
+                isToday: false,
+                hasRecords: materiasSet.length > 0,
+                materias: materiasSet
+              });
+
+              curr.setDate(curr.getDate() + 1);
+              count++;
+            }
+          }
+          return cards;
+        },
+
+        getCronogramaCardsToDisplay() {
+          let list = [...this.estudos];
+          
+          if (this.selectedCronogramaDateFilter) {
+            list = list.filter(e => e.data === this.selectedCronogramaDateFilter);
+          } else if (this.cronogramaMode === 'last7') {
+            const miniCards = this.getCronogramaMiniCards();
+            const allowedDates = miniCards.map(c => c.dateStr);
+            list = list.filter(e => allowedDates.includes(e.data));
+          } else {
+            const miniCards = this.getCronogramaMiniCards();
+            const allowedDates = miniCards.map(c => c.dateStr);
+            list = list.filter(e => allowedDates.includes(e.data));
+          }
+
+          list.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+          const groupsMap = {};
+          list.forEach(item => {
+            const dStr = item.data || new Date().toISOString().split('T')[0];
+            if (!groupsMap[dStr]) {
+              groupsMap[dStr] = {
+                date: dStr,
+                dayOfWeek: this.getDayOfWeekShort(dStr),
+                items: []
+              };
+            }
+            groupsMap[dStr].items.push(item);
+          });
+
+          return Object.values(groupsMap);
+        },
+
+        openAddEstudoModal() {
+          this.editingEstudoId = null;
+          this.modalEstudoData = new Date().toISOString().split('T')[0];
+          this.modalEstudoMateria = this.materias[0] ? this.materias[0].nome : '';
+          this.modalEstudoTipo = 'Teoria & Questões';
+          this.modalEstudoAssunto = '';
+          this.modalEstudoTotal = 0;
+          this.modalEstudoAcertos = 0;
+          this.modalEstudoAnotacao = '';
+          this.showEstudoModal = true;
+        },
+
+        openEditEstudoModal(item) {
+          this.editingEstudoId = item.id;
+          this.modalEstudoData = item.data || new Date().toISOString().split('T')[0];
+          this.modalEstudoMateria = item.materia;
+          this.modalEstudoTipo = item.tipo || 'Teoria & Questões';
+          this.modalEstudoAssunto = item.assunto || '';
+          this.modalEstudoTotal = item.total || 0;
+          this.modalEstudoAcertos = item.acertos || 0;
+          this.modalEstudoAnotacao = item.anotacao || '';
+          this.showEstudoModal = true;
+        },
+
+        saveEstudoModal() {
+          if (!this.modalEstudoMateria) return;
+          const dataE = this.modalEstudoData || new Date().toISOString().split('T')[0];
+          const anotacaoText = this.modalEstudoAnotacao ? this.modalEstudoAnotacao.trim() : '';
+
+          if (this.editingEstudoId) {
+            const item = this.estudos.find(e => e.id === this.editingEstudoId);
+            if (item) {
+              item.data = dataE;
+              item.materia = this.modalEstudoMateria;
+              item.tipo = this.modalEstudoTipo;
+              item.assunto = this.modalEstudoAssunto;
+              item.total = Number(this.modalEstudoTotal) || 0;
+              item.acertos = Number(this.modalEstudoAcertos) || 0;
+              item.anotacao = anotacaoText;
+            }
+          } else {
+            const newId = 'est_' + Date.now();
+            this.estudos.unshift({
+              id: newId,
+              data: dataE,
+              materia: this.modalEstudoMateria,
+              tipo: this.modalEstudoTipo,
+              assunto: this.modalEstudoAssunto,
+              total: Number(this.modalEstudoTotal) || 0,
+              acertos: Number(this.modalEstudoAcertos) || 0,
+              anotacao: anotacaoText
+            });
+
+            if (anotacaoText) {
+              this.gargalos.unshift({
+                id: 'g_' + Date.now(),
+                questaoId: null,
+                materia: this.modalEstudoMateria,
+                titulo: this.modalEstudoAssunto ? `Revisão: ${this.modalEstudoAssunto}` : `Dúvida em ${this.modalEstudoMateria}`,
+                descricao: anotacaoText,
+                resolvido: false,
+                dataCriacao: dataE,
+                dataConclusao: null
+              });
+            }
+          }
+
+          this.showEstudoModal = false;
+          this.editingEstudoId = null;
+          this.saveAll();
+        },
+
+        deleteEstudoRecord(id) {
+          this.estudos = this.estudos.filter(e => e.id !== id);
+          this.saveAll();
+        },
+
+        calcItemPercent(item) {
+          if (!item.total) return 0;
+          return Math.round((item.acertos / item.total) * 100);
         },
 
         getCustomProgressBarBg(pct) {
@@ -1452,6 +1817,7 @@
               mat.nome = this.modalMateriaNome.trim();
               mat.cor = this.modalMateriaCor;
               this.questoes.forEach(q => { if (q.materia === oldName) q.materia = mat.nome; });
+              this.estudos.forEach(e => { if (e.materia === oldName) e.materia = mat.nome; });
               this.gargalos.forEach(g => { if (g.materia === oldName) g.materia = mat.nome; });
             }
           } else {
@@ -1498,10 +1864,14 @@
           return this.questoes.filter(q => new Date(q.data) >= limitDate);
         },
         calcTotalQuestions() {
-          return this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.total || 0), 0);
+          const qTotal = this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.total || 0), 0);
+          const eTotal = this.estudos.reduce((acc, e) => acc + (e.total || 0), 0);
+          return qTotal + eTotal;
         },
         calcTotalRights() {
-          return this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const qRights = this.getQuestionsByPeriod().reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const eRights = this.estudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
+          return qRights + eRights;
         },
         calcOverallAccuracy() {
           const total = this.calcTotalQuestions();
@@ -1542,6 +1912,17 @@
               q.total = Number(this.modalQuestaoTotal) || 0;
               q.acertos = Number(this.modalQuestaoAcertos) || 0;
               q.anotacao = anotacaoText;
+
+              // Sincroniza também no Cronograma (estudos)
+              const estItem = this.estudos.find(e => e.questaoId === q.id);
+              if (estItem) {
+                estItem.data = dataQ;
+                estItem.materia = this.modalQuestaoMateria;
+                estItem.assunto = this.modalQuestaoAssunto;
+                estItem.total = q.total;
+                estItem.acertos = q.acertos;
+                estItem.anotacao = anotacaoText;
+              }
             }
           } else {
             const newQId = 'q_' + Date.now();
@@ -1554,6 +1935,19 @@
               anotacao: anotacaoText,
               data: dataQ,
               showNote: false
+            });
+
+            // Adiciona automaticamente no Cronograma (estudos)
+            this.estudos.unshift({
+              id: 'est_q_' + Date.now(),
+              questaoId: newQId,
+              data: dataQ,
+              materia: this.modalQuestaoMateria,
+              tipo: 'Resolução de Questões',
+              assunto: this.modalQuestaoAssunto,
+              total: Number(this.modalQuestaoTotal) || 0,
+              acertos: Number(this.modalQuestaoAcertos) || 0,
+              anotacao: anotacaoText
             });
 
             if (anotacaoText) {
@@ -1576,6 +1970,7 @@
         },
         deleteQuestao(qId) {
           this.questoes = this.questoes.filter(q => q.id !== qId);
+          this.estudos = this.estudos.filter(e => e.questaoId !== qId);
           this.saveAll();
           this.renderQuestionsChart();
         },
@@ -1596,18 +1991,6 @@
         },
         removePinnedNote(index) {
           this.pinnedNotes.splice(index, 1);
-          this.saveAll();
-        },
-        addCronogramaItem(dia) {
-          const text = prompt(`Adicionar matéria/atividade para ${dia}:`);
-          if (text && text.trim()) {
-            if (!this.cronograma[dia]) this.cronograma[dia] = [];
-            this.cronograma[dia].push(text.trim());
-            this.saveAll();
-          }
-        },
-        removeFromCronograma(dia, index) {
-          this.cronograma[dia].splice(index, 1);
           this.saveAll();
         },
         formatDate(dateStr) {
