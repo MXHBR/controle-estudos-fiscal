@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.0</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.1</span>
       </div>
     </aside>
 
@@ -434,7 +434,7 @@
               <p class="text-slate-400 text-sm">Resoluções agrupadas por data com estatísticas individuais e importação via Excel.</p>
             </div>
             
-            <!-- Botões de Ação: Baixar Modelo, Importar Excel e Novo Treino -->
+            <!-- Botões de Ação: Baixar Modelo, Importar Excel, Desfazer e Novo Treino -->
             <div class="flex flex-wrap items-center gap-2">
               <button @click="downloadExcelTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
@@ -446,6 +446,12 @@
                 <span>Importar Excel</span>
               </button>
               <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
+
+              <!-- Botão para Desfazer Última Importação -->
+              <button @click="undoLastImport()" x-show="lastImportId" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                <span>Desfazer Última Importação</span>
+              </button>
 
               <button @click="openAddQuestaoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
                 <i data-lucide="plus" class="w-4 h-4"></i>
@@ -1032,12 +1038,51 @@
       }
     }
 
+    function parseExcelDate(val) {
+      if (!val) return new Date().toISOString().split('T')[0];
+      
+      // Se o Excel repassar como número serial de data
+      if (typeof val === 'number') {
+        const dateInfo = XLSX.SSF.parse_date_code(val);
+        if (dateInfo) {
+          const y = dateInfo.y;
+          const m = String(dateInfo.m).padStart(2, '0');
+          const d = String(dateInfo.d).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+      }
+
+      const str = String(val).trim();
+      
+      // Formato DD/MM/AA ou DD/MM/AAAA
+      if (str.includes('/')) {
+        const parts = str.split('/');
+        if (parts.length === 3) {
+          let day = parts[0].padStart(2, '0');
+          let month = parts[1].padStart(2, '0');
+          let year = parts[2];
+          if (year.length === 2) {
+            year = '20' + year;
+          }
+          return `${year}-${month}-${day}`;
+        }
+      }
+
+      // Formato YYYY-MM-DD
+      if (str.includes('-')) {
+        return str.split('T')[0];
+      }
+
+      return new Date().toISOString().split('T')[0];
+    }
+
     function appData() {
       return {
         activeTab: localStorage.getItem(TAB_KEY) || 'dashboard',
         syncing: false,
         lastSync: false,
         isLoaded: false,
+        lastImportId: null,
 
         tabs: [
           { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
@@ -1228,7 +1273,8 @@
                 assunto: q.assunto || '',
                 total: q.total || 0,
                 acertos: q.acertos || 0,
-                anotacao: q.anotacao || ''
+                anotacao: q.anotacao || '',
+                importId: q.importId || null
               });
             }
           });
@@ -1540,7 +1586,8 @@
               assunto: this.modalEstudoAssunto,
               total: Number(this.modalEstudoTotal) || 0,
               acertos: Number(this.modalEstudoAcertos) || 0,
-              anotacao: anotacaoText
+              anotacao: anotacaoText,
+              importId: null
             });
 
             if (anotacaoText) {
@@ -1552,7 +1599,8 @@
                 descricao: anotacaoText,
                 resolvido: false,
                 dataCriacao: dataE,
-                dataConclusao: null
+                dataConclusao: null,
+                importId: null
               });
             }
           }
@@ -1721,7 +1769,8 @@
             descricao: this.modalGargaloDesc ? this.modalGargaloDesc.trim() : '',
             resolvido: false,
             dataCriacao: new Date().toISOString().split('T')[0],
-            dataConclusao: null
+            dataConclusao: null,
+            importId: null
           });
           this.showGargaloModal = false;
           this.modalGargaloTitulo = '';
@@ -2105,7 +2154,8 @@
               acertos: Number(this.modalQuestaoAcertos) || 0,
               anotacao: anotacaoText,
               data: dataQ,
-              showNote: false
+              showNote: false,
+              importId: null
             });
 
             this.estudos.unshift({
@@ -2117,7 +2167,8 @@
               assunto: this.modalQuestaoAssunto,
               total: Number(this.modalQuestaoTotal) || 0,
               acertos: Number(this.modalQuestaoAcertos) || 0,
-              anotacao: anotacaoText
+              anotacao: anotacaoText,
+              importId: null
             });
 
             if (anotacaoText) {
@@ -2129,7 +2180,8 @@
                 descricao: anotacaoText,
                 resolvido: false,
                 dataCriacao: dataQ,
-                dataConclusao: null
+                dataConclusao: null,
+                importId: null
               });
             }
           }
@@ -2186,8 +2238,8 @@
         downloadExcelTemplate() {
           const wsData = [
             ["Data", "Materia", "Assunto", "Total", "Acertos", "Anotacao"],
-            ["2026-10-24", "Direito Tributário", "Obrigações Tributárias", 10, 8, "Rever prazo de decadência e prescrição"],
-            ["2026-10-25", "Contabilidade Geral", "Balanço Patrimonial", 15, 12, "Dúvida no tratamento de ativos intangíveis"]
+            ["24/10/2026", "Direito Tributário", "Obrigações Tributárias", 10, 8, "Rever prazo de decadência e prescrição"],
+            ["25/10/26", "Contabilidade Geral", "Balanço Patrimonial", 15, 12, "Dúvida no tratamento de ativos intangíveis"]
           ];
           const ws = XLSX.utils.aoa_to_sheet(wsData);
           const wb = XLSX.utils.book_new();
@@ -2214,14 +2266,18 @@
                 return;
               }
 
+              const importBatchId = 'imp_' + Date.now();
               let importedCount = 0;
+
               jsonRows.forEach(row => {
                 const rowNormalized = {};
                 Object.keys(row).forEach(k => {
                   rowNormalized[k.trim().toLowerCase()] = row[k];
                 });
 
-                const dataQ = rowNormalized['data'] ? String(rowNormalized['data']).split('T')[0] : new Date().toISOString().split('T')[0];
+                const rawDate = rowNormalized['data'];
+                const dataQ = parseExcelDate(rawDate);
+
                 const materiaQ = rowNormalized['materia'] || rowNormalized['matéria'] || (this.materias[0] ? this.materias[0].nome : 'Geral');
                 const assuntoQ = rowNormalized['assunto'] || '';
                 const totalQ = Number(rowNormalized['total'] || rowNormalized['total de questões'] || 10);
@@ -2230,6 +2286,7 @@
 
                 const newQId = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
+                // 1. Adiciona em Questões
                 this.questoes.push({
                   id: newQId,
                   materia: materiaQ,
@@ -2238,9 +2295,11 @@
                   acertos: acertosQ,
                   anotacao: anotacaoQ,
                   data: dataQ,
-                  showNote: false
+                  showNote: false,
+                  importId: importBatchId
                 });
 
+                // 2. Adiciona simultaneamente no Cronograma (Estudos)
                 this.estudos.unshift({
                   id: 'est_q_' + newQId,
                   questaoId: newQId,
@@ -2250,9 +2309,11 @@
                   assunto: assuntoQ,
                   total: totalQ,
                   acertos: acertosQ,
-                  anotacao: anotacaoQ
+                  anotacao: anotacaoQ,
+                  importId: importBatchId
                 });
 
+                // 3. Adiciona em Gargalos se houver anotação
                 if (anotacaoQ) {
                   this.gargalos.unshift({
                     id: 'g_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -2262,15 +2323,17 @@
                     descricao: anotacaoQ,
                     resolvido: false,
                     dataCriacao: dataQ,
-                    dataConclusao: null
+                    dataConclusao: null,
+                    importId: importBatchId
                   });
                 }
 
                 importedCount++;
               });
 
+              this.lastImportId = importBatchId;
               this.saveAll();
-              alert(`${importedCount} registros de questões importados com sucesso!`);
+              alert(`${importedCount} registros de questões importados com sucesso para o histórico e cronograma!`);
             } catch (err) {
               console.error(err);
               alert("Erro ao processar o arquivo Excel. Verifique se o formato está correto.");
@@ -2279,6 +2342,23 @@
             }
           };
           reader.readAsArrayBuffer(file);
+        },
+
+        // Função para cancelar / desfazer a última importação
+        undoLastImport() {
+          if (!this.lastImportId) return;
+          if (!confirm("Deseja realmente desfazer a última importação? Todos os cards e registros associados a ela serão removidos.")) {
+            return;
+          }
+
+          const targetId = this.lastImportId;
+          this.questoes = this.questoes.filter(q => q.importId !== targetId);
+          this.estudos = this.estudos.filter(e => e.importId !== targetId);
+          this.gargalos = this.gargalos.filter(g => g.importId !== targetId);
+          
+          this.lastImportId = null;
+          this.saveAll();
+          alert("Última importação desfeita com sucesso!");
         }
       }
     }
