@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.6</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.7</span>
       </div>
     </aside>
 
@@ -150,7 +150,6 @@
               </div>
             </div>
 
-            <!-- Card Interativo de Acerto vs Total de Questões -->
             <div @click="showAccuracyPercent = !showAccuracyPercent" class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm cursor-pointer hover:border-indigo-500/50 transition group" title="Clique para alternar entre Total e Percentual">
               <div class="flex justify-between items-center">
                 <span class="text-xs font-medium text-slate-400" x-text="showAccuracyPercent ? 'Taxa de Acerto Geral' : 'Total de Questões Realizadas'"></span>
@@ -188,7 +187,6 @@
               <div class="text-xs text-amber-400/80 font-medium">Revisão prioritária</div>
             </div>
 
-            <!-- Card de Tempo de Jornada de Estudos -->
             <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
               <div class="flex justify-between items-center">
                 <span class="text-xs font-medium text-slate-400">Tempo de Jornada</span>
@@ -202,9 +200,8 @@
             </div>
           </div>
 
-          <!-- ==================== CARD RETANGULAR MESTRE: Provas (Esquerda) & Anotações (Direita) ==================== -->
+          <!-- CARD RETANGULAR MESTRE: Provas & Anotações -->
           <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-sm backdrop-blur-sm grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
             <div class="lg:col-span-5 space-y-3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800/80 pb-5 lg:pb-0 lg:pr-6">
               <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
@@ -291,7 +288,6 @@
                 </div>
               </div>
             </div>
-
           </div>
 
           <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-5 shadow-sm space-y-4 backdrop-blur-sm">
@@ -504,12 +500,12 @@
           </template>
         </div>
 
-        <!-- ==================== TAB 3: QUESTÕES (NOVO LAYOUT LIMPO E INTUITIVO) ==================== -->
+        <!-- ==================== TAB 3: QUESTÕES (AGRUPADAS POR DATA E MATÉRIA + CORREÇÃO GARGALO) ==================== -->
         <div x-show="activeTab === 'questoes'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Questões e Performance</h2>
-              <p class="text-slate-400 text-sm">Acompanhe seu desempenho com visão compacta e métricas consolidadas.</p>
+              <p class="text-slate-400 text-sm">Acompanhe seu desempenho agrupado por data, matéria e assuntos individuais.</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
@@ -563,13 +559,11 @@
             </template>
           </div>
 
-          <!-- PAINEL PRINCIPAL EM FORMATO DE TABELA / LISTA LIMPA -->
+          <!-- PAINEL PRINCIPAL EM FORMATO DE LISTA LIMPA E AGRUPADA -->
           <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-4 shadow-sm backdrop-blur-sm">
             
             <!-- Barra de Filtros e Resumo Rápido -->
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-              
-              <!-- Seletor de Período em Botões (Mais limpo que dropdown) -->
               <div class="flex flex-wrap items-center gap-1.5 text-xs">
                 <span class="text-slate-400 mr-2 font-medium">Período:</span>
                 <button @click="questoesPeriodFilter = '7'" :class="questoesPeriodFilter === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-lg transition font-medium">Últimos 7 dias</button>
@@ -578,7 +572,6 @@
                 <button @click="questoesPeriodFilter = 'total'" :class="questoesPeriodFilter === 'total' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-lg transition font-medium">Tudo</button>
               </div>
 
-              <!-- Filtro por Matéria e Resumo de Acertos do Filtro -->
               <div class="flex flex-wrap items-center gap-3">
                 <select x-model="questoesFilterMateria" class="bg-slate-950/80 border border-slate-800 text-xs text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500">
                   <option value="todas">Todas as Matérias</option>
@@ -596,94 +589,116 @@
               </div>
             </div>
 
-            <!-- Tabela Compacta de Histórico de Questões -->
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-950/40">
-                    <th class="py-3 px-4">Data</th>
-                    <th class="py-3 px-4">Matéria & Assunto</th>
-                    <th class="py-3 px-4 text-center">Desempenho</th>
-                    <th class="py-3 px-4 text-center">Taxa</th>
-                    <th class="py-3 px-4 text-center">Gargalo / Anotação</th>
-                    <th class="py-3 px-4 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60 text-xs">
-                  <template x-for="q in getCleanFilteredQuestionsList()" :key="q.id">
-                    <tr class="hover:bg-slate-850/60 transition group">
-                      <!-- Data -->
-                      <td class="py-3 px-4 font-mono text-slate-300 whitespace-nowrap">
-                        <div class="font-bold" x-text="formatDate(q.data)"></div>
-                        <div class="text-[10px] text-slate-500 uppercase" x-text="getDayOfWeekShort(q.data)"></div>
-                      </td>
-
-                      <!-- Matéria e Assunto -->
-                      <td class="py-3 px-4">
-                        <div class="font-bold text-slate-100 flex items-center space-x-2">
-                          <span class="w-2 h-2 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(q.materia)}`"></span>
-                          <span x-text="q.materia"></span>
-                        </div>
-                        <div class="text-slate-400 text-[11px] truncate max-w-xs pt-0.5" x-text="q.assunto || 'Geral'"></div>
-                      </td>
-
-                      <!-- Desempenho (Acertos / Total) -->
-                      <td class="py-3 px-4 text-center font-mono whitespace-nowrap">
-                        <span class="text-slate-200 font-bold" x-text="q.acertos"></span>
-                        <span class="text-slate-500" x-text="`/ ${q.total}`"></span>
-                      </td>
-
-                      <!-- Taxa de Acerto (Badge Colorido) -->
-                      <td class="py-3 px-4 text-center whitespace-nowrap">
-                        <span class="px-2.5 py-1 rounded-md font-bold font-mono text-[11px]" :class="getCustomProgressBarText(calcQuestaoPercent(q))" x-text="calcQuestaoPercent(q) + '%'"></span>
-                      </td>
-
-                      <!-- Anotação / Gargalo (Expansível ou Indicador) -->
-                      <td class="py-3 px-4 text-center">
-                        <template x-if="q.anotacao">
-                          <button @click="q.showNote = !q.showNote" class="inline-flex items-center space-x-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-md transition text-[11px]" title="Ver anotação registrada">
-                            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-                            <span x-text="q.showNote ? 'Ocultar' : 'Ver Nota'"></span>
-                          </button>
-                        </template>
-                        <template x-if="!q.anotacao">
-                          <span class="text-slate-600 italic">-</span>
-                        </template>
-                      </td>
-
-                      <!-- Ações (Editar / Excluir) -->
-                      <td class="py-3 px-4 text-right whitespace-nowrap">
-                        <div class="flex items-center justify-end space-x-1">
-                          <button @click="openEditQuestaoModal(q)" class="p-1.5 text-slate-400 hover:text-indigo-400 rounded hover:bg-slate-800 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                          <button @click="deleteQuestao(q.id)" class="p-1.5 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                        </div>
-                      </td>
-                    </tr>
-                    <!-- Linha expansível para exibir o gargalo/nota caso clique em Ver Nota -->
-                    <template x-if="q.anotacao && q.showNote">
-                      <tr class="bg-slate-950/80">
-                        <td colspan="6" class="p-3 px-4">
-                          <div class="bg-slate-900 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-200/90 flex items-start space-x-2">
-                            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-                            <div>
-                              <span class="font-bold text-amber-400 block mb-0.5">Gargalo / Anotação registrada:</span>
-                              <p x-text="q.anotacao"></p>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </template>
-                  </template>
+            <!-- EXIBIÇÃO AGRUPADA POR DATA -> MATÉRIA -> ASSUNTOS INDIVIDUAIS -->
+            <div class="space-y-6">
+              <template x-for="dateGroup in getGroupedQuestionsList()" :key="dateGroup.date">
+                <div class="border border-slate-800/80 rounded-xl bg-slate-950/40 overflow-hidden space-y-0">
                   
-                  <template x-if="getCleanFilteredQuestionsList().length === 0">
-                    <tr>
-                      <td colspan="6" class="py-12 text-center text-slate-500 text-xs">
-                        Nenhum registro de questões encontrado para os filtros selecionados.
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
+                  <!-- Cabeçalho da Data -->
+                  <div class="bg-slate-850/90 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 uppercase" x-text="dateGroup.dayOfWeek"></span>
+                      <span class="font-bold text-slate-200 font-mono text-xs" x-text="formatDate(dateGroup.date)"></span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-mono" x-text="`${dateGroup.totalQ} questões • ${dateGroup.acc}% acerto`"></span>
+                  </div>
+
+                  <!-- Agrupamento por Matéria na mesma Data -->
+                  <div class="divide-y divide-slate-800/60">
+                    <template x-for="matGroup in dateGroup.materias" :key="matGroup.materia">
+                      <div class="p-3 sm:p-4 space-y-3 bg-slate-900/30">
+                        
+                        <!-- Barra de Matéria -->
+                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                          <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
+                            <span class="font-bold text-xs uppercase tracking-wide text-slate-100" x-text="matGroup.materia"></span>
+                          </div>
+                          <div class="flex items-center space-x-2 text-[11px] font-mono">
+                            <span class="text-slate-400" x-text="`${matGroup.totalRights}/${matGroup.totalQ} acertos`"></span>
+                            <span class="px-2 py-0.5 rounded font-bold" :class="getCustomProgressBarText(matGroup.acc)" x-text="`${matGroup.acc}%`"></span>
+                          </div>
+                        </div>
+
+                        <!-- Tabela de Assuntos Individuais dentro desta Matéria -->
+                        <div class="overflow-x-auto">
+                          <table class="w-full text-left border-collapse">
+                            <thead>
+                              <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-800/40">
+                                <th class="pb-1.5 px-2">Assunto</th>
+                                <th class="pb-1.5 px-2 text-center">Desempenho</th>
+                                <th class="pb-1.5 px-2 text-center">Taxa</th>
+                                <th class="pb-1.5 px-2 text-center">Gargalo / Anotação</th>
+                                <th class="pb-1.5 px-2 text-right">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/30 text-xs">
+                              <template x-for="q in matGroup.items" :key="q.id">
+                                <!-- Linha Principal do Assunto -->
+                                <tr class="hover:bg-slate-850/50 transition">
+                                  <td class="py-2.5 px-2 font-medium text-slate-200">
+                                    <span x-text="q.assunto || 'Geral'"></span>
+                                  </td>
+                                  
+                                  <td class="py-2.5 px-2 text-center font-mono whitespace-nowrap">
+                                    <span class="text-slate-200 font-bold" x-text="q.acertos"></span>
+                                    <span class="text-slate-500" x-text="`/ ${q.total}`"></span>
+                                  </td>
+
+                                  <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded font-bold font-mono text-[10px]" :class="getCustomProgressBarText(calcQuestaoPercent(q))" x-text="calcQuestaoPercent(q) + '%'"></span>
+                                  </td>
+
+                                  <!-- Botão Exibir Gargalo Corrigido -->
+                                  <td class="py-2.5 px-2 text-center">
+                                    <template x-if="q.anotacao">
+                                      <button @click="q.showNote = !q.showNote" class="inline-flex items-center space-x-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-md transition text-[11px]" title="Ver anotação/gargalo">
+                                        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                                        <span x-text="q.showNote ? 'Ocultar' : 'Ver Nota'"></span>
+                                      </button>
+                                    </template>
+                                    <template x-if="!q.anotacao">
+                                      <span class="text-slate-600 italic">-</span>
+                                    </template>
+                                  </td>
+
+                                  <td class="py-2.5 px-2 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end space-x-1">
+                                      <button @click="openEditQuestaoModal(q)" class="p-1 text-slate-400 hover:text-indigo-400 rounded hover:bg-slate-800 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                      <button @click="deleteQuestao(q.id)" class="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                    </div>
+                                  </td>
+                                </tr>
+
+                                <!-- Linha Expansível do Gargalo CORRIGIDA com x-show -->
+                                <tr x-show="q.anotacao && q.showNote" class="bg-slate-950/80">
+                                  <td colspan="5" class="p-3">
+                                    <div class="bg-slate-900 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-200/90 flex items-start space-x-2.5">
+                                      <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+                                      <div>
+                                        <span class="font-bold text-amber-400 block mb-0.5">Gargalo / Anotação registrada:</span>
+                                        <p x-text="q.anotacao" class="leading-relaxed"></p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              </template>
+                            </tbody>
+                          </table>
+                        </div>
+
+                      </div>
+                    </template>
+                  </div>
+
+                </div>
+              </template>
+
+              <template x-if="getGroupedQuestionsList().length === 0">
+                <div class="py-12 text-center text-slate-500 text-xs bg-slate-950/40 border border-dashed border-slate-800 rounded-xl">
+                  Nenhum registro de questões encontrado para os filtros selecionados.
+                </div>
+              </template>
             </div>
 
           </div>
@@ -953,7 +968,6 @@
     </div>
   </div>
 
-  <!-- Modal Configurar Prova -->
   <div x-show="showExamModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingExamId ? 'Editar Prova' : 'Nova Prova'"></h3>
@@ -974,7 +988,6 @@
     </div>
   </div>
 
-  <!-- Modal Criar / Editar Anotação (Texto ou Checklist) -->
   <div x-show="showNoteModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingNoteId ? 'Editar Anotação' : 'Nova Anotação'"></h3>
@@ -1027,7 +1040,6 @@
     </div>
   </div>
 
-  <!-- Modal Adicionar Subtópicos em Massa -->
   <div x-show="showSubtopicModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base">Adicionar Subtópicos</h3>
@@ -1130,7 +1142,7 @@
     </div>
   </div>
 
-  <!-- Modal Registrar / Editar Treino (Questões) com botões rápidos +1 e iniciando em branco -->
+  <!-- Modal Registrar / Editar Treino (Questões) com botões rápidos +1 e x-init de showNote -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Treino' : 'Registrar Treino'"></h3>
@@ -1441,7 +1453,12 @@
             });
             this.ensureValidSelection();
           }
-          if (loaded.questoes) this.questoes = loaded.questoes;
+          if (loaded.questoes) {
+            this.questoes = loaded.questoes.map(q => {
+              if (q.showNote === undefined) q.showNote = false;
+              return q;
+            });
+          }
           if (loaded.estudos) this.estudos = loaded.estudos;
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
           if (loaded.exams) this.exams = loaded.exams;
@@ -1481,6 +1498,7 @@
         syncExistingQuestionsToEstudos() {
           if (!this.questoes) return;
           this.questoes.forEach(q => {
+            if (q.showNote === undefined) q.showNote = false;
             const exists = this.estudos.some(e => e.questaoId === q.id);
             if (!exists) {
               this.estudos.push({
@@ -1879,6 +1897,68 @@
           }
           list.sort((a, b) => new Date(b.data) - new Date(a.data));
           return list;
+        },
+
+        // NOVA LÓGICA DE AGRUPAMENTO: POR DATA -> POR MATÉRIA -> ASSUNTOS INDIVIDUAIS
+        getGroupedQuestionsList() {
+          const rawList = this.getCleanFilteredQuestionsList();
+          const dateMap = {};
+
+          rawList.forEach(q => {
+            const d = q.data || new Date().toISOString().split('T')[0];
+            if (!dateMap[d]) {
+              dateMap[d] = {
+                date: d,
+                dayOfWeek: this.getDayOfWeekShort(d),
+                materiaMap: {}
+              };
+            }
+
+            const m = q.materia || 'Geral';
+            if (!dateMap[d].materiaMap[m]) {
+              dateMap[d].materiaMap[m] = {
+                materia: m,
+                items: []
+              };
+            }
+
+            dateMap[d].materiaMap[m].items.push(q);
+          });
+
+          const result = Object.values(dateMap).map(dObj => {
+            let dateTotalQ = 0;
+            let dateRights = 0;
+
+            const materiasArr = Object.values(dObj.materiaMap).map(mObj => {
+              const matTotalQ = mObj.items.reduce((acc, q) => acc + (q.total || 0), 0);
+              const matRights = mObj.items.reduce((acc, q) => acc + (q.acertos || 0), 0);
+              const matAcc = matTotalQ > 0 ? Math.round((matRights / matTotalQ) * 100) : 0;
+
+              dateTotalQ += matTotalQ;
+              dateRights += matRights;
+
+              return {
+                materia: mObj.materia,
+                totalQ: matTotalQ,
+                totalRights: matRights,
+                acc: matAcc,
+                items: mObj.items
+              };
+            });
+
+            const dateAcc = dateTotalQ > 0 ? Math.round((dateRights / dateTotalQ) * 100) : 0;
+
+            return {
+              date: dObj.date,
+              dayOfWeek: dObj.dayOfWeek,
+              totalQ: dateTotalQ,
+              acc: dateAcc,
+              materias: materiasArr
+            };
+          });
+
+          result.sort((a, b) => new Date(b.date) - new Date(a.date));
+          return result;
         },
 
         calcFilteredSummary() {
@@ -2695,7 +2775,7 @@
               event.target.value = '';
             }
           };
-          reader.readAsArrayBuffer(file);
+          reader.readAsBuffer(file);
         },
 
         undoLastImport() {
