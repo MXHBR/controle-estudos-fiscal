@@ -1436,7 +1436,40 @@
             }
           }
 
+          // ROTINA AUTOMÁTICA DE CORREÇÃO DE CONT. PÚBLICA / PÚPLICA
+          if (this.questoes && Array.isArray(this.questoes)) {
+            this.questoes.forEach(q => {
+              if (q.materia) {
+                const upper = String(q.materia).toUpperCase();
+                if (upper.includes('CONT') && (upper.includes('PUB') || upper.includes('PUP'))) {
+                  q.materia = 'CONT. PÚBLICA';
+                }
+              }
+            });
+          }
+
+          if (this.gargalos && Array.isArray(this.gargalos)) {
+            this.gargalos.forEach(g => {
+              if (g.materia) {
+                const upper = String(g.materia).toUpperCase();
+                if (upper.includes('CONT') && (upper.includes('PUB') || upper.includes('PUP'))) {
+                  g.materia = 'CONT. PÚBLICA';
+                }
+              }
+            });
+          }
+
           await this.loadFromSupabase();
+
+          // Aplica a mesma limpeza após carregar do Supabase para garantir
+          this.questoes.forEach(q => {
+            if (q.materia) {
+              const upper = String(q.materia).toUpperCase();
+              if (upper.includes('CONT') && (upper.includes('PUB') || upper.includes('PUP'))) {
+                q.materia = 'CONT. PÚBLICA';
+              }
+            }
+          });
 
           if (!this.selectedDateFilter) {
             this.selectedDateFilter = new Date().toISOString().split('T')[0];
