@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v5.8</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v6.0</span>
       </div>
     </aside>
 
@@ -500,12 +500,12 @@
           </template>
         </div>
 
-        <!-- ==================== TAB 3: QUESTÕES (NOVO DESIGN LIMPO, ALINHADO E HIERÁRQUICO) ==================== -->
-        <div x-show="activeTab === 'questoes'" x-cloak class="space-y-6">
+        <!-- ==================== TAB 3: QUESTÕES E ESTUDOS UNIFICADOS ==================== -->
+        <div x-show="activeTab === 'questoes' || activeTab === 'estudos'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Questões e Performance</h2>
-              <p class="text-slate-400 text-sm">Acompanhe seu desempenho agrupado por data, matéria e assuntos individuais.</p>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Questões</h2>
+              <p class="text-slate-400 text-sm">Controle seus registros teóricos e resolução de questões no mesmo lugar. Clique no mini card para detalhar no card central.</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
@@ -516,236 +516,80 @@
               
               <button @click="$refs.excelFileInput.click()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i data-lucide="upload" class="w-4 h-4 text-sky-400"></i>
-                <span>Importar</span>
+                <span>Importar Excel</span>
               </button>
               <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
 
               <button @click="undoLastImport()" x-show="lastImportId" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                <span>Desfazer</span>
+                <span>Desfazer Importação</span>
               </button>
 
               <button @click="openAddQuestaoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Novo Treino</span>
+                <span>Novo Registro (Teoria/Questões)</span>
               </button>
             </div>
           </div>
 
-          <!-- MINI CARDS DOS ÚLTIMOS 7 DIAS -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            <template x-for="dayObj in getLast7DaysCards()" :key="dayObj.dateStr">
-              <div class="bg-slate-900/80 border rounded-xl p-3 flex flex-col justify-between space-y-2.5 transition backdrop-blur-sm"
-                   :class="dayObj.isToday ? 'border-indigo-500 bg-indigo-600/10 shadow-md shadow-indigo-500/10' : 'border-slate-800'">
-                
-                <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-                  <span class="text-[10px] font-bold font-mono tracking-wider uppercase" :class="dayObj.isToday ? 'text-indigo-400' : 'text-slate-400'" x-text="dayObj.dayOfWeek"></span>
-                  <span class="text-[10px] text-slate-500 font-mono" x-text="dayObj.formattedDate"></span>
-                </div>
-
-                <div class="space-y-1.5 min-h-[50px] flex flex-col justify-center">
-                  <template x-if="dayObj.materias.length > 0">
-                    <div class="flex flex-wrap gap-1">
-                      <template x-for="mName in dayObj.materias" :key="mName">
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-slate-800 text-slate-200 border border-slate-700 truncate max-w-full" x-text="mName"></span>
-                      </template>
-                    </div>
-                  </template>
-                  <template x-if="dayObj.materias.length === 0">
-                    <span class="text-[11px] text-slate-500 italic text-center block">Sem registros</span>
-                  </template>
-                </div>
-              </div>
-            </template>
-          </div>
-
-          <!-- PAINEL PRINCIPAL HIERÁRQUICO E ALINHADO -->
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-4 shadow-sm backdrop-blur-sm">
-            
-            <!-- Barra de Filtros e Resumo Rápido -->
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-              <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                <span class="text-slate-400 mr-2 font-medium">Período:</span>
-                <button @click="questoesPeriodFilter = '7'" :class="questoesPeriodFilter === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-lg transition font-medium">Últimos 7 dias</button>
-                <button @click="questoesPeriodFilter = '15'" :class="questoesPeriodFilter === '15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-lg transition font-medium">15 Dias</button>
-                <button @click="questoesPeriodFilter = '30'" :class="questoesPeriodFilter === '30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-lg transition font-medium">30 Dias</button>
-                <button @click="questoesPeriodFilter = 'total'" :class="questoesPeriodFilter === 'total' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-lg transition font-medium">Tudo</button>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-3">
-                <select x-model="questoesFilterMateria" class="bg-slate-950/80 border border-slate-800 text-xs text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500">
-                  <option value="todas">Todas as Matérias</option>
-                  <template x-for="m in materias" :key="m.id">
-                    <option :value="m.nome" x-text="m.nome"></option>
-                  </template>
-                </select>
-                
-                <div class="bg-slate-850 border border-slate-800 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-300 flex items-center space-x-2">
-                  <span class="text-slate-400">Total Filtrado:</span>
-                  <span class="font-bold text-indigo-400" x-text="calcFilteredSummary().totalQ + ' qsts'"></span>
-                  <span>•</span>
-                  <span class="font-bold text-emerald-400" x-text="calcFilteredSummary().acc + '% acerto'"></span>
-                </div>
-              </div>
-            </div>
-
-            <!-- EXIBIÇÃO AGRUPADA POR DATA -> MATÉRIA -> ASSUNTOS (ALINHamento PERFEITO COM GRID) -->
-            <div class="space-y-6">
-              <template x-for="dayGroup in getGroupedQuestionsList()" :key="dayGroup.date">
-                <div class="border border-slate-800/80 rounded-xl bg-slate-950/40 overflow-hidden shadow-sm">
-                  
-                  <!-- Cabeçalho da Data -->
-                  <div class="bg-slate-850/90 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                      <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 uppercase" x-text="dayGroup.dayOfWeek"></span>
-                      <span class="font-bold text-slate-100 font-mono text-xs" x-text="formatDate(dayGroup.date)"></span>
-                    </div>
-                    <div class="flex items-center space-x-3 text-xs font-mono">
-                      <span class="text-slate-400">Total do Dia: <strong class="text-indigo-400" x-text="dayGroup.totalQ + ' qsts'"></strong></span>
-                      <span class="text-slate-500">•</span>
-                      <span class="text-slate-400">Acerto: <strong class="text-emerald-400" x-text="dayGroup.acc + '%'"></strong></span>
-                    </div>
-                  </div>
-
-                  <!-- Blocos de Matérias dentro do Dia -->
-                  <div class="p-4 space-y-4">
-                    <template x-for="matGroup in dayGroup.materias" :key="matGroup.materia">
-                      <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
-                        
-                        <!-- Cabeçalho da Matéria -->
-                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-2.5">
-                          <div class="flex items-center space-x-2.5">
-                            <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
-                            <span class="font-bold text-xs uppercase tracking-wider text-slate-100" x-text="matGroup.materia"></span>
-                          </div>
-                          <div class="flex items-center space-x-3 text-xs font-mono">
-                            <span class="text-slate-400" x-text="`${matGroup.totalRights}/${matGroup.totalQ} acertos`"></span>
-                            <span class="px-2 py-0.5 rounded-md font-bold" :class="getCustomProgressBarText(matGroup.acc)" x-text="matGroup.acc + '%'"></span>
-                          </div>
-                        </div>
-
-                        <!-- Lista de Assuntos Individuais com Grid Perfeitamente Alinhado -->
-                        <div class="space-y-2">
-                          <template x-for="q in matGroup.items" :key="q.id">
-                            <div class="bg-slate-850/80 border border-slate-800/60 rounded-lg p-3 hover:border-slate-700 transition space-y-2">
-                              <div class="grid grid-cols-12 items-center gap-3">
-                                <!-- Assunto (Col 1 a 6) -->
-                                <div class="col-span-6 min-w-0">
-                                  <span class="text-xs font-semibold text-slate-200 block truncate" x-text="q.assunto || 'Geral'"></span>
-                                </div>
-                                <!-- Desempenho (Col 7 a 8) -->
-                                <div class="col-span-2 text-center font-mono text-xs">
-                                  <span class="text-slate-200 font-bold" x-text="q.acertos"></span>
-                                  <span class="text-slate-500" x-text="`/ ${q.total}`"></span>
-                                </div>
-                                <!-- Taxa (Col 9) -->
-                                <div class="col-span-1 text-center">
-                                  <span class="px-2 py-0.5 rounded font-bold font-mono text-[10px]" :class="getCustomProgressBarText(calcQuestaoPercent(q))" x-text="calcQuestaoPercent(q) + '%'"></span>
-                                </div>
-                                <!-- Gargalo / Nota (Col 10) -->
-                                <div class="col-span-2 text-center">
-                                  <template x-if="q.anotacao">
-                                    <button @click="q.showNote = !q.showNote" class="inline-flex items-center space-x-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-md transition text-[11px]" title="Ver anotação/gargalo">
-                                      <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-                                      <span x-text="q.showNote ? 'Ocultar' : 'Ver Nota'"></span>
-                                    </button>
-                                  </template>
-                                  <template x-if="!q.anotacao">
-                                    <span class="text-slate-600 italic text-[11px]">-</span>
-                                  </template>
-                                </div>
-                                <!-- Ações (Col 11 a 12) -->
-                                <div class="col-span-1 flex items-center justify-end space-x-1">
-                                  <button @click="openEditQuestaoModal(q)" class="p-1 text-slate-400 hover:text-indigo-400 rounded hover:bg-slate-800 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                  <button @click="deleteQuestao(q.id)" class="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                                </div>
-                              </div>
-
-                              <!-- Bloco Expansível de Gargalo Funcional -->
-                              <div x-show="q.anotacao && q.showNote" x-collapse class="pt-2 border-t border-slate-800/80">
-                                <div class="bg-slate-950 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-200/90 flex items-start space-x-2.5">
-                                  <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-                                  <div>
-                                    <span class="font-bold text-amber-400 block mb-0.5">Gargalo / Anotação registrada:</span>
-                                    <p x-text="q.anotacao" class="leading-relaxed"></p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </template>
-                        </div>
-
-                      </div>
-                    </template>
-                  </div>
-
-                </div>
-              </template>
-
-              <template x-if="getGroupedQuestionsList().length === 0">
-                <div class="py-12 text-center text-slate-500 text-xs bg-slate-950/40 border border-dashed border-slate-800 rounded-xl">
-                  Nenhum registro de questões encontrado para os filtros selecionados.
-                </div>
-              </template>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- ==================== TAB 4: ESTUDOS ==================== -->
-        <div x-show="activeTab === 'estudos'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Cronograma</h2>
-              <p class="text-slate-400 text-sm">Clique em um dos mini cards abaixo para detalhar os registros no card central.</p>
-            </div>
-            <button @click="openAddEstudoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Novo Registro de Estudo</span>
-            </button>
-          </div>
-
-          <div class="space-y-3 bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm backdrop-blur-sm">
+          <!-- LINHA DO TEMPO DOS MINI CARDS COM ALERTA DE GARGALO EM ALARANJADO -->
+          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm backdrop-blur-sm space-y-3">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
               <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
                 <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
-                <span>Linha do Tempo (Mini Cards)</span>
+                <span>Linha do Tempo (Até 30 Mini Cards)</span>
               </div>
+              
+              <!-- FILTROS DE DIAS -->
               <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                <button @click="setCronogramaMode('last30')" :class="cronogramaMode === 'last30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">Últimos 30 Dias</button>
-                <button @click="setCronogramaMode('last15')" :class="cronogramaMode === 'last15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">15 Dias</button>
-                <button @click="setCronogramaMode('last7')" :class="cronogramaMode === 'last7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">7 Dias</button>
-                <button @click="cronogramaMode = 'range'" :class="cronogramaMode === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">Personalizado</button>
+                <button @click="setTimelinePeriod('30')" :class="timelinePeriod === '30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">Últimos 30 Dias</button>
+                <button @click="setTimelinePeriod('15')" :class="timelinePeriod === '15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">15 Dias</button>
+                <button @click="setTimelinePeriod('7')" :class="timelinePeriod === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">7 Dias</button>
+                <button @click="timelinePeriod = 'range'" :class="timelinePeriod === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">Personalizado</button>
               </div>
             </div>
 
-            <div x-show="cronogramaMode === 'range'" x-cloak class="flex flex-wrap items-center gap-3 pt-1">
+            <!-- FILTRO DE PERÍODO PERSONALIZADO (MÁXIMO DE 30 DIAS) -->
+            <div x-show="timelinePeriod === 'range'" x-cloak class="flex flex-wrap items-center gap-3 pt-1">
               <div class="flex items-center space-x-2">
                 <span class="text-xs text-slate-400">De:</span>
-                <input type="date" x-model="cronogramaDateStart" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                <input type="date" x-model="timelineDateStart" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
               <div class="flex items-center space-x-2">
                 <span class="text-xs text-slate-400">Até (máx 30 dias):</span>
-                <input type="date" x-model="cronogramaDateEnd" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                <input type="date" x-model="timelineDateEnd" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-72 overflow-y-auto pr-1">
-              <template x-for="dayObj in getCronogramaMiniCards()" :key="dayObj.dateStr">
-                <div @click="selectedCronogramaDateFilter = dayObj.dateStr"
-                     class="bg-slate-850/80 border rounded-xl p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left"
-                     :class="selectedCronogramaDateFilter === dayObj.dateStr ? 'border-indigo-500 bg-indigo-600/20 shadow-md shadow-indigo-500/15 ring-1 ring-indigo-500' : (dayObj.hasRecords ? 'border-indigo-500/40 bg-slate-900/90 hover:border-indigo-400' : 'border-slate-800 hover:border-slate-700')">
+            <!-- GRID DOS MINI CARDS -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-80 overflow-y-auto pr-1">
+              <template x-for="dayObj in getTimelineMiniCards()" :key="dayObj.dateStr">
+                <div @click="selectedDateFilter = dayObj.dateStr"
+                     class="border rounded-xl p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left relative overflow-hidden"
+                     :class="[
+                       selectedDateFilter === dayObj.dateStr ? 'ring-2 ring-indigo-500 shadow-lg' : '',
+                       dayObj.hasActiveBottleneck 
+                         ? 'bg-amber-950/40 border-amber-500/70 shadow-amber-500/10' 
+                         : (dayObj.hasRecords ? 'bg-slate-900/90 border-indigo-500/40 hover:border-indigo-400' : 'bg-slate-850/60 border-slate-800 hover:border-slate-700')
+                     ]">
                   
+                  <!-- Destaque visual se houver gargalo pendente -->
+                  <template x-if="dayObj.hasActiveBottleneck">
+                    <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Gargalo pendente registrado neste dia"></span>
+                  </template>
+
                   <div class="flex items-center justify-between border-b border-slate-800/80 pb-1">
-                    <span class="text-[9px] font-bold font-mono tracking-wider uppercase" :class="dayObj.isToday ? 'text-indigo-400' : 'text-slate-400'" x-text="dayObj.dayOfWeek"></span>
-                    <span class="text-[9px] text-slate-500 font-mono" x-text="dayObj.formattedDate"></span>
+                    <span class="text-[9px] font-bold font-mono tracking-wider uppercase" :class="dayObj.hasActiveBottleneck ? 'text-amber-400' : (dayObj.isToday ? 'text-indigo-400' : 'text-slate-400')" x-text="dayObj.dayOfWeek"></span>
+                    <span class="text-[9px] font-mono" :class="dayObj.hasActiveBottleneck ? 'text-amber-300/80' : 'text-slate-500'" x-text="dayObj.formattedDate"></span>
                   </div>
 
                   <div class="space-y-1 min-h-[35px] flex flex-col justify-center">
                     <template x-if="dayObj.materias.length > 0">
                       <div class="flex flex-wrap gap-1">
                         <template x-for="mName in dayObj.materias" :key="mName">
-                          <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 truncate max-w-full" x-text="mName"></span>
+                          <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide truncate max-w-full"
+                                :class="dayObj.bottleneckMaterias.includes(mName) ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'"
+                                x-text="mName"></span>
                         </template>
                       </div>
                     </template>
@@ -758,68 +602,96 @@
             </div>
           </div>
 
-          <div class="space-y-4">
+          <!-- CARD CENTRAL DO DIA SELECIONADO -->
+          <div class="space-y-4 max-w-4xl mx-auto">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
                 <i data-lucide="book-open-check" class="w-4 h-4 text-indigo-400"></i>
-                <span x-text="selectedCronogramaDateFilter ? `Detalhes do Dia: ${formatDate(selectedCronogramaDateFilter)}` : 'Detalhes do Dia Selecionado'"></span>
+                <span x-text="selectedDateFilter ? `Card Central do Dia: ${formatDate(selectedDateFilter)}` : 'Card Central de Detalhes do Dia'"></span>
               </h3>
             </div>
 
-            <div class="space-y-4 max-w-3xl mx-auto">
-              <template x-for="cardGroup in getCronogramaCardsToDisplay()" :key="cardGroup.date">
-                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 transition hover:border-indigo-500/40 backdrop-blur-sm">
-                  <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div class="flex items-center space-x-3">
-                      <span class="px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
-                      <span class="text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
-                    </div>
-                    <span class="text-xs text-slate-400 font-mono bg-slate-800 px-2.5 py-1 rounded-lg" x-text="`${cardGroup.items.length} ${cardGroup.items.length === 1 ? 'registro' : 'registros'}`"></span>
+            <template x-for="cardGroup in getSelectedDayDetailCards()" :key="cardGroup.date">
+              <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 backdrop-blur-sm relative">
+                
+                <!-- Cabeçalho do Card Central -->
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div class="flex items-center space-x-3">
+                    <span class="px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
+                    <span class="text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
                   </div>
-
-                  <div class="space-y-4">
-                    <template x-for="item in cardGroup.items" :key="item.id">
-                      <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                          <div class="flex items-center space-x-2.5">
-                            <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(item.materia)}`"></span>
-                            <span class="font-bold text-slate-100 text-sm uppercase tracking-wide" x-text="item.materia"></span>
-                            <span class="text-slate-600">•</span>
-                            <span class="text-xs font-semibold text-indigo-300 bg-indigo-600/10 border border-indigo-500/20 px-2 py-0.5 rounded" x-text="item.tipo || 'Teoria & Questões'"></span>
-                          </div>
-
-                          <div class="flex items-center space-x-3 text-xs">
-                            <template x-if="item.total > 0">
-                              <span class="font-bold px-2.5 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
-                            </template>
-                            <button @click="openEditEstudoModal(item)" class="text-slate-500 hover:text-indigo-400 p-1 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                            <button @click="deleteEstudoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                          </div>
-                        </div>
-
-                        <div class="text-xs text-slate-300 font-medium bg-slate-900/90 border border-slate-800/80 rounded-lg p-2.5">
-                          <span class="text-slate-500 font-normal">Assunto: </span>
-                          <span x-text="item.assunto || 'Geral'"></span>
-                        </div>
-
-                        <template x-if="item.anotacao">
-                          <div class="text-xs text-amber-200/90 bg-slate-950/80 border border-amber-500/20 rounded-lg p-2.5 space-y-1">
-                            <div class="flex items-center space-x-1.5 text-amber-400 font-semibold">
-                              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-                              <span>Anotação / Gargalo</span>
-                            </div>
-                            <p x-text="item.anotacao"></p>
-                          </div>
-                        </template>
-                      </div>
-                    </template>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs text-slate-400 font-mono bg-slate-800 px-2.5 py-1 rounded-lg" x-text="`${cardGroup.items.length} ${cardGroup.items.length === 1 ? 'registro' : 'registros'}`"></span>
+                    <button @click="openAddQuestaoModalForDate(cardGroup.date)" class="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                      <span>+ Adicionar Neste Dia</span>
+                    </button>
                   </div>
                 </div>
-              </template>
 
-              <div x-show="getCronogramaCardsToDisplay().length === 0" class="p-12 text-center text-slate-500 text-xs bg-slate-900/80 border border-dashed border-slate-800 rounded-2xl backdrop-blur-sm">
-                Nenhum registro encontrado para este dia. Selecione outro mini card acima ou clique em "Novo Registro de Estudo".
+                <!-- Lista de Registros teóricos e de questões do dia -->
+                <div class="space-y-4">
+                  <template x-for="item in cardGroup.items" :key="item.id">
+                    <div class="border rounded-xl p-4 space-y-3 transition"
+                         :class="item.hasBottleneckPending ? 'bg-amber-950/20 border-amber-500/40' : 'bg-slate-850/80 border-slate-800/80'">
+                      
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center space-x-2.5">
+                          <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(item.materia)}`"></span>
+                          <span class="font-bold text-slate-100 text-sm uppercase tracking-wide" x-text="item.materia"></span>
+                          <span class="text-slate-600">•</span>
+                          <span class="text-xs font-semibold px-2 py-0.5 rounded border"
+                                :class="item.tipo === 'Estudo Teórico' ? 'text-sky-300 bg-sky-600/10 border-sky-500/20' : 'text-indigo-300 bg-indigo-600/10 border-indigo-500/20'"
+                                x-text="item.tipo || 'Resolução de Questões'"></span>
+                        </div>
+
+                        <div class="flex items-center space-x-3 text-xs">
+                          <template x-if="item.total > 0">
+                            <span class="font-bold px-2.5 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
+                          </template>
+                          <button @click="openEditQuestaoModal(item)" class="text-slate-500 hover:text-indigo-400 p-1 transition" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                          <button @click="deleteQuestaoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                      </div>
+
+                      <div class="text-xs text-slate-300 font-medium bg-slate-900/90 border border-slate-800/80 rounded-lg p-2.5">
+                        <span class="text-slate-500 font-normal">Assunto: </span>
+                        <span x-text="item.assunto || 'Geral'"></span>
+                      </div>
+
+                      <!-- Bloco do Gargalo associado com Ação de Conclusão Direta -->
+                      <template x-if="item.anotacao">
+                        <div class="text-xs rounded-lg p-3 space-y-2 border"
+                             :class="item.bottleneckResolved ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200' : 'bg-amber-950/30 border-amber-500/40 text-amber-200'">
+                          <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-1.5 font-bold" :class="item.bottleneckResolved ? 'text-emerald-400' : 'text-amber-400'">
+                              <i :data-lucide="item.bottleneckResolved ? 'check-circle' : 'alert-triangle'" class="w-4 h-4"></i>
+                              <span x-text="item.bottleneckResolved ? 'Gargalo Concluído' : 'Gargalo Registrado (Pendente)'"></span>
+                            </div>
+
+                            <!-- Botão Concluir Gargalo Direto no Card Central -->
+                            <template x-if="!item.bottleneckResolved">
+                              <button @click="resolveBottleneckFromCard(item.gargaloId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1 shadow">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                                <span>Marcar como Concluído</span>
+                              </button>
+                            </template>
+                          </div>
+                          <p class="leading-relaxed" x-text="item.anotacao"></p>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
               </div>
+            </template>
+
+            <div x-show="getSelectedDayDetailCards().length === 0" class="p-12 text-center text-slate-500 text-xs bg-slate-900/80 border border-dashed border-slate-800 rounded-2xl backdrop-blur-sm space-y-3">
+              <p>Nenhum registro de estudo teórico ou de questões para este dia.</p>
+              <button @click="openAddQuestaoModalForDate(selectedDateFilter)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold inline-flex items-center space-x-1.5 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Registrar Estudo ou Questões Neste Dia</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1044,56 +916,6 @@
     </div>
   </div>
 
-  <div x-show="showEstudoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
-      <h3 class="font-bold text-slate-100 text-base" x-text="editingEstudoId ? 'Editar Registro de Estudo' : 'Novo Registro de Estudo'"></h3>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Data</label>
-          <input type="date" x-model="modalEstudoData" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Matéria</label>
-          <select x-model="modalEstudoMateria" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-            <template x-for="m in materias" :key="m.id">
-              <option :value="m.nome" x-text="m.nome"></option>
-            </template>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Tipo de Estudo</label>
-          <select x-model="modalEstudoTipo" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-            <option value="Teoria & Questões">Teoria & Questões</option>
-            <option value="Estudo Teórico">Estudo Teórico</option>
-            <option value="Resolução de Questões">Resolução de Questões</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Assunto</label>
-          <input type="text" x-model="modalEstudoAssunto" placeholder="Ex: Obrigações Tributárias" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-slate-400 block mb-1">Total de Questões</label>
-            <input type="number" x-model.number="modalEstudoTotal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-          </div>
-          <div>
-            <label class="text-xs text-slate-400 block mb-1">Acertos</label>
-            <input type="number" x-model.number="modalEstudoAcertos" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-          </div>
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalo</label>
-          <textarea x-model="modalEstudoAnotacao" rows="2" placeholder="Pontos importantes ou dúvidas..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
-        </div>
-      </div>
-      <div class="flex justify-end space-x-2 pt-2">
-        <button @click="showEstudoModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
-        <button @click="saveEstudoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Salvar</button>
-      </div>
-    </div>
-  </div>
-
   <div x-show="showMateriaModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingMateriaId ? 'Editar Matéria' : 'Nova Matéria'"></h3>
@@ -1130,10 +952,10 @@
     </div>
   </div>
 
-  <!-- Modal Registrar / Editar Treino (Questões) -->
+  <!-- Modal Registrar / Editar Treino (Questões e Estudo Teórico com botões +1 e -1) -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
-      <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Treino' : 'Registrar Treino'"></h3>
+      <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Registro' : 'Registrar Estudo / Questões'"></h3>
       <div class="space-y-3">
         <div>
           <label class="text-xs text-slate-400 block mb-1">Data</label>
@@ -1148,30 +970,40 @@
           </select>
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Assunto</label>
+          <label class="text-xs text-slate-400 block mb-1">Tipo de Registro</label>
+          <select x-model="modalQuestaoTipo" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="Resolução de Questões">Resolução de Questões</option>
+            <option value="Estudo Teórico">Estudo Teórico</option>
+            <option value="Teoria & Questões">Teoria & Questões</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Assunto / Tópico</label>
           <input type="text" x-model="modalQuestaoAssunto" placeholder="Ex: Lançamento Tributário" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
         
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3" x-show="modalQuestaoTipo !== 'Estudo Teórico'">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Total</label>
+            <label class="text-xs text-slate-400 block mb-1">Total de Questões</label>
             <div class="flex items-center space-x-1">
               <input type="number" x-model.number="modalQuestaoTotal" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              <button @click="modalQuestaoTotal = (Number(modalQuestaoTotal)||0) + 1" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 questão">+1</button>
+              <button @click="modalQuestaoTotal = Math.max(0, (Number(modalQuestaoTotal)||0) - 1)" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-2 rounded-lg text-xs font-bold transition border border-slate-700" title="Subtrair 1 questão">-1</button>
+              <button @click="modalQuestaoTotal = (Number(modalQuestaoTotal)||0) + 1" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 questão">+1</button>
             </div>
           </div>
           <div>
             <label class="text-xs text-slate-400 block mb-1">Acertos</label>
             <div class="flex items-center space-x-1">
               <input type="number" x-model.number="modalQuestaoAcertos" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              <button @click="modalQuestaoAcertos = (Number(modalQuestaoAcertos)||0) + 1" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 acerto">+1</button>
+              <button @click="modalQuestaoAcertos = Math.max(0, (Number(modalQuestaoAcertos)||0) - 1)" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-2 rounded-lg text-xs font-bold transition border border-slate-700" title="Subtrair 1 acerto">-1</button>
+              <button @click="modalQuestaoAcertos = (Number(modalQuestaoAcertos)||0) + 1" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 acerto">+1</button>
             </div>
           </div>
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalo (Vai direto para o Painel de Gargalos)</label>
-          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Descreva os pontos em que errou..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalo (Gera alerta no mini card e na aba de Gargalos)</label>
+          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Descreva os pontos em que errou ou dúvidas para revisar..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
       </div>
       <div class="flex justify-end space-x-2 pt-2">
@@ -1300,8 +1132,7 @@
         tabs: [
           { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
           { id: 'materias', label: 'Matérias', icon: 'book-open' },
-          { id: 'questoes', label: 'Questões', icon: 'target' },
-          { id: 'estudos', label: 'Estudos', icon: 'calendar' },
+          { id: 'questoes', label: 'Questões & Estudos', icon: 'target' },
           { id: 'gargalos', label: 'Gargalos', icon: 'alert-triangle' }
         ],
 
@@ -1320,16 +1151,16 @@
         materiaSearchQuery: '',
         draggedMateriaId: null,
         newTopicText: '',
+        
         questoes: [],
-        questoesFilterMateria: 'todas',
-        questoesPeriodFilter: '7',
-        gargalos: [],
         estudos: [], 
+        gargalos: [],
 
-        cronogramaMode: 'last30',
-        cronogramaDateStart: new Date().toISOString().split('T')[0],
-        cronogramaDateEnd: new Date().toISOString().split('T')[0],
-        selectedCronogramaDateFilter: '',
+        // Linha do tempo de mini cards
+        timelinePeriod: '30',
+        timelineDateStart: new Date().toISOString().split('T')[0],
+        timelineDateEnd: new Date().toISOString().split('T')[0],
+        selectedDateFilter: new Date().toISOString().split('T')[0],
 
         showResolveGargaloModal: false,
         resolvingGargaloId: null,
@@ -1339,16 +1170,6 @@
         activeParentTopicForSub: null,
         modalSubtopicText: '',
 
-        showEstudoModal: false,
-        editingEstudoId: null,
-        modalEstudoData: new Date().toISOString().split('T')[0],
-        modalEstudoMateria: '',
-        modalEstudoTipo: 'Teoria & Questões',
-        modalEstudoAssunto: '',
-        modalEstudoTotal: 0,
-        modalEstudoAcertos: 0,
-        modalEstudoAnotacao: '',
-
         showMateriaModal: false,
         editingMateriaId: null,
         modalMateriaNome: '',
@@ -1356,14 +1177,17 @@
         showEditTopicModal: false,
         editingTopicObj: null,
         modalTopicText: '',
+        
         showQuestaoModal: false,
         editingQuestaoId: null,
         modalQuestaoData: new Date().toISOString().split('T')[0],
         modalQuestaoMateria: '',
+        modalQuestaoTipo: 'Resolução de Questões',
         modalQuestaoAssunto: '',
         modalQuestaoTotal: '',
         modalQuestaoAcertos: '',
         modalQuestaoAnotacao: '',
+        
         showGargaloModal: false,
         modalGargaloMateria: '',
         modalGargaloTitulo: '',
@@ -1383,12 +1207,9 @@
           }
 
           await this.loadFromSupabase();
-          
-          this.syncExistingQuestionsToEstudos();
 
-          if (!this.selectedCronogramaDateFilter) {
-            const todayStr = new Date().toISOString().split('T')[0];
-            this.selectedCronogramaDateFilter = todayStr;
+          if (!this.selectedDateFilter) {
+            this.selectedDateFilter = new Date().toISOString().split('T')[0];
           }
 
           this.isLoaded = true;
@@ -1403,13 +1224,7 @@
             }
           }, { deep: true });
           
-          this.$watch('questoes', () => { 
-            if (this.isLoaded) {
-              this.syncExistingQuestionsToEstudos();
-              this.saveAll();
-            }
-          }, { deep: true });
-
+          this.$watch('questoes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('estudos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('gargalos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
           this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
@@ -1419,6 +1234,7 @@
         },
 
         setActiveTab(tabId) {
+          if (tabId === 'estudos') tabId = 'questoes';
           this.activeTab = tabId;
           localStorage.setItem(TAB_KEY, tabId);
           this.refreshIcons();
@@ -1441,13 +1257,48 @@
             });
             this.ensureValidSelection();
           }
-          if (loaded.questoes) {
-            this.questoes = loaded.questoes.map(q => {
-              if (q.showNote === undefined) q.showNote = false;
-              return q;
+
+          // Migração e unificação de questões + estudos anteriores
+          const mergedList = [];
+          
+          if (loaded.questoes && Array.isArray(loaded.questoes)) {
+            loaded.questoes.forEach(q => {
+              mergedList.push({
+                id: q.id || 'q_' + Math.random(),
+                data: q.data || new Date().toISOString().split('T')[0],
+                materia: q.materia,
+                tipo: q.tipo || 'Resolução de Questões',
+                assunto: q.assunto || '',
+                total: q.total || 0,
+                acertos: q.acertos || 0,
+                anotacao: q.anotacao || '',
+                importId: q.importId || null
+              });
             });
           }
-          if (loaded.estudos) this.estudos = loaded.estudos;
+
+          if (loaded.estudos && Array.isArray(loaded.estudos)) {
+            loaded.estudos.forEach(e => {
+              const alreadyExists = mergedList.some(q => q.id === e.id || (e.questaoId && q.id === e.questaoId));
+              if (!alreadyExists) {
+                mergedList.push({
+                  id: e.id || 'est_' + Math.random(),
+                  data: e.data || new Date().toISOString().split('T')[0],
+                  materia: e.materia,
+                  tipo: e.tipo || 'Estudo Teórico',
+                  assunto: e.assunto || '',
+                  total: e.total || 0,
+                  acertos: e.acertos || 0,
+                  anotacao: e.anotacao || '',
+                  importId: e.importId || null
+                });
+              }
+            });
+          }
+
+          this.questoes = mergedList;
+          this.estudos = mergedList;
+
           if (loaded.gargalos) this.gargalos = loaded.gargalos;
           if (loaded.exams) this.exams = loaded.exams;
           if (loaded.pinnedNotes) {
@@ -1483,34 +1334,12 @@
           return this.materias.find(m => m.id === this.selectedMateriaId) || this.materias[0] || null; 
         },
 
-        syncExistingQuestionsToEstudos() {
-          if (!this.questoes) return;
-          this.questoes.forEach(q => {
-            if (q.showNote === undefined) q.showNote = false;
-            const exists = this.estudos.some(e => e.questaoId === q.id);
-            if (!exists) {
-              this.estudos.push({
-                id: 'est_q_' + q.id,
-                questaoId: q.id,
-                data: q.data || new Date().toISOString().split('T')[0],
-                materia: q.materia,
-                tipo: 'Resolução de Questões',
-                assunto: q.assunto || '',
-                total: q.total || 0,
-                acertos: q.acertos || 0,
-                anotacao: q.anotacao || '',
-                importId: q.importId || null
-              });
-            }
-          });
-        },
-
         saveAll() {
           if (!this.isLoaded) return;
           const payload = {
             materias: this.materias,
             questoes: this.questoes,
-            estudos: this.estudos,
+            estudos: this.questoes,
             gargalos: this.gargalos,
             pinnedNotes: this.pinnedNotes,
             exams: this.exams
@@ -1601,20 +1430,16 @@
 
         calcMatQuestions(mat) {
           if (!mat) return 0;
-          const list = this.questoes.filter(q => q.materia === mat.nome);
-          const listEstudos = this.estudos.filter(e => e.materia === mat.nome);
-          const qTotal = list.reduce((acc, q) => acc + (q.total || 0), 0);
-          const eTotal = listEstudos.reduce((acc, e) => acc + (e.total || 0), 0);
-          return Math.max(qTotal, eTotal);
+          return this.questoes
+            .filter(q => q.materia === mat.nome)
+            .reduce((acc, q) => acc + (q.total || 0), 0);
         },
 
         calcMatRights(mat) {
           if (!mat) return 0;
-          const list = this.questoes.filter(q => q.materia === mat.nome);
-          const listEstudos = this.estudos.filter(e => e.materia === mat.nome);
-          const qRights = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
-          const eRights = listEstudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
-          return Math.max(qRights, eRights);
+          return this.questoes
+            .filter(q => q.materia === mat.nome)
+            .reduce((acc, q) => acc + (q.acertos || 0), 0);
         },
 
         calcMatAccuracy(mat) {
@@ -1628,52 +1453,23 @@
           return m ? (m.cor || '#6366f1') : '#6366f1';
         },
 
-        getLast7DaysCards() {
-          const cards = [];
-          const today = new Date();
-          
-          for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(today.getDate() - i);
-            
-            const ano = d.getFullYear();
-            const mes = String(d.getMonth() + 1).padStart(2, '0');
-            const dia = String(d.getDate()).padStart(2, '0');
-            const dateStr = `${ano}-${mes}-${dia}`;
-            
-            const isToday = i === 0;
-            const dayOfWeek = this.getDayOfWeekShort(dateStr);
-            const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
-
-            const matchedQ = this.questoes.filter(q => q.data === dateStr);
-            const matchedE = this.estudos.filter(e => e.data === dateStr);
-            const materiasSet = [...new Set([...matchedQ.map(q => q.materia), ...matchedE.map(e => e.materia)])];
-
-            cards.push({
-              dateStr,
-              dayOfWeek,
-              formattedDate,
-              isToday,
-              materias: materiasSet
-            });
-          }
-          return cards;
+        setTimelinePeriod(mode) {
+          this.timelinePeriod = mode;
         },
 
-        setCronogramaMode(mode) {
-          this.cronogramaMode = mode;
-        },
-
-        getCronogramaMiniCards() {
+        // GERAÇÃO DOS 30 MINI CARDS DA LINHA DO TEMPO COM DESTAQUE EM ALARANJADO PARA GARGALOS PENDENTES
+        getTimelineMiniCards() {
           const cards = [];
           const today = new Date();
           let limitDays = 30;
 
-          if (this.cronogramaMode === 'last7') limitDays = 7;
-          else if (this.cronogramaMode === 'last15') limitDays = 15;
-          else if (this.cronogramaMode === 'last30') limitDays = 30;
+          if (this.timelinePeriod === '7') limitDays = 7;
+          else if (this.timelinePeriod === '15') limitDays = 15;
+          else if (this.timelinePeriod === '30') limitDays = 30;
 
-          if (this.cronogramaMode !== 'range') {
+          const activeGargalos = this.gargalos.filter(g => !g.resolvido);
+
+          if (this.timelinePeriod !== 'range') {
             for (let i = limitDays - 1; i >= 0; i--) {
               const d = new Date();
               d.setDate(today.getDate() - i);
@@ -1686,8 +1482,12 @@
               const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
 
               const matchedQ = this.questoes.filter(q => q.data === dateStr);
-              const matchedE = this.estudos.filter(e => e.data === dateStr);
-              const materiasSet = [...new Set([...matchedQ.map(q => q.materia), ...matchedE.map(e => e.materia)])];
+              const materiasSet = [...new Set(matchedQ.map(q => q.materia))];
+
+              // Verifica gargalos ativos na data
+              const dayActiveGargalos = activeGargalos.filter(g => g.dataCriacao === dateStr);
+              const hasActiveBottleneck = dayActiveGargalos.length > 0;
+              const bottleneckMaterias = [...new Set(dayActiveGargalos.map(g => g.materia))];
 
               cards.push({
                 dateStr,
@@ -1695,15 +1495,17 @@
                 formattedDate,
                 isToday,
                 hasRecords: materiasSet.length > 0,
-                materias: materiasSet
+                materias: materiasSet,
+                hasActiveBottleneck,
+                bottleneckMaterias
               });
             }
           } else {
-            if (!this.cronogramaDateStart) this.cronogramaDateStart = new Date().toISOString().split('T')[0];
-            if (!this.cronogramaDateEnd) this.cronogramaDateEnd = this.cronogramaDateStart;
+            if (!this.timelineDateStart) this.timelineDateStart = new Date().toISOString().split('T')[0];
+            if (!this.timelineDateEnd) this.timelineDateEnd = this.timelineDateStart;
 
-            let curr = new Date(this.cronogramaDateStart);
-            const limit = new Date(this.cronogramaDateEnd);
+            let curr = new Date(this.timelineDateStart);
+            const limit = new Date(this.timelineDateEnd);
             let count = 0;
 
             while (curr <= limit && count < 30) {
@@ -1715,8 +1517,11 @@
               const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
 
               const matchedQ = this.questoes.filter(q => q.data === dateStr);
-              const matchedE = this.estudos.filter(e => e.data === dateStr);
-              const materiasSet = [...new Set([...matchedQ.map(q => q.materia), ...matchedE.map(e => e.materia)])];
+              const materiasSet = [...new Set(matchedQ.map(q => q.materia))];
+
+              const dayActiveGargalos = activeGargalos.filter(g => g.dataCriacao === dateStr);
+              const hasActiveBottleneck = dayActiveGargalos.length > 0;
+              const bottleneckMaterias = [...new Set(dayActiveGargalos.map(g => g.materia))];
 
               cards.push({
                 dateStr,
@@ -1724,7 +1529,9 @@
                 formattedDate,
                 isToday: false,
                 hasRecords: materiasSet.length > 0,
-                materias: materiasSet
+                materias: materiasSet,
+                hasActiveBottleneck,
+                bottleneckMaterias
               });
 
               curr.setDate(curr.getDate() + 1);
@@ -1734,115 +1541,147 @@
           return cards;
         },
 
-        getCronogramaCardsToDisplay() {
-          if (!this.selectedCronogramaDateFilter) return [];
-          const list = this.estudos.filter(e => e.data === this.selectedCronogramaDateFilter);
+        // EXIBIÇÃO DETALHADA NO CARD CENTRAL
+        getSelectedDayDetailCards() {
+          if (!this.selectedDateFilter) return [];
+          const items = this.questoes.filter(q => q.data === this.selectedDateFilter);
 
-          const groupsMap = {};
-          const dStr = this.selectedCronogramaDateFilter;
-          groupsMap[dStr] = {
-            date: dStr,
-            dayOfWeek: this.getDayOfWeekShort(dStr),
-            items: list
-          };
+          const processedItems = items.map(item => {
+            const g = this.gargalos.find(x => x.questaoId === item.id || (x.materia === item.materia && x.descricao === item.anotacao && x.dataCriacao === item.data));
+            return {
+              ...item,
+              gargaloId: g ? g.id : null,
+              hasBottleneckPending: g ? !g.resolvido : false,
+              bottleneckResolved: g ? g.resolvido : false
+            };
+          });
 
-          return Object.values(groupsMap);
+          return [{
+            date: this.selectedDateFilter,
+            dayOfWeek: this.getDayOfWeekShort(this.selectedDateFilter),
+            items: processedItems
+          }];
         },
 
-        openAddEstudoModal() {
-          this.editingEstudoId = null;
-          this.modalEstudoData = this.selectedCronogramaDateFilter || new Date().toISOString().split('T')[0];
-          this.modalEstudoMateria = this.materias[0] ? this.materias[0].nome : '';
-          this.modalEstudoTipo = 'Teoria & Questões';
-          this.modalEstudoAssunto = '';
-          this.modalEstudoTotal = 0;
-          this.modalEstudoAcertos = 0;
-          this.modalEstudoAnotacao = '';
-          this.showEstudoModal = true;
+        resolveBottleneckFromCard(gargaloId) {
+          if (!gargaloId) return;
+          this.resolvingGargaloId = gargaloId;
+          this.modalResolveData = new Date().toISOString().split('T')[0];
+          this.confirmResolveGargalo();
         },
 
-        openEditEstudoModal(item) {
-          this.editingEstudoId = item.id;
-          this.modalEstudoData = item.data || new Date().toISOString().split('T')[0];
-          this.modalEstudoMateria = item.materia;
-          this.modalEstudoTipo = item.tipo || 'Teoria & Questões';
-          this.modalEstudoAssunto = item.assunto || '';
-          this.modalEstudoTotal = item.total || 0;
-          this.modalEstudoAcertos = item.acertos || 0;
-          this.modalEstudoAnotacao = item.anotacao || '';
-          this.showEstudoModal = true;
+        openAddQuestaoModalForDate(dateStr) {
+          this.editingQuestaoId = null;
+          this.modalQuestaoData = dateStr || new Date().toISOString().split('T')[0];
+          this.modalQuestaoMateria = this.materias[0] ? this.materias[0].nome : '';
+          this.modalQuestaoTipo = 'Resolução de Questões';
+          this.modalQuestaoAssunto = '';
+          this.modalQuestaoTotal = '';
+          this.modalQuestaoAcertos = '';
+          this.modalQuestaoAnotacao = '';
+          this.showQuestaoModal = true;
         },
 
-        saveEstudoModal() {
-          if (!this.modalEstudoMateria) return;
-          const dataE = this.modalEstudoData || new Date().toISOString().split('T')[0];
-          const anotacaoText = this.modalEstudoAnotacao ? this.modalEstudoAnotacao.trim() : '';
+        openAddQuestaoModal() {
+          this.openAddQuestaoModalForDate(this.selectedDateFilter);
+        },
 
-          if (this.editingEstudoId) {
-            const item = this.estudos.find(e => e.id === this.editingEstudoId);
+        openEditQuestaoModal(q) {
+          this.editingQuestaoId = q.id;
+          this.modalQuestaoData = q.data || new Date().toISOString().split('T')[0];
+          this.modalQuestaoMateria = q.materia;
+          this.modalQuestaoTipo = q.tipo || 'Resolução de Questões';
+          this.modalQuestaoAssunto = q.assunto || '';
+          this.modalQuestaoTotal = q.total || '';
+          this.modalQuestaoAcertos = q.acertos || '';
+          this.modalQuestaoAnotacao = q.anotacao || '';
+          this.showQuestaoModal = true;
+        },
+
+        saveQuestaoModal() {
+          if (!this.modalQuestaoMateria) return;
+          const dataQ = this.modalQuestaoData || new Date().toISOString().split('T')[0];
+          const anotacaoText = this.modalQuestaoAnotacao ? this.modalQuestaoAnotacao.trim() : '';
+          const totalVal = this.modalQuestaoTipo === 'Estudo Teórico' ? 0 : (Number(this.modalQuestaoTotal) || 0);
+          const acertosVal = this.modalQuestaoTipo === 'Estudo Teórico' ? 0 : (Number(this.modalQuestaoAcertos) || 0);
+
+          if (this.editingQuestaoId) {
+            const item = this.questoes.find(q => q.id === this.editingQuestaoId);
             if (item) {
-              item.data = dataE;
-              item.materia = this.modalEstudoMateria;
-              item.tipo = this.modalEstudoTipo;
-              item.assunto = this.modalEstudoAssunto;
-              item.total = Number(this.modalEstudoTotal) || 0;
-              item.acertos = Number(this.modalEstudoAcertos) || 0;
+              item.data = dataQ;
+              item.materia = this.modalQuestaoMateria;
+              item.tipo = this.modalQuestaoTipo;
+              item.assunto = this.modalQuestaoAssunto;
+              item.total = totalVal;
+              item.acertos = acertosVal;
               item.anotacao = anotacaoText;
 
-              if (item.questaoId) {
-                const q = this.questoes.find(x => x.id === item.questaoId);
-                if (q) {
-                  q.data = dataE;
-                  q.materia = this.modalEstudoMateria;
-                  q.assunto = this.modalEstudoAssunto;
-                  q.total = item.total;
-                  q.acertos = item.acertos;
-                  q.anotacao = anotacaoText;
+              const existingGargalo = this.gargalos.find(g => g.questaoId === item.id);
+              if (anotacaoText) {
+                if (existingGargalo) {
+                  existingGargalo.materia = this.modalQuestaoMateria;
+                  existingGargalo.titulo = this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`;
+                  existingGargalo.descricao = anotacaoText;
+                  existingGargalo.dataCriacao = dataQ;
+                } else {
+                  this.gargalos.unshift({
+                    id: 'g_' + Date.now(),
+                    questaoId: item.id,
+                    materia: this.modalQuestaoMateria,
+                    titulo: this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`,
+                    descricao: anotacaoText,
+                    resolvido: false,
+                    dataCriacao: dataQ,
+                    dataConclusao: null,
+                    importId: null
+                  });
+                }
+              } else {
+                if (existingGargalo) {
+                  this.gargalos = this.gargalos.filter(g => g.questaoId !== item.id);
                 }
               }
             }
           } else {
-            const newId = 'est_' + Date.now();
-            this.estudos.unshift({
-              id: newId,
-              questaoId: null,
-              data: dataE,
-              materia: this.modalEstudoMateria,
-              tipo: this.modalEstudoTipo,
-              assunto: this.modalEstudoAssunto,
-              total: Number(this.modalEstudoTotal) || 0,
-              acertos: Number(this.modalEstudoAcertos) || 0,
+            const newQId = 'q_' + Date.now();
+            const newItem = {
+              id: newQId,
+              data: dataQ,
+              materia: this.modalQuestaoMateria,
+              tipo: this.modalQuestaoTipo,
+              assunto: this.modalQuestaoAssunto,
+              total: totalVal,
+              acertos: acertosVal,
               anotacao: anotacaoText,
               importId: null
-            });
+            };
+
+            this.questoes.unshift(newItem);
 
             if (anotacaoText) {
               this.gargalos.unshift({
                 id: 'g_' + Date.now(),
-                questaoId: null,
-                materia: this.modalEstudoMateria,
-                titulo: this.modalEstudoAssunto ? `Revisão: ${this.modalEstudoAssunto}` : `Dúvida em ${this.modalEstudoMateria}`,
+                questaoId: newQId,
+                materia: this.modalQuestaoMateria,
+                titulo: this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`,
                 descricao: anotacaoText,
                 resolvido: false,
-                dataCriacao: dataE,
+                dataCriacao: dataQ,
                 dataConclusao: null,
                 importId: null
               });
             }
           }
 
-          this.selectedCronogramaDateFilter = dataE;
-          this.showEstudoModal = false;
-          this.editingEstudoId = null;
+          this.selectedDateFilter = dataQ;
+          this.showQuestaoModal = false;
+          this.editingQuestaoId = null;
           this.saveAll();
         },
 
-        deleteEstudoRecord(id) {
-          const item = this.estudos.find(e => e.id === id);
-          if (item && item.questaoId) {
-            this.questoes = this.questoes.filter(q => q.id !== item.questaoId);
-          }
-          this.estudos = this.estudos.filter(e => e.id !== id);
+        deleteQuestaoRecord(id) {
+          this.questoes = this.questoes.filter(q => q.id !== id);
+          this.gargalos = this.gargalos.filter(g => g.questaoId !== id);
           this.saveAll();
         },
 
@@ -1867,95 +1706,6 @@
           if (!this.materiaSearchQuery.trim()) return this.materias;
           const query = this.materiaSearchQuery.toLowerCase();
           return this.materias.filter(m => m.nome.toLowerCase().includes(query));
-        },
-
-        getQuestionsByPeriod() {
-          if (this.questoesPeriodFilter === 'total') return this.questoes;
-          const now = new Date();
-          const days = parseInt(this.questoesPeriodFilter, 10);
-          const limitDate = new Date();
-          limitDate.setDate(now.getDate() - days);
-          return this.questoes.filter(q => new Date(q.data) >= limitDate);
-        },
-
-        getCleanFilteredQuestionsList() {
-          let list = this.getQuestionsByPeriod();
-          if (this.questoesFilterMateria !== 'todas') {
-            list = list.filter(q => q.materia === this.questoesFilterMateria);
-          }
-          list.sort((a, b) => new Date(b.data) - new Date(a.data));
-          return list;
-        },
-
-        // HIERARQUIA SOLICITADA: AGRUPADO POR DATA -> POR MATÉRIA -> ASSUNTOS INDIVIDUAIS
-        getGroupedQuestionsList() {
-          const rawList = this.getCleanFilteredQuestionsList();
-          const dateMap = {};
-
-          rawList.forEach(q => {
-            if (q.showNote === undefined) q.showNote = false;
-            const d = q.data || new Date().toISOString().split('T')[0];
-            if (!dateMap[d]) {
-              dateMap[d] = {
-                date: d,
-                dayOfWeek: this.getDayOfWeekShort(d),
-                materiaMap: {}
-              };
-            }
-
-            const m = q.materia || 'Geral';
-            if (!dateMap[d].materiaMap[m]) {
-              dateMap[d].materiaMap[m] = {
-                materia: m,
-                items: []
-              };
-            }
-
-            dateMap[d].materiaMap[m].items.push(q);
-          });
-
-          const result = Object.values(dateMap).map(dObj => {
-            let dateTotalQ = 0;
-            let dateRights = 0;
-
-            const materiasArr = Object.values(dObj.materiaMap).map(mObj => {
-              const matTotalQ = mObj.items.reduce((acc, q) => acc + (q.total || 0), 0);
-              const matRights = mObj.items.reduce((acc, q) => acc + (q.acertos || 0), 0);
-              const matAcc = matTotalQ > 0 ? Math.round((matRights / matTotalQ) * 100) : 0;
-
-              dateTotalQ += matTotalQ;
-              dateRights += matRights;
-
-              return {
-                materia: mObj.materia,
-                totalQ: matTotalQ,
-                totalRights: matRights,
-                acc: matAcc,
-                items: mObj.items
-              };
-            });
-
-            const dateAcc = dateTotalQ > 0 ? Math.round((dateRights / dateTotalQ) * 100) : 0;
-
-            return {
-              date: dObj.date,
-              dayOfWeek: dObj.dayOfWeek,
-              totalQ: dateTotalQ,
-              acc: dateAcc,
-              materias: materiasArr
-            };
-          });
-
-          result.sort((a, b) => new Date(b.date) - new Date(a.date));
-          return result;
-        },
-
-        calcFilteredSummary() {
-          const list = this.getCleanFilteredQuestionsList();
-          const totalQ = list.reduce((acc, q) => acc + (q.total || 0), 0);
-          const totalAcertos = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
-          const acc = totalQ > 0 ? Math.round((totalAcertos / totalQ) * 100) : 0;
-          return { totalQ, acc };
         },
 
         getDayOfWeekShort(dateStr) {
@@ -2318,7 +2068,6 @@
               mat.cor = novaCor;
 
               this.questoes.forEach(q => { if (q.materia === oldName) q.materia = novoNome; });
-              this.estudos.forEach(e => { if (e.materia === oldName) e.materia = novoNome; });
               this.gargalos.forEach(g => { if (g.materia === oldName) g.materia = novoNome; });
             }
           } else {
@@ -2364,15 +2113,11 @@
         },
 
         calcTotalQuestions() {
-          const qTotal = this.questoes.reduce((acc, q) => acc + (q.total || 0), 0);
-          const eTotal = this.estudos.reduce((acc, e) => acc + (e.total || 0), 0);
-          return Math.max(qTotal, eTotal);
+          return this.questoes.reduce((acc, q) => acc + (q.total || 0), 0);
         },
 
         calcTotalRights() {
-          const qRights = this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
-          const eRights = this.estudos.reduce((acc, e) => acc + (e.acertos || 0), 0);
-          return Math.max(qRights, eRights);
+          return this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
         },
 
         calcOverallAccuracy() {
@@ -2383,7 +2128,6 @@
         calcStudyStreak() {
           let allDates = [];
           this.questoes.forEach(q => { if (q.data) allDates.push(new Date(q.data)); });
-          this.estudos.forEach(e => { if (e.data) allDates.push(new Date(e.data)); });
           
           if (allDates.length === 0) return { days: 0, weeks: 0 };
           
@@ -2511,137 +2255,6 @@
 
         countActiveBottlenecks() { return this.gargalos.filter(g => !g.resolvido).length; },
 
-        openAddQuestaoModal() {
-          this.editingQuestaoId = null;
-          this.modalQuestaoData = new Date().toISOString().split('T')[0];
-          this.modalQuestaoMateria = this.materias[0] ? this.materias[0].nome : '';
-          this.modalQuestaoAssunto = '';
-          this.modalQuestaoTotal = '';
-          this.modalQuestaoAcertos = '';
-          this.modalQuestaoAnotacao = '';
-          this.showQuestaoModal = true;
-        },
-
-        openEditQuestaoModal(q) {
-          this.editingQuestaoId = q.id;
-          this.modalQuestaoData = q.data || new Date().toISOString().split('T')[0];
-          this.modalQuestaoMateria = q.materia;
-          this.modalQuestaoAssunto = q.assunto;
-          this.modalQuestaoTotal = q.total;
-          this.modalQuestaoAcertos = q.acertos;
-          this.modalQuestaoAnotacao = q.anotacao || '';
-          this.showQuestaoModal = true;
-        },
-
-        saveQuestaoModal() {
-          if (!this.modalQuestaoMateria) return;
-          const dataQ = this.modalQuestaoData || new Date().toISOString().split('T')[0];
-          const anotacaoText = this.modalQuestaoAnotacao ? this.modalQuestaoAnotacao.trim() : '';
-
-          if (this.editingQuestaoId) {
-            const q = this.questoes.find(item => item.id === this.editingQuestaoId);
-            if (q) {
-              q.data = dataQ;
-              q.materia = this.modalQuestaoMateria;
-              q.assunto = this.modalQuestaoAssunto;
-              q.total = Number(this.modalQuestaoTotal) || 0;
-              q.acertos = Number(this.modalQuestaoAcertos) || 0;
-              q.anotacao = anotacaoText;
-
-              const estItem = this.estudos.find(e => e.questaoId === q.id);
-              if (estItem) {
-                estItem.data = dataQ;
-                estItem.materia = this.modalQuestaoMateria;
-                estItem.assunto = this.modalQuestaoAssunto;
-                estItem.total = q.total;
-                estItem.acertos = q.acertos;
-                estItem.anotacao = anotacaoText;
-              }
-
-              const existingGargalo = this.gargalos.find(g => g.questaoId === q.id);
-              if (anotacaoText) {
-                if (existingGargalo) {
-                  existingGargalo.materia = this.modalQuestaoMateria;
-                  existingGargalo.titulo = this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`;
-                  existingGargalo.descricao = anotacaoText;
-                  existingGargalo.dataCriacao = dataQ;
-                } else {
-                  this.gargalos.unshift({
-                    id: 'g_' + Date.now(),
-                    questaoId: q.id,
-                    materia: this.modalQuestaoMateria,
-                    titulo: this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`,
-                    descricao: anotacaoText,
-                    resolvido: false,
-                    dataCriacao: dataQ,
-                    dataConclusao: null,
-                    importId: null
-                  });
-                }
-              } else {
-                if (existingGargalo) {
-                  this.gargalos = this.gargalos.filter(g => g.questaoId !== q.id);
-                }
-              }
-            }
-          } else {
-            const newQId = 'q_' + Date.now();
-            this.questoes.push({
-              id: newQId,
-              materia: this.modalQuestaoMateria,
-              assunto: this.modalQuestaoAssunto,
-              total: Number(this.modalQuestaoTotal) || 0,
-              acertos: Number(this.modalQuestaoAcertos) || 0,
-              anotacao: anotacaoText,
-              data: dataQ,
-              showNote: false,
-              importId: null
-            });
-
-            this.estudos.unshift({
-              id: 'est_q_' + newQId,
-              questaoId: newQId,
-              data: dataQ,
-              materia: this.modalQuestaoMateria,
-              tipo: 'Resolução de Questões',
-              assunto: this.modalQuestaoAssunto,
-              total: Number(this.modalQuestaoTotal) || 0,
-              acertos: Number(this.modalQuestaoAcertos) || 0,
-              anotacao: anotacaoText,
-              importId: null
-            });
-
-            if (anotacaoText) {
-              this.gargalos.unshift({
-                id: 'g_' + Date.now(),
-                questaoId: newQId,
-                materia: this.modalQuestaoMateria,
-                titulo: this.modalQuestaoAssunto ? `Revisão: ${this.modalQuestaoAssunto}` : `Dúvida em ${this.modalQuestaoMateria}`,
-                descricao: anotacaoText,
-                resolvido: false,
-                dataCriacao: dataQ,
-                dataConclusao: null,
-                importId: null
-              });
-            }
-          }
-          this.showQuestaoModal = false;
-          this.editingQuestaoId = null;
-          this.saveAll();
-        },
-
-        deleteQuestao(qId) {
-          this.questoes = this.questoes.filter(q => q.id !== qId);
-          this.estudos = this.estudos.filter(e => e.questaoId !== qId);
-          this.gargalos = this.gargalos.filter(g => g.questaoId !== qId);
-          this.saveAll();
-        },
-
-        calcQuestaoPercent(q) {
-          if (!q.total) return 0;
-          return Math.round((q.acertos / q.total) * 100);
-        },
-
         deleteGargalo(gId) {
           this.gargalos = this.gargalos.filter(g => g.id !== gId);
           this.saveAll();
@@ -2664,14 +2277,14 @@
 
         downloadExcelTemplate() {
           const wsData = [
-            ["Data", "Materia", "Assunto", "Total", "Acertos", "Anotacao"],
-            ["24/10/2026", "Direito Tributário", "Obrigações Tributárias", 10, 8, "Rever prazo de decadência e prescrição"],
-            ["25/10/26", "Contabilidade Geral", "Balanço Patrimonial", 15, 12, "Dúvida no tratamento de ativos intangíveis"]
+            ["Data", "Materia", "Tipo", "Assunto", "Total", "Acertos", "Anotacao"],
+            ["24/10/2026", "Direito Tributário", "Resolução de Questões", "Obrigações Tributárias", 10, 8, "Rever prazo de decadência e prescrição"],
+            ["25/10/2026", "Contabilidade Geral", "Estudo Teórico", "Balanço Patrimonial", 0, 0, "Dúvida no tratamento de ativos intangíveis"]
           ];
           const ws = XLSX.utils.aoa_to_sheet(wsData);
           const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Questões");
-          XLSX.writeFile(wb, "modelo_importacao_questoes.xlsx");
+          XLSX.utils.book_append_sheet(wb, ws, "Questões e Estudos");
+          XLSX.writeFile(wb, "modelo_importacao_estudos.xlsx");
         },
 
         importExcelFile(event) {
@@ -2705,31 +2318,19 @@
                 const dataQ = parseExcelDate(rawDate);
 
                 const materiaQ = rowNormalized['materia'] || rowNormalized['matéria'] || (this.materias[0] ? this.materias[0].nome : 'Geral');
+                const tipoQ = rowNormalized['tipo'] || 'Resolução de Questões';
                 const assuntoQ = rowNormalized['assunto'] || '';
-                const totalQ = Number(rowNormalized['total'] || rowNormalized['total de questões'] || 10);
-                const acertosQ = Number(rowNormalized['acertos'] || 8);
+                const totalQ = Number(rowNormalized['total'] || 0);
+                const acertosQ = Number(rowNormalized['acertos'] || 0);
                 const anotacaoQ = rowNormalized['anotacao'] || rowNormalized['anotação'] || '';
 
                 const newQId = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
-                this.questoes.push({
+                this.questoes.unshift({
                   id: newQId,
-                  materia: materiaQ,
-                  assunto: assuntoQ,
-                  total: totalQ,
-                  acertos: acertosQ,
-                  anotacao: anotacaoQ,
-                  data: dataQ,
-                  showNote: false,
-                  importId: importBatchId
-                });
-
-                this.estudos.unshift({
-                  id: 'est_q_' + newQId,
-                  questaoId: newQId,
                   data: dataQ,
                   materia: materiaQ,
-                  tipo: 'Resolução de Questões',
+                  tipo: tipoQ,
                   assunto: assuntoQ,
                   total: totalQ,
                   acertos: acertosQ,
@@ -2756,7 +2357,7 @@
 
               this.lastImportId = importBatchId;
               this.saveAll();
-              alert(`${importedCount} registros importados com sucesso para histórico e estudos!`);
+              alert(`${importedCount} registros importados com sucesso!`);
             } catch (err) {
               console.error(err);
               alert("Erro ao processar o arquivo Excel. Verifique se o formato está correto.");
@@ -2769,13 +2370,12 @@
 
         undoLastImport() {
           if (!this.lastImportId) return;
-          if (!confirm("Deseja realmente desfazer a última importação? Todos os cards associados a ela serão removidos.")) {
+          if (!confirm("Deseja realmente desfazer a última importação? Todos os registros associados a ela serão removidos.")) {
             return;
           }
 
           const targetId = this.lastImportId;
           this.questoes = this.questoes.filter(q => q.importId !== targetId);
-          this.estudos = this.estudos.filter(e => e.importId !== targetId);
           this.gargalos = this.gargalos.filter(g => g.importId !== targetId);
           
           this.lastImportId = null;
