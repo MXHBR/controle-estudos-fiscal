@@ -2,10 +2,10 @@
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Plano de Estudos - Auditor Fiscal</title>
   
-  <!-- Dynamic Favicon SVG (Círculo com Raio no centro) -->
+  <!-- Dynamic Favicon SVG -->
   <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m13 2-2 10h4l-2 10'/></svg>">
 
   <!-- Tailwind CSS -->
@@ -36,7 +36,7 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- SheetJS (XLSX) para Importação/Exportação de Excel -->
+  <!-- SheetJS (XLSX) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Alpine.js Collapse Plugin + Alpine Core -->
@@ -49,24 +49,39 @@
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    /* Suporte para telas touch */
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: 60px; /* Espaço para a barra inferior no celular */
+      }
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-[rgb(25,37,104)] via-slate-900 to-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-indigo-500 selection:text-white" x-data="appData()" x-init="initApp()">
 
-  <div class="flex h-screen overflow-hidden">
+  <div class="flex h-screen overflow-hidden relative">
     
-    <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900/90 backdrop-blur-md border-r border-slate-800 flex flex-col justify-between shrink-0 hidden md:flex">
+    <!-- Sidebar Backdrop Mobile -->
+    <div x-show="mobileMenuOpen" x-cloak @click="mobileMenuOpen = false" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm md:hidden"></div>
+
+    <!-- Sidebar Desktop & Mobile Drawer -->
+    <aside class="w-64 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 flex flex-col justify-between shrink-0 fixed md:relative z-50 h-full transition-transform duration-300 md:translate-x-0"
+           :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
       <div>
-        <div class="p-5 border-b border-slate-800/80 flex items-center space-x-3">
-          <!-- Ícone com Círculo e Raio no Centro -->
-          <div class="w-10 h-10 rounded-full border-2 border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/20">
-            <i data-lucide="zap" class="w-5 h-5"></i>
+        <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full border-2 border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/20">
+              <i data-lucide="zap" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h1 class="font-bold text-slate-100 tracking-wide text-sm">Auditor Fiscal</h1>
+              <p class="text-xs text-slate-400 font-medium">Controle de Alta Performance</p>
+            </div>
           </div>
-          <div>
-            <h1 class="font-bold text-slate-100 tracking-wide text-sm">Auditor Fiscal</h1>
-            <p class="text-xs text-slate-400 font-medium">Controle de Alta Performance</p>
-          </div>
+          <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white p-1">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
 
         <div class="px-4 py-2 bg-slate-850/80 border-b border-slate-800 flex items-center justify-between text-xs">
@@ -81,7 +96,7 @@
 
         <nav class="p-3 space-y-1">
           <template x-for="tab in tabs" :key="tab.id">
-            <button @click="setActiveTab(tab.id)"
+            <button @click="setActiveTab(tab.id); mobileMenuOpen = false"
               :class="activeTab === tab.id ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150">
               <i :data-lucide="tab.icon" class="w-4 h-4"></i>
@@ -100,46 +115,45 @@
     <!-- Main Content Container -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent">
       
-      <header class="md:hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-full border border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400">
-            <i data-lucide="zap" class="w-4 h-4"></i>
+      <!-- Header Mobile -->
+      <header class="md:hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-3.5 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center space-x-2.5">
+          <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div class="w-7 h-7 rounded-full border border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
           </div>
           <span class="font-bold text-slate-100 text-sm">Auditor Fiscal</span>
         </div>
-        <div class="flex space-x-1">
-          <template x-for="tab in tabs" :key="tab.id">
-            <button @click="setActiveTab(tab.id)"
-              :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'"
-              class="p-2 rounded-lg transition">
-              <i :data-lucide="tab.icon" class="w-4 h-4"></i>
-            </button>
-          </template>
+
+        <div class="flex items-center space-x-1.5 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
         </div>
       </header>
 
-      <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main class="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-20 md:pb-8">
         
         <!-- ==================== TAB 1: DASHBOARD ==================== -->
         <div x-show="activeTab === 'dashboard'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Visão Geral do Edital</h2>
-              <p class="text-slate-400 text-sm">Acompanhe seu progresso global e o avanço detalhado por matéria.</p>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Visão Geral do Edital</h2>
+              <p class="text-slate-400 text-xs sm:text-sm">Acompanhe seu progresso global e o avanço detalhado por matéria.</p>
             </div>
-            <div class="flex items-center space-x-2">
-              <button @click="openAddExamModal()" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition">
+            <div class="flex items-center space-x-2 shrink-0">
+              <button @click="openAddExamModal()" class="flex-1 sm:flex-none bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
                 <i data-lucide="flag" class="w-3.5 h-3.5 text-indigo-400"></i>
                 <span>Nova Prova</span>
               </button>
-              <button @click="openAddNoteModal()" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition">
+              <button @click="openAddNoteModal()" class="flex-1 sm:flex-none bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
                 <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-400"></i>
                 <span>Nova Anotação</span>
               </button>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
               <div class="flex justify-between items-center">
                 <span class="text-xs font-medium text-slate-400">Progresso Geral (Concluído)</span>
@@ -214,7 +228,7 @@
           </div>
 
           <!-- CARD RETANGULAR MESTRE: Provas & Anotações -->
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-sm backdrop-blur-sm grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm backdrop-blur-sm grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
             <div class="lg:col-span-5 space-y-3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800/80 pb-5 lg:pb-0 lg:pr-6">
               <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
@@ -229,9 +243,9 @@
                     <div class="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
                     <div class="flex items-center justify-between">
                       <span class="text-xs font-bold uppercase tracking-wider text-indigo-300 truncate pr-2" x-text="exam.title"></span>
-                      <div class="flex items-center space-x-1 shrink-0 opacity-0 group-hover:opacity-100 transition">
-                        <button @click="openEditExamModal(exam)" class="text-slate-400 hover:text-indigo-300 p-0.5"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                        <button @click="deleteExam(exam.id)" class="text-slate-400 hover:text-rose-400 p-0.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                      <div class="flex items-center space-x-1 shrink-0">
+                        <button @click="openEditExamModal(exam)" class="text-slate-400 hover:text-indigo-300 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                        <button @click="deleteExam(exam.id)" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                       </div>
                     </div>
                     <div class="flex items-baseline justify-between">
@@ -272,8 +286,8 @@
                         <span class="text-[11px] font-bold text-slate-200 truncate max-w-[140px]" x-text="note.title || 'Anotação'"></span>
                       </div>
                       <div class="flex items-center space-x-1">
-                        <button @click="openEditNoteModal(note)" class="text-slate-400 hover:text-indigo-300 p-0.5"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                        <button @click="removePinnedNote(note.id)" class="text-slate-400 hover:text-rose-400 p-0.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        <button @click="openEditNoteModal(note)" class="text-slate-400 hover:text-indigo-300 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                        <button @click="removePinnedNote(note.id)" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                       </div>
                     </div>
 
@@ -292,7 +306,7 @@
                       </div>
                     </template>
 
-                    <div class="text-[10px] text-slate-600 italic pt-1 border-t border-slate-800/60">Arraste para reorganizar</div>
+                    <div class="text-[10px] text-slate-600 italic pt-1 border-t border-slate-800/60 hidden sm:block">Arraste para reorganizar</div>
                   </div>
                 </template>
 
@@ -303,21 +317,21 @@
             </div>
           </div>
 
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-5 shadow-sm space-y-4 backdrop-blur-sm">
-            <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 sm:p-5 shadow-sm space-y-4 backdrop-blur-sm">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
               <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
               <span>Avanço do Edital e Desempenho por Matéria</span>
             </h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <template x-for="mat in materias" :key="'dash_' + mat.id">
-                <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 space-y-3">
                   <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2.5">
+                    <div class="flex items-center space-x-2.5 min-w-0 pr-2">
                       <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
-                      <span class="font-bold text-slate-100 text-xs" x-text="mat.nome"></span>
+                      <span class="font-bold text-slate-100 text-xs truncate" x-text="mat.nome"></span>
                     </div>
-                    <div class="flex items-center space-x-2 text-xs">
+                    <div class="flex items-center space-x-2 text-xs shrink-0">
                       <span class="text-slate-400 font-mono" x-text="`${calcMateriaCompleted(mat)}/${(mat.topicos || []).length} tópicos`"></span>
                       <span class="font-bold px-2 py-0.5 rounded text-[11px]" :class="getCustomProgressBarText(calcMateriaPercent(mat))" x-text="calcMateriaPercent(mat) + '%'"></span>
                     </div>
@@ -327,8 +341,7 @@
                     <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
                   </div>
 
-                  <!-- VALORES DESTACADOS EM FONTE MAIOR -->
-                  <div class="flex items-center justify-between text-sm font-bold text-slate-200 pt-1 border-t border-slate-800/60 font-mono">
+                  <div class="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-200 pt-1 border-t border-slate-800/60 font-mono">
                     <span x-text="`Questões: ${calcMatQuestions(mat)}`"></span>
                     <span x-text="`Acerto: ${calcMatAccuracy(mat)}%`" :class="calcMatAccuracy(mat) >= 70 ? 'text-emerald-400 font-extrabold' : (calcMatAccuracy(mat) >= 50 ? 'text-amber-400 font-extrabold' : 'text-rose-400 font-extrabold')"></span>
                   </div>
@@ -340,19 +353,19 @@
 
         <!-- ==================== TAB 2: MATÉRIAS ==================== -->
         <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
-              <p class="text-slate-400 text-sm">Clique nos cards para selecionar, gerenciar ou reordenar suas disciplinas.</p>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
+              <p class="text-slate-400 text-xs sm:text-sm">Clique nos cards para selecionar, gerenciar ou reordenar suas disciplinas.</p>
             </div>
-            <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
+            <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>Nova Matéria</span>
             </button>
           </div>
 
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm space-y-4 backdrop-blur-sm">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 shadow-sm space-y-4 backdrop-blur-sm">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-3">
               <div class="relative w-full md:w-80">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
                 <input type="text" x-model="materiaSearchQuery" placeholder="Buscar matéria..." class="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -393,7 +406,7 @@
                   
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2.5 min-w-0">
-                      <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 shrink-0"></i>
+                      <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 shrink-0 hidden sm:block"></i>
                       <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
                       <span class="font-bold text-slate-200 text-xs truncate group-hover:text-white" x-text="mat.nome"></span>
                     </div>
@@ -418,11 +431,13 @@
             <div class="space-y-6">
               <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm space-y-4 backdrop-blur-sm">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                  <div class="flex items-center space-x-3">
-                    <span class="w-4 h-4 rounded-full shrink-0" :style="`background-color: ${getSelectedMateria().cor}`"></span>
-                    <h3 class="text-lg font-bold text-slate-100" x-text="getSelectedMateria().nome"></h3>
+                  <div class="flex items-center justify-between sm:justify-start space-x-3 w-full sm:w-auto">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                      <span class="w-4 h-4 rounded-full shrink-0" :style="`background-color: ${getSelectedMateria().cor}`"></span>
+                      <h3 class="text-base sm:text-lg font-bold text-slate-100 truncate" x-text="getSelectedMateria().nome"></h3>
+                    </div>
                     
-                    <div class="flex items-center space-x-1 pl-2 border-l border-slate-800">
+                    <div class="flex items-center space-x-1 shrink-0 pl-2 border-l border-slate-800">
                       <button @click.stop="openEditMateriaModal(getSelectedMateria())" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar Matéria">
                         <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
                         <span class="hidden sm:inline">Editar</span>
@@ -434,7 +449,7 @@
                     </div>
                   </div>
 
-                  <div class="flex items-center space-x-4 text-xs text-slate-400">
+                  <div class="flex items-center justify-between sm:justify-end space-x-4 text-xs text-slate-400">
                     <div>
                       <span>Progresso: </span>
                       <span class="font-bold text-slate-200" x-text="calcMateriaPercent(getSelectedMateria()) + '%'"></span>
@@ -446,15 +461,15 @@
                 </div>
 
                 <div class="space-y-2">
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <label class="text-xs font-semibold text-slate-300">Adicionar Tópicos ao Edital</label>
-                    <span class="text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa!</span>
+                    <span class="text-[10px] sm:text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa!</span>
                   </div>
                   <div class="flex gap-2">
                     <input type="text" x-model="newTopicText" @keydown.enter="addTopicToSelectedMateria()" placeholder="Ex: 1. DIREITO TRIBUTÁRIO. 1.1 Vigência da Lei." class="flex-1 bg-slate-950/80 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
-                    <button @click="addTopicToSelectedMateria()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
+                    <button @click="addTopicToSelectedMateria()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 transition shrink-0">
                       <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                      <span>Adicionar</span>
+                      <span class="hidden sm:inline">Adicionar</span>
                     </button>
                   </div>
                 </div>
@@ -463,7 +478,7 @@
               <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl overflow-hidden shadow-sm backdrop-blur-sm">
                 <div class="px-4 py-3 bg-slate-850/80 border-b border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
                   <span>Estrutura de Conteúdo</span>
-                  <div class="flex space-x-2">
+                  <div class="flex space-x-2 text-[11px]">
                     <button @click="expandAllTopics(true)" class="hover:text-slate-200 transition">Expandir Todos</button>
                     <span>•</span>
                     <button @click="expandAllTopics(false)" class="hover:text-slate-200 transition">Recolher Todos</button>
@@ -474,12 +489,12 @@
                   <template x-for="(group, gIdx) in getGroupedTopics(getSelectedMateria())" :key="group.parent ? group.parent.id : 'orphans-' + gIdx">
                     <div class="bg-slate-900/40">
                       <template x-if="group.parent">
-                        <div class="p-3.5 flex items-start justify-between gap-3 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
-                          <div class="flex items-start space-x-3 flex-1 min-w-0 pt-0.5">
+                        <div class="p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
+                          <div class="flex items-start space-x-2.5 flex-1 min-w-0 pt-0.5">
                             <button @click="group.parent.expandido = !group.parent.expandido; saveAll()" class="p-1 rounded hover:bg-slate-800 text-slate-400 transition shrink-0 mt-0.5">
                               <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
                             </button>
-                            <button @click="cycleStatus(group.parent)" class="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-md border transition flex items-center space-x-1 mt-0.5" :class="getStatusBadgeClass(group.parent.status)">
+                            <button @click="cycleStatus(group.parent)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md border transition flex items-center space-x-1 mt-0.5" :class="getStatusBadgeClass(group.parent.status)">
                               <span x-text="getStatusLabel(group.parent.status)"></span>
                             </button>
                             <span class="text-xs font-bold whitespace-normal break-words cursor-pointer tracking-wide flex-1 min-w-0 leading-relaxed" :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'" @click="group.parent.expandido = !group.parent.expandido; saveAll()" x-text="group.parent.nome"></span>
@@ -487,13 +502,13 @@
                               <span x-text="getPriorityLabel(group.parent.prioridade)"></span>
                             </button>
                           </div>
-                          <div class="flex items-center space-x-1 shrink-0">
-                            <button @click="openAddSubtopicModal(group.parent)" title="Adicionar Subtópicos" class="text-slate-400 hover:text-emerald-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
-                            <button @click="moveGroup(group.parent.id, 'up')" title="Mover para Cima" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
-                            <button @click="moveGroup(group.parent.id, 'down')" title="Mover para Baixo" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
-                            <button @click="openEditTopicModal(group.parent)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                            <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
-                            <button @click="deleteTopic(group.parent.id)" title="Excluir Assunto" class="text-slate-400 hover:text-rose-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                          <div class="flex items-center justify-end space-x-1 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
+                            <button @click="openAddSubtopicModal(group.parent)" title="Adicionar Subtópicos" class="text-slate-400 hover:text-emerald-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
+                            <button @click="moveGroup(group.parent.id, 'up')" title="Mover para Cima" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+                            <button @click="moveGroup(group.parent.id, 'down')" title="Mover para Baixo" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
+                            <button @click="openEditTopicModal(group.parent)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                            <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
+                            <button @click="deleteTopic(group.parent.id)" title="Excluir Assunto" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                           </div>
                         </div>
                       </template>
@@ -501,20 +516,20 @@
                       <template x-if="group.parent">
                         <div x-show="group.parent.expandido" x-collapse class="bg-slate-950/60 border-t border-b border-slate-800/40 divide-y divide-slate-800/30">
                           <template x-for="child in group.children" :key="child.id">
-                            <div class="py-2.5 pl-8 sm:pl-12 pr-4 flex items-start justify-between gap-3 hover:bg-slate-800/30 transition">
-                              <div class="flex items-start space-x-3 flex-1 min-w-0 pt-0.5">
+                            <div class="py-2.5 pl-4 sm:pl-12 pr-3 flex flex-col sm:flex-row sm:items-start justify-between gap-2 hover:bg-slate-800/30 transition">
+                              <div class="flex items-start space-x-2.5 flex-1 min-w-0 pt-0.5">
                                 <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-slate-600 shrink-0 mt-1"></i>
                                 <button @click="cycleStatus(child)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition mt-0.5" :class="getStatusBadgeClass(child.status)">
                                   <span x-text="getStatusLabel(child.status)"></span>
                                 </button>
                                 <span :class="child.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'" class="text-xs whitespace-normal break-words flex-1 min-w-0 leading-relaxed" x-text="child.nome"></span>
                               </div>
-                              <div class="flex items-center space-x-1 shrink-0">
-                                <button @click="moveSubtopic(child.id, 'up')" title="Mover Subtópico para Cima" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
-                                <button @click="moveSubtopic(child.id, 'down')" title="Mover Subtópico para Baixo" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
-                                <button @click="openEditTopicModal(child)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                <button @click="toggleTopicType(child.id)" title="Promover a Tópico" class="text-slate-400 hover:text-indigo-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
-                                <button @click="deleteTopic(child.id)" title="Excluir Subtópico" class="text-slate-400 hover:text-rose-400 p-1.5 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                              <div class="flex items-center justify-end space-x-1 shrink-0">
+                                <button @click="moveSubtopic(child.id, 'up')" title="Mover Subtópico para Cima" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+                                <button @click="moveSubtopic(child.id, 'down')" title="Mover Subtópico para Baixo" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
+                                <button @click="openEditTopicModal(child)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                <button @click="toggleTopicType(child.id)" title="Promover a Tópico" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
+                                <button @click="deleteTopic(child.id)" title="Excluir Subtópico" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                               </div>
                             </div>
                           </template>
@@ -534,71 +549,70 @@
 
         <!-- ==================== TAB 3: QUESTÕES E ESTUDOS UNIFICADOS ==================== -->
         <div x-show="activeTab === 'questoes' || activeTab === 'estudos'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Questões</h2>
-              <p class="text-slate-400 text-sm">Controle seus registros teóricos e resolução de questões no mesmo lugar. Clique no mini card para detalhar no card central.</p>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Questões</h2>
+              <p class="text-slate-400 text-xs sm:text-sm">Controle seus registros teóricos e resolução de questões no mesmo lugar.</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-              <button @click="downloadExcelTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+              <button @click="downloadExcelTemplate()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
                 <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
-                <span>Baixar Modelo</span>
+                <span class="hidden sm:inline">Baixar Modelo</span>
+                <span class="sm:hidden">Modelo</span>
               </button>
               
-              <button @click="$refs.excelFileInput.click()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+              <button @click="$refs.excelFileInput.click()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
                 <i data-lucide="upload" class="w-4 h-4 text-sky-400"></i>
-                <span>Importar Excel</span>
+                <span class="hidden sm:inline">Importar Excel</span>
+                <span class="sm:hidden">Importar</span>
               </button>
               <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
 
-              <!-- BOTÃO DE DESFAZER A ÚLTIMA IMPORTAÇÃO -->
-              <button @click="undoLastImport()" x-show="lastImportId" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow">
+              <button @click="undoLastImport()" x-show="lastImportId" class="w-full sm:w-auto bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 <span>Desfazer Importação</span>
               </button>
 
-              <button @click="openAddQuestaoModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+              <button @click="openAddQuestaoModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Novo Registro (Teoria/Questões)</span>
+                <span>Novo Registro</span>
               </button>
             </div>
           </div>
 
-          <!-- LINHA DO TEMPO DOS MINI CARDS COM ALERTA DE GARGALO EM ALARANJADO -->
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm backdrop-blur-sm space-y-3">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
+          <!-- LINHA DO TEMPO DOS MINI CARDS -->
+          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 shadow-sm backdrop-blur-sm space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
               <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
                 <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
                 <span>Linha do Tempo (Até 30 Mini Cards)</span>
               </div>
               
-              <!-- FILTROS DE DIAS -->
-              <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                <button @click="setTimelinePeriod('30')" :class="timelinePeriod === '30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">Últimos 30 Dias</button>
-                <button @click="setTimelinePeriod('15')" :class="timelinePeriod === '15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">15 Dias</button>
-                <button @click="setTimelinePeriod('7')" :class="timelinePeriod === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">7 Dias</button>
-                <button @click="timelinePeriod = 'range'" :class="timelinePeriod === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2.5 py-1 rounded-lg transition font-medium">Personalizado</button>
+              <div class="flex flex-wrap items-center gap-1 text-xs">
+                <button @click="setTimelinePeriod('30')" :class="timelinePeriod === '30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">30 Dias</button>
+                <button @click="setTimelinePeriod('15')" :class="timelinePeriod === '15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">15 Dias</button>
+                <button @click="setTimelinePeriod('7')" :class="timelinePeriod === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">7 Dias</button>
+                <button @click="timelinePeriod = 'range'" :class="timelinePeriod === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">Personalizado</button>
               </div>
             </div>
 
-            <!-- FILTRO DE PERÍODO PERSONALIZADO (MÁXIMO DE 30 DIAS) -->
             <div x-show="timelinePeriod === 'range'" x-cloak class="flex flex-wrap items-center gap-3 pt-1">
               <div class="flex items-center space-x-2">
                 <span class="text-xs text-slate-400">De:</span>
                 <input type="date" x-model="timelineDateStart" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
               <div class="flex items-center space-x-2">
-                <span class="text-xs text-slate-400">Até (máx 30 dias):</span>
+                <span class="text-xs text-slate-400">Até (máx 30d):</span>
                 <input type="date" x-model="timelineDateEnd" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
             </div>
 
-            <!-- GRID DOS MINI CARDS -->
+            <!-- GRID DOS MINI CARDS RESPONSIVO -->
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-80 overflow-y-auto pr-1">
               <template x-for="dayObj in getTimelineMiniCards()" :key="dayObj.dateStr">
                 <div @click="selectedDateFilter = dayObj.dateStr"
-                     class="border rounded-xl p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left relative overflow-hidden"
+                     class="border rounded-xl p-2 sm:p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left relative overflow-hidden"
                      :class="[
                        selectedDateFilter === dayObj.dateStr ? 'ring-2 ring-indigo-500 shadow-lg' : '',
                        dayObj.hasActiveBottleneck 
@@ -619,7 +633,7 @@
                     <template x-if="dayObj.materias.length > 0">
                       <div class="flex flex-wrap gap-1">
                         <template x-for="mName in dayObj.materias" :key="mName">
-                          <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide truncate max-w-full"
+                          <span class="inline-block px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold tracking-wide truncate max-w-full"
                                 :class="dayObj.bottleneckMaterias.includes(mName) ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'"
                                 x-text="mName"></span>
                         </template>
@@ -637,104 +651,103 @@
           <!-- CARD CENTRAL DO DIA SELECIONADO -->
           <div class="space-y-4 max-w-4xl mx-auto">
             <div class="flex items-center justify-between">
-              <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+              <h3 class="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
                 <i data-lucide="book-open-check" class="w-4 h-4 text-indigo-400"></i>
-                <span x-text="selectedDateFilter ? `Card Central do Dia: ${formatDate(selectedDateFilter)}` : 'Card Central de Detalhes do Dia'"></span>
+                <span x-text="selectedDateFilter ? `Card Central: ${formatDate(selectedDateFilter)}` : 'Card Central de Detalhes do Dia'"></span>
               </h3>
             </div>
 
             <template x-for="cardGroup in getSelectedDayDetailCards()" :key="cardGroup.date">
-              <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 backdrop-blur-sm relative">
+              <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5 backdrop-blur-sm relative">
                 
-                <!-- Cabeçalho do Card Central com Totalizador de Questões do Dia -->
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                  <div class="flex items-center space-x-2">
-                    <button @click="changeSelectedDate(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition" title="Dia Anterior">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div class="flex items-center justify-between sm:justify-start space-x-2">
+                    <button @click="changeSelectedDate(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
                       <i data-lucide="chevron-left" class="w-4 h-4"></i>
                       <span class="hidden sm:inline">Anterior</span>
                     </button>
                     
-                    <span class="px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
-                    <span class="text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
+                    <div class="flex items-center space-x-2">
+                      <span class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
+                      <span class="text-sm sm:text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
+                    </div>
 
-                    <button @click="changeSelectedDate(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition" title="Próximo Dia">
+                    <button @click="changeSelectedDate(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
                       <span class="hidden sm:inline">Próximo</span>
                       <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </button>
                   </div>
 
-                  <!-- TOTAL DE QUESTÕES E ACERTOS DO DIA COM FONTE DESTACADA -->
-                  <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-500/30 px-3 py-1.5 rounded-xl">
-                      <i data-lucide="target" class="w-4 h-4 text-indigo-400"></i>
-                      <span class="text-xs text-slate-400">Total do Dia:</span>
-                      <span class="text-sm font-extrabold text-white font-mono" x-text="`${cardGroup.dayTotalQuestions} q`"></span>
+                  <div class="flex items-center justify-between sm:justify-end space-x-2">
+                    <div class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-500/30 px-2.5 py-1.5 rounded-xl">
+                      <i data-lucide="target" class="w-3.5 h-3.5 text-indigo-400"></i>
+                      <span class="text-xs text-slate-400 hidden sm:inline">Total:</span>
+                      <span class="text-xs sm:text-sm font-extrabold text-white font-mono" x-text="`${cardGroup.dayTotalQuestions} q`"></span>
                       <template x-if="cardGroup.dayTotalQuestions > 0">
-                        <span class="text-xs font-bold font-mono px-1.5 py-0.5 rounded" :class="getCustomProgressBarText(cardGroup.dayAccuracy)" x-text="`(${cardGroup.dayTotalRights} acertos - ${cardGroup.dayAccuracy}%)`"></span>
+                        <span class="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded" :class="getCustomProgressBarText(cardGroup.dayAccuracy)" x-text="`(${cardGroup.dayAccuracy}%)`"></span>
                       </template>
                     </div>
 
-                    <button @click="openAddQuestaoModalForDate(cardGroup.date)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition shadow-md shadow-indigo-600/20">
+                    <button @click="openAddQuestaoModalForDate(cardGroup.date)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition shadow-md shrink-0">
                       <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                      <span>+ Adicionar</span>
+                      <span>Adicionar</span>
                     </button>
                   </div>
                 </div>
 
-                <!-- Lista de Registros agrupados por matéria no dia -->
-                <div class="space-y-4">
+                <div class="space-y-3 sm:space-y-4">
                   <template x-for="matGroup in cardGroup.materiaGroups" :key="matGroup.materia">
-                    <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                    <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-3 sm:p-4 space-y-3">
                       
-                      <!-- Cabeçalho da Matéria Agrupada com Valores Destacados -->
                       <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-                        <div class="flex items-center space-x-2.5">
+                        <div class="flex items-center space-x-2 min-w-0">
                           <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
-                          <span class="font-bold text-slate-100 text-xs uppercase tracking-wider" x-text="matGroup.materia"></span>
+                          <span class="font-bold text-slate-100 text-xs uppercase tracking-wider truncate" x-text="matGroup.materia"></span>
                         </div>
-                        <div class="flex items-center space-x-3 text-sm font-bold font-mono">
-                          <span class="text-slate-300" x-text="`${matGroup.totalAcertos}/${matGroup.totalQuestoes} acertos`"></span>
-                          <span class="px-2.5 py-0.5 rounded-md text-sm font-extrabold" :class="getCustomProgressBarText(matGroup.acc)" x-text="matGroup.acc + '%'"></span>
+                        <div class="flex items-center space-x-2 text-xs sm:text-sm font-bold font-mono shrink-0">
+                          <span class="text-slate-300" x-text="`${matGroup.totalAcertos}/${matGroup.totalQuestoes}`"></span>
+                          <span class="px-2 py-0.5 rounded-md text-xs sm:text-sm font-extrabold" :class="getCustomProgressBarText(matGroup.acc)" x-text="matGroup.acc + '%'"></span>
                         </div>
                       </div>
 
-                      <!-- Assuntos Registrados Individualmente -->
-                      <div class="space-y-2.5 pt-1">
+                      <div class="space-y-2 pt-1">
                         <template x-for="item in matGroup.items" :key="item.id">
-                          <div class="bg-slate-900/90 border border-slate-800/60 rounded-lg p-3 space-y-2">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
+                          <div class="bg-slate-900/90 border border-slate-800/60 rounded-lg p-2.5 sm:p-3 space-y-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div class="flex items-center space-x-2 min-w-0">
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded border shrink-0"
+                                <span class="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded border shrink-0"
                                       :class="item.tipo === 'Estudo Teórico' ? 'text-sky-300 bg-sky-600/10 border-sky-500/20' : 'text-indigo-300 bg-indigo-600/10 border-indigo-500/20'"
                                       x-text="item.tipo || 'Resolução de Questões'"></span>
                                 <span class="text-xs text-slate-200 font-medium truncate" x-text="item.assunto || 'Geral'"></span>
                               </div>
 
-                              <div class="flex items-center space-x-3">
+                              <div class="flex items-center justify-between sm:justify-end space-x-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
                                 <template x-if="item.total > 0">
-                                  <span class="text-sm font-extrabold px-2.5 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
+                                  <span class="text-xs font-extrabold px-2 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
                                 </template>
-                                <button @click="openEditQuestaoModal(item)" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar este registro">
-                                  <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-                                  <span>Editar</span>
-                                </button>
-                                <button @click="deleteQuestaoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                <div class="flex items-center space-x-1">
+                                  <button @click="openEditQuestaoModal(item)" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar">
+                                    <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                    <span class="hidden sm:inline">Editar</span>
+                                  </button>
+                                  <button @click="deleteQuestaoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1.5 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
                               </div>
                             </div>
 
                             <template x-if="item.anotacao">
-                              <div class="text-xs rounded-lg p-3 space-y-2 border"
+                              <div class="text-xs rounded-lg p-2.5 sm:p-3 space-y-2 border"
                                    :class="item.bottleneckResolved ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200' : 'bg-amber-950/30 border-amber-500/40 text-amber-200'">
                                 <div class="flex items-center justify-between">
                                   <div class="flex items-center space-x-1.5 font-bold" :class="item.bottleneckResolved ? 'text-emerald-400' : 'text-amber-400'">
                                     <i :data-lucide="item.bottleneckResolved ? 'check-circle' : 'alert-triangle'" class="w-4 h-4"></i>
-                                    <span x-text="item.bottleneckResolved ? 'Gargalo Concluído' : 'Gargalo Registrado (Pendente)'"></span>
+                                    <span x-text="item.bottleneckResolved ? 'Gargalo Concluído' : 'Gargalo Pendente'"></span>
                                   </div>
 
                                   <template x-if="!item.bottleneckResolved">
-                                    <button @click="resolveBottleneckFromCard(item.gargaloId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1 shadow">
+                                    <button @click="resolveBottleneckFromCard(item.gargaloId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold transition flex items-center space-x-1">
                                       <i data-lucide="check" class="w-3 h-3"></i>
-                                      <span>Marcar como Concluído</span>
+                                      <span>Concluir</span>
                                     </button>
                                   </template>
                                 </div>
@@ -751,11 +764,11 @@
               </div>
             </template>
 
-            <div x-show="getSelectedDayDetailCards().length === 0" class="p-12 text-center text-slate-500 text-xs bg-slate-900/80 border border-dashed border-slate-800 rounded-2xl backdrop-blur-sm space-y-3">
+            <div x-show="getSelectedDayDetailCards().length === 0" class="p-8 text-center text-slate-500 text-xs bg-slate-900/80 border border-dashed border-slate-800 rounded-2xl backdrop-blur-sm space-y-3">
               <p>Nenhum registro de estudo teórico ou de questões para este dia.</p>
               <button @click="openAddQuestaoModalForDate(selectedDateFilter)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold inline-flex items-center space-x-1.5 transition">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Registrar Estudo ou Questões Neste Dia</span>
+                <span>Registrar Neste Dia</span>
               </button>
             </div>
           </div>
@@ -763,29 +776,29 @@
 
         <!-- ==================== TAB 5: GARGALOS ==================== -->
         <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 class="text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
-              <p class="text-slate-400 text-sm">Tarefas de revisão organizadas por matéria e histórico de resolução por data.</p>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
+              <p class="text-slate-400 text-xs sm:text-sm">Tarefas de revisão organizadas por matéria e histórico de resolução.</p>
             </div>
-            <button @click="openAddGargaloModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
+            <button @click="openAddGargaloModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
               <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Adicionar Gargalo Manual</span>
+              <span>Adicionar Gargalo</span>
             </button>
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
+            <h3 class="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
               <i data-lucide="alert-triangle" class="w-4 h-4"></i>
               <span>Gargalos Pendentes de Revisão</span>
             </h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <template x-for="matGroup in getGargalosGroupedByMateria(false)" :key="matGroup.materia">
-                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 space-y-3 shadow-sm backdrop-blur-sm">
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 space-y-3 shadow-sm backdrop-blur-sm">
                   <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
                     <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
-                    <h4 class="font-bold text-slate-100 text-xs uppercase tracking-wide" x-text="matGroup.materia"></h4>
+                    <h4 class="font-bold text-slate-100 text-xs uppercase tracking-wide truncate" x-text="matGroup.materia"></h4>
                     <span class="ml-auto text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" x-text="matGroup.items.length"></span>
                   </div>
 
@@ -802,7 +815,7 @@
                           <span class="text-[10px] text-slate-500 font-mono" x-text="formatDate(g.dataCriacao)"></span>
                           <button @click="openResolveGargaloModal(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
                             <i data-lucide="check" class="w-3 h-3"></i>
-                            <span>Marcar Concluído</span>
+                            <span>Concluir</span>
                           </button>
                         </div>
                       </div>
@@ -818,30 +831,30 @@
           </div>
 
           <div class="space-y-4 pt-6 border-t border-slate-800">
-            <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+            <h3 class="text-xs sm:text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
               <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-              <span>Gargalos Resolvidos (Agrupados por Matéria e Data)</span>
+              <span>Gargalos Resolvidos</span>
             </h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <template x-for="matGroup in getResolvedGargalosGroupedByMateriaAndDate()" :key="'res_' + matGroup.materia">
-                <div class="bg-slate-900/80 border border-slate-800/60 rounded-xl p-4 space-y-4 opacity-90 backdrop-blur-sm">
+                <div class="bg-slate-900/80 border border-slate-800/60 rounded-xl p-3.5 sm:p-4 space-y-3 opacity-90 backdrop-blur-sm">
                   <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
                     <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
-                    <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide" x-text="matGroup.materia"></h4>
+                    <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide truncate" x-text="matGroup.materia"></h4>
                   </div>
 
                   <div class="space-y-3">
                     <template x-for="dateGroup in matGroup.dateGroups" :key="dateGroup.date">
-                      <div class="bg-slate-850/80 border border-slate-800/70 rounded-lg p-3 space-y-2">
-                        <div class="flex items-center justify-between text-[11px] text-emerald-400 font-mono border-b border-slate-800 pb-1.5">
+                      <div class="bg-slate-850/80 border border-slate-800/70 rounded-lg p-2.5 sm:p-3 space-y-2">
+                        <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-emerald-400 font-mono border-b border-slate-800 pb-1.5">
                           <span class="font-bold uppercase" x-text="dateGroup.dayOfWeek"></span>
                           <span x-text="`Concluído em: ${formatDate(dateGroup.date)}`"></span>
                         </div>
 
                         <div class="space-y-2">
                           <template x-for="g in dateGroup.items" :key="g.id">
-                            <div class="bg-slate-900/90 border border-slate-800/50 rounded p-2.5 space-y-1">
+                            <div class="bg-slate-900/90 border border-slate-800/50 rounded p-2 space-y-1">
                               <div class="flex items-start justify-between gap-2">
                                 <span class="font-bold text-xs text-slate-300 line-through" x-text="g.titulo"></span>
                                 <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
@@ -867,39 +880,46 @@
         </div>
 
       </main>
+
+      <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA PARA DISPOSITIVOS MÓVEIS -->
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-40 flex justify-around items-center h-14 px-2">
+        <template x-for="tab in tabs" :key="tab.id">
+          <button @click="setActiveTab(tab.id)"
+                  class="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium transition-colors"
+                  :class="activeTab === tab.id ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'">
+            <i :data-lucide="tab.icon" class="w-4 h-4 mb-0.5"></i>
+            <span x-text="tab.label.split(' ')[0]"></span>
+          </button>
+        </template>
+      </nav>
+
     </div>
   </div>
 
-  <!-- ==================== MODALS ==================== -->
+  <!-- ==================== MODALS RESPONSIVOS ==================== -->
   
-  <!-- MODAL DE ESTATÍSTICAS DETALHADAS -->
-  <div x-show="showDetailedStatsModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-4xl space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+  <!-- MODAL ESTATÍSTICAS DETALHADAS -->
+  <div x-show="showDetailedStatsModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-4xl space-y-4 sm:space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
       
-      <!-- Cabeçalho -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
         <div>
-          <h3 class="font-bold text-slate-100 text-lg flex items-center space-x-2">
+          <h3 class="font-bold text-slate-100 text-base sm:text-lg flex items-center space-x-2">
             <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-400"></i>
-            <span>Estatísticas de Desempenho em Questões</span>
+            <span>Estatísticas de Desempenho</span>
           </h3>
-          <p class="text-xs text-slate-400">Análise detalhada de evolução com agrupamento por dia ou semana e filtro por matéria.</p>
+          <p class="text-xs text-slate-400">Análise detalhada de evolução com agrupamento por dia ou semana.</p>
         </div>
 
-        <!-- Filtro de Período -->
-        <div class="flex flex-wrap items-center gap-1.5 bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs">
-          <button @click="setStatsPeriod('all')" :class="statsPeriod === 'all' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">Todo Período</button>
-          <button @click="setStatsPeriod('30')" :class="statsPeriod === '30' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">Últimos 30d</button>
-          <button @click="setStatsPeriod('15')" :class="statsPeriod === '15' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">15d</button>
-          <button @click="setStatsPeriod('7')" :class="statsPeriod === '7' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">7d</button>
-          <button @click="setStatsPeriod('range')" :class="statsPeriod === 'range' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">Personalizado</button>
+        <div class="flex flex-wrap items-center gap-1 bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs">
+          <button @click="setStatsPeriod('all')" :class="statsPeriod === 'all' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-1 rounded-lg transition text-[11px]">Tudo</button>
+          <button @click="setStatsPeriod('30')" :class="statsPeriod === '30' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-1 rounded-lg transition text-[11px]">30d</button>
+          <button @click="setStatsPeriod('15')" :class="statsPeriod === '15' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-1 rounded-lg transition text-[11px]">15d</button>
+          <button @click="setStatsPeriod('7')" :class="statsPeriod === '7' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-1 rounded-lg transition text-[11px]">7d</button>
         </div>
       </div>
 
-      <!-- Filtros Avançados: Matéria, Métrica e Agrupamento Semanal -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-slate-850/80 p-3.5 rounded-xl border border-slate-800 text-xs">
-        
-        <!-- Dropdown de Filtro por Matéria -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-850/80 p-3 rounded-xl border border-slate-800 text-xs">
         <div>
           <label class="text-slate-400 block mb-1 font-semibold">Filtrar por Matéria:</label>
           <select x-model="statsSelectedMateria" @change="updateStatsCharts()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -910,106 +930,79 @@
           </select>
         </div>
 
-        <!-- Métrica Exibida -->
         <div>
-          <label class="text-slate-400 block mb-1 font-semibold">Métrica no Gráfico:</label>
+          <label class="text-slate-400 block mb-1 font-semibold">Métrica:</label>
           <select x-model="statsMetric" @change="updateStatsCharts()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
             <option value="both">Ambos (Questões + % Acerto)</option>
-            <option value="questions">Apenas Número de Questões</option>
-            <option value="accuracy">Apenas Percentual de Acerto (%)</option>
+            <option value="questions">Apenas Questões</option>
+            <option value="accuracy">Apenas Acertos (%)</option>
           </select>
         </div>
 
-        <!-- Agrupamento por Semana (Habilitado para períodos > 14 dias) -->
         <div>
           <label class="text-slate-400 block mb-1 font-semibold">Agrupar por:</label>
           <div class="flex items-center space-x-1 bg-slate-950 border border-slate-800 p-1 rounded-lg">
-            <button @click="statsGroupBy = 'day'; updateStatsCharts()" :class="statsGroupBy === 'day' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="flex-1 py-1 text-center rounded transition font-medium">Dia</button>
-            <button @click="statsGroupBy = 'week'; updateStatsCharts()" :disabled="!canGroupByWeek()" :class="[statsGroupBy === 'week' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200', !canGroupByWeek() && 'opacity-40 cursor-not-allowed']" class="flex-1 py-1 text-center rounded transition font-medium" :title="canGroupByWeek() ? 'Ver agrupado por semana' : 'Disponível para períodos superiores a 14 dias'">
-              Semana
-            </button>
+            <button @click="statsGroupBy = 'day'; updateStatsCharts()" :class="statsGroupBy === 'day' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="flex-1 py-1 text-center rounded transition font-medium text-[11px]">Dia</button>
+            <button @click="statsGroupBy = 'week'; updateStatsCharts()" :disabled="!canGroupByWeek()" :class="[statsGroupBy === 'week' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200', !canGroupByWeek() && 'opacity-40 cursor-not-allowed']" class="flex-1 py-1 text-center rounded transition font-medium text-[11px]">Semana</button>
           </div>
         </div>
-
-        <template x-if="statsPeriod === 'range'">
-          <div class="sm:col-span-2 flex flex-wrap items-center gap-3 pt-2 border-t border-slate-800/80">
-            <div class="flex items-center space-x-2">
-              <span class="text-slate-400">Data Inicial:</span>
-              <input type="date" x-model="statsStartDate" @change="updateStatsCharts()" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-            </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-slate-400">Data Final:</span>
-              <input type="date" x-model="statsEndDate" @change="updateStatsCharts()" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-            </div>
-          </div>
-        </template>
       </div>
 
-      <!-- Cards Resumo do Período -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl">
-          <span class="text-[11px] text-slate-400">Total de Questões no Período</span>
-          <div class="text-xl font-bold text-slate-100 mt-1" x-text="getFilteredStatsSummary().total"></div>
+        <div class="bg-slate-850/80 border border-slate-800 p-3 rounded-xl">
+          <span class="text-[11px] text-slate-400">Total de Questões</span>
+          <div class="text-lg sm:text-xl font-bold text-slate-100 mt-0.5" x-text="getFilteredStatsSummary().total"></div>
         </div>
-        <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl">
-          <span class="text-[11px] text-slate-400">Acertos no Período</span>
-          <div class="text-xl font-bold text-emerald-400 mt-1" x-text="`${getFilteredStatsSummary().acertos} (${getFilteredStatsSummary().pct}%)`"></div>
+        <div class="bg-slate-850/80 border border-slate-800 p-3 rounded-xl">
+          <span class="text-[11px] text-slate-400">Acertos</span>
+          <div class="text-lg sm:text-xl font-bold text-emerald-400 mt-0.5" x-text="`${getFilteredStatsSummary().acertos} (${getFilteredStatsSummary().pct}%)`"></div>
         </div>
-        <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl">
-          <span class="text-[11px] text-slate-400">Erros no Período</span>
-          <div class="text-xl font-bold text-rose-400 mt-1" x-text="getFilteredStatsSummary().erros"></div>
+        <div class="bg-slate-850/80 border border-slate-800 p-3 rounded-xl">
+          <span class="text-[11px] text-slate-400">Erros</span>
+          <div class="text-lg sm:text-xl font-bold text-rose-400 mt-0.5" x-text="getFilteredStatsSummary().erros"></div>
         </div>
       </div>
 
-      <!-- Gráfico de Evolução -->
-      <div class="bg-slate-850/80 border border-slate-800 p-4 rounded-xl space-y-2">
+      <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl space-y-2">
         <div class="flex items-center justify-between">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider" x-text="`Evolução de Desempenho (${statsGroupBy === 'week' ? 'Por Semana' : 'Por Dia'})`"></h4>
-          <span class="text-[10px] text-slate-400 font-mono" x-text="statsSelectedMateria === 'ALL' ? 'Todas as Matérias' : statsSelectedMateria"></span>
+          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider" x-text="`Evolução (${statsGroupBy === 'week' ? 'Semanal' : 'Diária'})`"></h4>
         </div>
-        <div class="h-60 relative w-full">
+        <div class="h-52 sm:h-60 relative w-full">
           <canvas id="evolutionChartCanvas"></canvas>
         </div>
       </div>
 
-      <!-- Tabela Destrinchada por Matéria -->
-      <div class="space-y-3">
-        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Desempenho Destrinchado por Matéria</h4>
-        <div class="bg-slate-850/80 border border-slate-800 rounded-xl overflow-hidden">
-          <table class="w-full text-left text-xs text-slate-300">
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Desempenho por Matéria</h4>
+        <div class="bg-slate-850/80 border border-slate-800 rounded-xl overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300 min-w-[400px]">
             <thead class="bg-slate-900 border-b border-slate-800 text-slate-400 font-mono text-[11px]">
               <tr>
-                <th class="p-3">Matéria</th>
-                <th class="p-3 text-center">Questões</th>
-                <th class="p-3 text-center">Acertos</th>
-                <th class="p-3 text-center">Erros</th>
-                <th class="p-3 text-right">Taxa de Acerto</th>
+                <th class="p-2.5">Matéria</th>
+                <th class="p-2.5 text-center">Questões</th>
+                <th class="p-2.5 text-center">Acertos</th>
+                <th class="p-2.5 text-right">Taxa de Acerto</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
               <template x-for="item in getDetailedMateriaStats()" :key="item.materia">
                 <tr class="hover:bg-slate-800/40 transition cursor-pointer" @click="statsSelectedMateria = item.materia; updateStatsCharts()">
-                  <td class="p-3 font-semibold text-slate-100 flex items-center space-x-2">
+                  <td class="p-2.5 font-semibold text-slate-100 flex items-center space-x-2 truncate">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background-color: ${item.cor}`"></span>
                     <span x-text="item.materia"></span>
                   </td>
-                  <td class="p-3 text-center font-mono" x-text="item.total"></td>
-                  <td class="p-3 text-center font-mono text-emerald-400" x-text="item.acertos"></td>
-                  <td class="p-3 text-center font-mono text-rose-400" x-text="item.erros"></td>
-                  <td class="p-3 text-right font-mono font-bold">
+                  <td class="p-2.5 text-center font-mono" x-text="item.total"></td>
+                  <td class="p-2.5 text-center font-mono text-emerald-400" x-text="item.acertos"></td>
+                  <td class="p-2.5 text-right font-mono font-bold">
                     <span :class="item.pct >= 75 ? 'text-emerald-400' : (item.pct >= 50 ? 'text-amber-400' : 'text-rose-400')" x-text="item.pct + '%'"></span>
                   </td>
                 </tr>
               </template>
-              <tr x-show="getDetailedMateriaStats().length === 0">
-                <td colspan="5" class="p-6 text-center text-slate-500 italic">Nenhuma questão registrada neste período.</td>
-              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Rodapé -->
       <div class="flex justify-end pt-2 border-t border-slate-800">
         <button @click="showDetailedStatsModal = false" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs font-semibold transition">
           Fechar
@@ -1025,16 +1018,15 @@
         <i data-lucide="check-circle-2" class="w-5 h-5"></i>
         <h3 class="font-bold text-slate-100 text-base">Concluir Gargalo</h3>
       </div>
-      <p class="text-xs text-slate-400">Informe a data em que este gargalo foi concluído:</p>
+      <p class="text-xs text-slate-400">Data de conclusão:</p>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Data de Conclusão</label>
         <input type="date" x-model="modalResolveData" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
       </div>
       <div class="flex justify-end space-x-2 pt-2">
         <button @click="showResolveGargaloModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
         <button @click="confirmResolveGargalo()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5">
           <i data-lucide="check" class="w-3.5 h-3.5"></i>
-          <span>Confirmar Conclusão</span>
+          <span>Confirmar</span>
         </button>
       </div>
     </div>
@@ -1065,11 +1057,11 @@
       <h3 class="font-bold text-slate-100 text-base" x-text="editingNoteId ? 'Editar Anotação' : 'Nova Anotação'"></h3>
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Título da Anotação</label>
+          <label class="text-xs text-slate-400 block mb-1">Título</label>
           <input type="text" x-model="modalNoteTitle" placeholder="Ex: Meta Semanal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Tipo de Anotação</label>
+          <label class="text-xs text-slate-400 block mb-1">Tipo</label>
           <select x-model="modalNoteType" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
             <option value="text">Texto Livre</option>
             <option value="checklist">Lista de Tarefas (Checklist)</option>
@@ -1078,14 +1070,12 @@
         
         <template x-if="modalNoteType === 'text'">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Conteúdo</label>
             <textarea x-model="modalNoteTextContent" rows="4" placeholder="Escreva suas anotações..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
           </div>
         </template>
 
         <template x-if="modalNoteType === 'checklist'">
           <div class="space-y-2">
-            <label class="text-xs text-slate-400 block">Itens da Lista (Separe por vírgula ou adicione abaixo)</label>
             <div class="flex gap-2">
               <input type="text" x-model="modalNewCheckItem" @keydown.enter.prevent="addChecklistItem()" placeholder="Novo item..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               <button @click="addChecklistItem()" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">Adicionar</button>
@@ -1115,11 +1105,8 @@
   <div x-show="showSubtopicModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base">Adicionar Subtópicos</h3>
-      <p class="text-xs text-slate-400">Insira os subtópicos separados por ponto final (.) para inserção automática:</p>
       <div class="space-y-3">
-        <div>
-          <textarea x-model="modalSubtopicText" rows="4" placeholder="Ex: 1.1 Conceito. 1.2 Classificação. 1.3 Aplicação." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
-        </div>
+        <textarea x-model="modalSubtopicText" rows="4" placeholder="Ex: 1.1 Conceito. 1.2 Classificação." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
       </div>
       <div class="flex justify-end space-x-2 pt-2">
         <button @click="showSubtopicModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
@@ -1151,11 +1138,8 @@
   <div x-show="showEditTopicModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base">Editar Nome do Assunto</h3>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Descrição do Tópico / Subtópico</label>
-          <input type="text" x-model="modalTopicText" @keydown.enter="saveEditedTopic()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
+      <div>
+        <input type="text" x-model="modalTopicText" @keydown.enter="saveEditedTopic()" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
       </div>
       <div class="flex justify-end space-x-2 pt-2">
         <button @click="showEditTopicModal = false" class="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
@@ -1165,8 +1149,8 @@
   </div>
 
   <!-- Modal Registrar / Editar Treino -->
-  <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
+  <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 w-full max-w-md space-y-3 sm:space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Registro' : 'Registrar Estudo / Questões'"></h3>
       <div class="space-y-3">
         <div>
@@ -1194,28 +1178,28 @@
           <input type="text" x-model="modalQuestaoAssunto" placeholder="Ex: Lançamento Tributário" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
         
-        <div class="grid grid-cols-2 gap-3" x-show="modalQuestaoTipo !== 'Estudo Teórico'">
+        <div class="grid grid-cols-2 gap-2 sm:gap-3" x-show="modalQuestaoTipo !== 'Estudo Teórico'">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Total de Questões</label>
+            <label class="text-xs text-slate-400 block mb-1">Total</label>
             <div class="flex items-center space-x-1">
-              <input type="number" x-model.number="modalQuestaoTotal" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              <button @click="modalQuestaoTotal = Math.max(0, (Number(modalQuestaoTotal)||0) - 1)" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-2 rounded-lg text-xs font-bold transition border border-slate-700" title="Subtrair 1 questão">-1</button>
-              <button @click="modalQuestaoTotal = (Number(modalQuestaoTotal)||0) + 1" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 questão">+1</button>
+              <input type="number" x-model.number="modalQuestaoTotal" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <button @click="modalQuestaoTotal = Math.max(0, (Number(modalQuestaoTotal)||0) - 1)" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-2 rounded-lg text-xs font-bold transition border border-slate-700">-1</button>
+              <button @click="modalQuestaoTotal = (Number(modalQuestaoTotal)||0) + 1" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-2 rounded-lg text-xs font-bold transition shadow">+1</button>
             </div>
           </div>
           <div>
             <label class="text-xs text-slate-400 block mb-1">Acertos</label>
             <div class="flex items-center space-x-1">
-              <input type="number" x-model.number="modalQuestaoAcertos" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              <button @click="modalQuestaoAcertos = Math.max(0, (Number(modalQuestaoAcertos)||0) - 1)" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-2 rounded-lg text-xs font-bold transition border border-slate-700" title="Subtrair 1 acerto">-1</button>
-              <button @click="modalQuestaoAcertos = (Number(modalQuestaoAcertos)||0) + 1" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-2 rounded-lg text-xs font-bold transition shadow" title="Somar 1 acerto">+1</button>
+              <input type="number" x-model.number="modalQuestaoAcertos" placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+              <button @click="modalQuestaoAcertos = Math.max(0, (Number(modalQuestaoAcertos)||0) - 1)" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-2 rounded-lg text-xs font-bold transition border border-slate-700">-1</button>
+              <button @click="modalQuestaoAcertos = (Number(modalQuestaoAcertos)||0) + 1" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-2 rounded-lg text-xs font-bold transition shadow">+1</button>
             </div>
           </div>
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalo (Gera alerta no mini card e na aba de Gargalos)</label>
-          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Descreva os pontos em que errou ou dúvidas para revisar..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+          <label class="text-xs text-slate-400 block mb-1">Anotações / Gargalo</label>
+          <textarea x-model="modalQuestaoAnotacao" rows="2" placeholder="Descreva os pontos em que errou..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
       </div>
       <div class="flex justify-end space-x-2 pt-2">
@@ -1323,6 +1307,7 @@
 
     function appData() {
       return {
+        mobileMenuOpen: false,
         activeTab: localStorage.getItem(TAB_KEY) || 'dashboard',
         syncing: false,
         lastSync: false,
@@ -1330,7 +1315,6 @@
         lastImportId: null,
         showAccuracyPercent: false,
 
-        // Modal Estatísticas Detalhadas
         showDetailedStatsModal: false,
         statsPeriod: '30',
         statsStartDate: new Date().toISOString().split('T')[0],
@@ -1436,40 +1420,7 @@
             }
           }
 
-          // ROTINA AUTOMÁTICA DE CORREÇÃO DE CONT. PÚBLICA / PÚPLICA
-          if (this.questoes && Array.isArray(this.questoes)) {
-            this.questoes.forEach(q => {
-              if (q.materia) {
-                const upper = String(q.materia).toUpperCase();
-                if (upper.includes('CONT') && (upper.includes('PUB') || upper.includes('PUP'))) {
-                  q.materia = 'CONT. PÚBLICA';
-                }
-              }
-            });
-          }
-
-          if (this.gargalos && Array.isArray(this.gargalos)) {
-            this.gargalos.forEach(g => {
-              if (g.materia) {
-                const upper = String(g.materia).toUpperCase();
-                if (upper.includes('CONT') && (upper.includes('PUB') || upper.includes('PUP'))) {
-                  g.materia = 'CONT. PÚBLICA';
-                }
-              }
-            });
-          }
-
           await this.loadFromSupabase();
-
-          // Aplica a mesma limpeza após carregar do Supabase para garantir
-          this.questoes.forEach(q => {
-            if (q.materia) {
-              const upper = String(q.materia).toUpperCase();
-              if (upper.includes('CONT') && (upper.includes('PUB') || upper.includes('PUP'))) {
-                q.materia = 'CONT. PÚBLICA';
-              }
-            }
-          });
 
           if (!this.selectedDateFilter) {
             this.selectedDateFilter = new Date().toISOString().split('T')[0];
@@ -1509,7 +1460,6 @@
           });
         },
 
-        // Normalização avançada de nomes de matérias para ignorar acentos, pontos, vírgulas e erros como PÚPLICA vs PÚBLICA
         normalizeMateriaName(str) {
           if (!str) return '';
           let s = String(str)
@@ -1740,16 +1690,15 @@
               maintainAspectRatio: false,
               scales: {
                 x: {
-                  ticks: { color: '#94a3b8', font: { size: 10 } },
+                  ticks: { color: '#94a3b8', font: { size: 9 } },
                   grid: { color: 'rgba(51, 65, 85, 0.3)' }
                 },
                 y: {
                   type: 'linear',
                   display: this.statsMetric === 'both' || this.statsMetric === 'questions',
                   position: 'left',
-                  ticks: { color: '#818cf8', font: { size: 10 } },
-                  grid: { color: 'rgba(51, 65, 85, 0.3)' },
-                  title: { display: true, text: 'Questões', color: '#818cf8', font: { size: 10 } }
+                  ticks: { color: '#818cf8', font: { size: 9 } },
+                  grid: { color: 'rgba(51, 65, 85, 0.3)' }
                 },
                 y1: {
                   type: 'linear',
@@ -1757,13 +1706,12 @@
                   position: 'right',
                   min: 0,
                   max: 100,
-                  ticks: { color: '#38bdf8', font: { size: 10 } },
-                  grid: { drawOnChartArea: false },
-                  title: { display: true, text: '% Acerto', color: '#38bdf8', font: { size: 10 } }
+                  ticks: { color: '#38bdf8', font: { size: 9 } },
+                  grid: { drawOnChartArea: false }
                 }
               },
               plugins: {
-                legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+                legend: { labels: { color: '#cbd5e1', font: { size: 10 } } }
               }
             }
           });
@@ -2862,7 +2810,6 @@
                 let rawMateria = rowNormalized['materia'] || rowNormalized['matéria'] || rowNormalized['disciplina'] || 'Geral';
                 let materiaQ = String(rawMateria).trim();
                 
-                // Tratamento específico de erro de digitação de Contabilidade Pública (PÚPLICA vs PÚBLICA)
                 const matUpper = materiaQ.toUpperCase();
                 if (matUpper.includes('CONT') && (matUpper.includes('PUB') || matUpper.includes('PUP'))) {
                   materiaQ = 'CONT. PÚBLICA';
@@ -2921,7 +2868,7 @@
 
         undoLastImport() {
           if (!this.lastImportId) return;
-          if (!confirm("Deseja realmente desfazer a última importação? Todos os registros associados a ela serão removidos.")) {
+          if (!confirm("Deseja realmente desfazer a última importação?")) {
             return;
           }
 
