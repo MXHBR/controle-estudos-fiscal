@@ -1870,18 +1870,26 @@
 
         calcMatQuestions(mat) {
           if (!mat || !mat.nome) return 0;
-          const targetName = mat.nome.trim().toUpperCase();
+          const targetName = String(mat.nome).trim().toUpperCase();
           return this.questoes
-            .filter(q => q.materia && q.materia.trim().toUpperCase() === targetName)
-            .reduce((acc, q) => acc + (q.total || 0), 0);
+            .filter(q => {
+              if (!q.materia) return false;
+              const qMateria = String(q.materia).trim().toUpperCase();
+              return qMateria === targetName;
+            })
+            .reduce((acc, q) => acc + (Number(q.total) || 0), 0);
         },
 
         calcMatRights(mat) {
           if (!mat || !mat.nome) return 0;
-          const targetName = mat.nome.trim().toUpperCase();
+          const targetName = String(mat.nome).trim().toUpperCase();
           return this.questoes
-            .filter(q => q.materia && q.materia.trim().toUpperCase() === targetName)
-            .reduce((acc, q) => acc + (q.acertos || 0), 0);
+            .filter(q => {
+              if (!q.materia) return false;
+              const qMateria = String(q.materia).trim().toUpperCase();
+              return qMateria === targetName;
+            })
+            .reduce((acc, q) => acc + (Number(q.acertos) || 0), 0);
         },
 
         calcMatAccuracy(mat) {
