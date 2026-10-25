@@ -89,7 +89,7 @@
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
         <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v6.1</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v6.2</span>
       </div>
     </aside>
 
@@ -150,29 +150,38 @@
               </div>
             </div>
 
-            <div @click="showAccuracyPercent = !showAccuracyPercent" class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm cursor-pointer hover:border-indigo-500/50 transition group" title="Clique para alternar entre Total e Percentual">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400" x-text="showAccuracyPercent ? 'Taxa de Acerto Geral' : 'Total de Questões Realizadas'"></span>
-                <i data-lucide="target" class="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform"></i>
+            <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm relative group">
+              <div @click="showAccuracyPercent = !showAccuracyPercent" class="cursor-pointer">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-medium text-slate-400" x-text="showAccuracyPercent ? 'Taxa de Acerto Geral' : 'Total de Questões Realizadas'"></span>
+                  <i data-lucide="target" class="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div class="flex items-baseline space-x-2 mt-1">
+                  <template x-if="!showAccuracyPercent">
+                    <div class="flex items-baseline space-x-2">
+                      <span class="text-2xl font-extrabold text-slate-100" x-text="calcTotalQuestions()"></span>
+                      <span class="text-xs text-slate-400">questões</span>
+                    </div>
+                  </template>
+                  <template x-if="showAccuracyPercent">
+                    <div class="flex items-baseline space-x-2">
+                      <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
+                      <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
+                    </div>
+                  </template>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mt-2">
+                  <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallAccuracy())" :style="`width: ${calcOverallAccuracy()}%`"></div>
+                </div>
               </div>
-              <div class="flex items-baseline space-x-2">
-                <template x-if="!showAccuracyPercent">
-                  <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-extrabold text-slate-100" x-text="calcTotalQuestions()"></span>
-                    <span class="text-xs text-slate-400">questões</span>
-                  </div>
-                </template>
-                <template x-if="showAccuracyPercent">
-                  <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
-                    <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
-                  </div>
-                </template>
+              
+              <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 mt-2">
+                <span @click="showAccuracyPercent = !showAccuracyPercent" class="text-[10px] text-slate-500 hover:text-slate-300 cursor-pointer">Alternar vista</span>
+                <button @click="openDetailedStatsModal()" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded transition">
+                  <i data-lucide="bar-chart-2" class="w-3 h-3"></i>
+                  <span>Estatísticas Detalhadas</span>
+                </button>
               </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallAccuracy())" :style="`width: ${calcOverallAccuracy()}%`"></div>
-              </div>
-              <div class="text-[10px] text-indigo-400/80 text-right font-medium">Clique para alternar visualização</div>
             </div>
 
             <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
@@ -338,12 +347,30 @@
           </div>
 
           <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm space-y-4 backdrop-blur-sm">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div class="relative w-full sm:w-80">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div class="relative w-full md:w-80">
                 <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
                 <input type="text" x-model="materiaSearchQuery" placeholder="Buscar matéria..." class="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
               </div>
-              <div class="text-xs text-slate-400 font-mono">
+
+              <!-- BARRA DE AVANÇO TOTAL DO EDITAL -->
+              <div class="w-full md:w-auto flex-1 max-w-md bg-slate-850/80 border border-slate-800 p-2.5 rounded-xl flex items-center space-x-3">
+                <div class="shrink-0 flex items-center space-x-1.5">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+                  <span class="text-xs font-bold text-slate-300">Edital:</span>
+                </div>
+                <div class="flex-1 space-y-1">
+                  <div class="flex justify-between text-[11px]">
+                    <span class="text-slate-400 font-mono" x-text="`${countCompletedTopics()}/${countTotalTopics()} tópicos`"></span>
+                    <span class="font-bold text-indigo-400 font-mono" x-text="calcOverallProgress() + '%'"></span>
+                  </div>
+                  <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                    <div class="h-full rounded-full transition-all duration-500" :class="getCustomProgressBarBg(calcOverallProgress())" :style="`width: ${calcOverallProgress()}%`"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-xs text-slate-400 font-mono shrink-0 hidden lg:block">
                 Total: <span class="text-slate-200 font-bold" x-text="materias.length"></span> matérias
               </div>
             </div>
@@ -645,7 +672,7 @@
                   <template x-for="matGroup in cardGroup.materiaGroups" :key="matGroup.materia">
                     <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
                       
-                      <!-- Cabeçalho da Matéria Agrupada (Exibido uma única vez com total de questões e acertos da matéria no dia) -->
+                      <!-- Cabeçalho da Matéria Agrupada -->
                       <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
                         <div class="flex items-center space-x-2.5">
                           <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
@@ -657,7 +684,7 @@
                         </div>
                       </div>
 
-                      <!-- Assuntos Registrados Individualmente na Matéria (Cada um com seu botão de edição individual) -->
+                      <!-- Assuntos Registrados Individualmente na Matéria -->
                       <div class="space-y-2.5 pt-1">
                         <template x-for="item in matGroup.items" :key="item.id">
                           <div class="bg-slate-900/90 border border-slate-800/60 rounded-lg p-3 space-y-2">
@@ -681,7 +708,7 @@
                               </div>
                             </div>
 
-                            <!-- Bloco do Gargalo associado com Ação de Conclusão Direta -->
+                            <!-- Bloco do Gargalo associado -->
                             <template x-if="item.anotacao">
                               <div class="text-xs rounded-lg p-3 space-y-2 border"
                                    :class="item.bottleneckResolved ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200' : 'bg-amber-950/30 border-amber-500/40 text-amber-200'">
@@ -691,7 +718,6 @@
                                     <span x-text="item.bottleneckResolved ? 'Gargalo Concluído' : 'Gargalo Registrado (Pendente)'"></span>
                                   </div>
 
-                                  <!-- Botão Concluir Gargalo Direto no Card Central -->
                                   <template x-if="!item.bottleneckResolved">
                                     <button @click="resolveBottleneckFromCard(item.gargaloId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1 shadow">
                                       <i data-lucide="check" class="w-3 h-3"></i>
@@ -833,6 +859,113 @@
 
   <!-- ==================== MODALS ==================== -->
   
+  <!-- MODAL DE ESTATÍSTICAS DETALHADAS DE QUESTÕES POR MATÉRIA E EVOLUÇÃO TEMPORAL -->
+  <div x-show="showDetailedStatsModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-4xl space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      
+      <!-- Cabeçalho -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="font-bold text-slate-100 text-lg flex items-center space-x-2">
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-400"></i>
+            <span>Estatísticas de Desempenho em Questões</span>
+          </h3>
+          <p class="text-xs text-slate-400">Análise de questões resolvidas e percentual de acertos destrinchado por período.</p>
+        </div>
+
+        <!-- Filtro de Período -->
+        <div class="flex flex-wrap items-center gap-1.5 bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs">
+          <button @click="setStatsPeriod('all')" :class="statsPeriod === 'all' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">Todo Período</button>
+          <button @click="setStatsPeriod('30')" :class="statsPeriod === '30' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">Últimos 30d</button>
+          <button @click="setStatsPeriod('15')" :class="statsPeriod === '15' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">15d</button>
+          <button @click="setStatsPeriod('7')" :class="statsPeriod === '7' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">7d</button>
+          <button @click="setStatsPeriod('range')" :class="statsPeriod === 'range' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-lg transition">Personalizado</button>
+        </div>
+      </div>
+
+      <!-- Filtro Personalizado de Datas -->
+      <div x-show="statsPeriod === 'range'" x-cloak class="flex flex-wrap items-center gap-4 bg-slate-850/80 p-3 rounded-xl border border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-slate-400">Data Inicial:</span>
+          <input type="date" x-model="statsStartDate" @change="updateStatsCharts()" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-slate-400">Data Final:</span>
+          <input type="date" x-model="statsEndDate" @change="updateStatsCharts()" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <!-- Cards Resumo do Período -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl">
+          <span class="text-[11px] text-slate-400">Total de Questões no Período</span>
+          <div class="text-xl font-bold text-slate-100 mt-1" x-text="getFilteredStatsSummary().total"></div>
+        </div>
+        <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl">
+          <span class="text-[11px] text-slate-400">Acertos no Período</span>
+          <div class="text-xl font-bold text-emerald-400 mt-1" x-text="`${getFilteredStatsSummary().acertos} (${getFilteredStatsSummary().pct}%)`"></div>
+        </div>
+        <div class="bg-slate-850/80 border border-slate-800 p-3.5 rounded-xl">
+          <span class="text-[11px] text-slate-400">Erros no Período</span>
+          <div class="text-xl font-bold text-rose-400 mt-1" x-text="getFilteredStatsSummary().erros"></div>
+        </div>
+      </div>
+
+      <!-- Gráfico de Evolução dos Acertos e Volume -->
+      <div class="bg-slate-850/80 border border-slate-800 p-4 rounded-xl space-y-2">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Evolução do Desempenho Diário</h4>
+        <div class="h-56 relative w-full">
+          <canvas id="evolutionChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabela Destrinchada por Matéria -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Desempenho Destrinchado por Matéria</h4>
+        <div class="bg-slate-850/80 border border-slate-800 rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+              <tr>
+                <th class="p-3">Matéria</th>
+                <th class="p-3 text-center">Questões</th>
+                <th class="p-3 text-center">Acertos</th>
+                <th class="p-3 text-center">Erros</th>
+                <th class="p-3 text-right">Taxa de Acerto</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              <template x-for="item in getDetailedMateriaStats()" :key="item.materia">
+                <tr class="hover:bg-slate-800/40 transition">
+                  <td class="p-3 font-semibold text-slate-100 flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background-color: ${item.cor}`"></span>
+                    <span x-text="item.materia"></span>
+                  </td>
+                  <td class="p-3 text-center font-mono" x-text="item.total"></td>
+                  <td class="p-3 text-center font-mono text-emerald-400" x-text="item.acertos"></td>
+                  <td class="p-3 text-center font-mono text-rose-400" x-text="item.erros"></td>
+                  <td class="p-3 text-right font-mono font-bold">
+                    <span :class="item.pct >= 75 ? 'text-emerald-400' : (item.pct >= 50 ? 'text-amber-400' : 'text-rose-400')" x-text="item.pct + '%'"></span>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="getDetailedMateriaStats().length === 0">
+                <td colspan="5" class="p-6 text-center text-slate-500 italic">Nenhuma questão registrada neste período.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Rodapé -->
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button @click="showDetailedStatsModal = false" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs font-semibold transition">
+          Fechar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <div x-show="showResolveGargaloModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-sm space-y-4 shadow-2xl">
       <div class="flex items-center space-x-2 text-emerald-400">
@@ -978,7 +1111,7 @@
     </div>
   </div>
 
-  <!-- Modal Registrar / Editar Treino (Questões e Estudo Teórico com botões +1 e -1) -->
+  <!-- Modal Registrar / Editar Treino -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4 shadow-2xl">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Registro' : 'Registrar Estudo / Questões'"></h3>
@@ -1135,6 +1268,13 @@
         lastImportId: null,
         showAccuracyPercent: false,
 
+        // Modal Estatísticas Detalhadas por Período
+        showDetailedStatsModal: false,
+        statsPeriod: '30',
+        statsStartDate: new Date().toISOString().split('T')[0],
+        statsEndDate: new Date().toISOString().split('T')[0],
+        evolutionChart: null,
+
         exams: [
           { id: 'ex_1', title: 'ISS Caruaru', date: '2026-11-29' }
         ],
@@ -1269,6 +1409,178 @@
         refreshIcons() {
           this.$nextTick(() => {
             if (window.lucide) window.lucide.createIcons();
+          });
+        },
+
+        openDetailedStatsModal() {
+          this.showDetailedStatsModal = true;
+          this.$nextTick(() => {
+            this.updateStatsCharts();
+          });
+        },
+
+        setStatsPeriod(p) {
+          this.statsPeriod = p;
+          this.$nextTick(() => {
+            this.updateStatsCharts();
+          });
+        },
+
+        getFilteredQuestionsByPeriod() {
+          if (this.statsPeriod === 'all') return this.questoes;
+          
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+          let startDate = new Date();
+
+          if (this.statsPeriod === '7') {
+            startDate.setDate(today.getDate() - 7);
+          } else if (this.statsPeriod === '15') {
+            startDate.setDate(today.getDate() - 15);
+          } else if (this.statsPeriod === '30') {
+            startDate.setDate(today.getDate() - 30);
+          } else if (this.statsPeriod === 'range') {
+            if (this.statsStartDate) startDate = new Date(this.statsStartDate + 'T00:00:00');
+            let endDate = this.statsEndDate ? new Date(this.statsEndDate + 'T23:59:59') : today;
+            return this.questoes.filter(q => {
+              if (!q.data) return false;
+              const d = new Date(q.data + 'T00:00:00');
+              return d >= startDate && d <= endDate;
+            });
+          }
+
+          startDate.setHours(0, 0, 0, 0);
+          return this.questoes.filter(q => {
+            if (!q.data) return false;
+            const d = new Date(q.data + 'T00:00:00');
+            return d >= startDate && d <= today;
+          });
+        },
+
+        getFilteredStatsSummary() {
+          const list = this.getFilteredQuestionsByPeriod();
+          const total = list.reduce((acc, q) => acc + (q.total || 0), 0);
+          const acertos = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const erros = Math.max(0, total - acertos);
+          const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
+          return { total, acertos, erros, pct };
+        },
+
+        getDetailedMateriaStats() {
+          const list = this.getFilteredQuestionsByPeriod();
+          const map = {};
+
+          this.materias.forEach(m => {
+            map[m.nome] = { materia: m.nome, cor: m.cor || '#6366f1', total: 0, acertos: 0 };
+          });
+
+          list.forEach(q => {
+            const mName = q.materia || 'Outros';
+            if (!map[mName]) {
+              map[mName] = { materia: mName, cor: '#6366f1', total: 0, acertos: 0 };
+            }
+            map[mName].total += (q.total || 0);
+            map[mName].acertos += (q.acertos || 0);
+          });
+
+          return Object.values(map)
+            .filter(item => item.total > 0)
+            .map(item => {
+              const erros = Math.max(0, item.total - item.acertos);
+              const pct = Math.round((item.acertos / item.total) * 100);
+              return { ...item, erros, pct };
+            })
+            .sort((a, b) => b.total - a.total);
+        },
+
+        updateStatsCharts() {
+          const canvas = document.getElementById('evolutionChartCanvas');
+          if (!canvas) return;
+
+          const list = this.getFilteredQuestionsByPeriod();
+          const dateMap = {};
+
+          list.forEach(q => {
+            if (!q.data) return;
+            if (!dateMap[q.data]) {
+              dateMap[q.data] = { total: 0, acertos: 0 };
+            }
+            dateMap[q.data].total += (q.total || 0);
+            dateMap[q.data].acertos += (q.acertos || 0);
+          });
+
+          const sortedDates = Object.keys(dateMap).sort();
+          const labels = sortedDates.map(d => this.formatDate(d));
+          const accuracyData = sortedDates.map(d => {
+            const item = dateMap[d];
+            return item.total > 0 ? Math.round((item.acertos / item.total) * 100) : 0;
+          });
+          const volumeData = sortedDates.map(d => dateMap[d].total);
+
+          if (this.evolutionChart) {
+            this.evolutionChart.destroy();
+          }
+
+          const ctx = canvas.getContext('2d');
+          this.evolutionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  type: 'line',
+                  label: 'Taxa de Acertos (%)',
+                  data: accuracyData,
+                  borderColor: '#38bdf8',
+                  backgroundColor: '#38bdf8',
+                  borderWidth: 2,
+                  fill: false,
+                  tension: 0.3,
+                  yAxisID: 'y1'
+                },
+                {
+                  type: 'bar',
+                  label: 'Qtd. Questões',
+                  data: volumeData,
+                  backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                  borderColor: '#6366f1',
+                  borderWidth: 1,
+                  borderRadius: 4,
+                  yAxisID: 'y'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  ticks: { color: '#94a3b8', font: { size: 10 } },
+                  grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                },
+                y: {
+                  type: 'linear',
+                  display: true,
+                  position: 'left',
+                  ticks: { color: '#818cf8', font: { size: 10 } },
+                  grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                  title: { display: true, text: 'Questões', color: '#818cf8', font: { size: 10 } }
+                },
+                y1: {
+                  type: 'linear',
+                  display: true,
+                  position: 'right',
+                  min: 0,
+                  max: 100,
+                  ticks: { color: '#38bdf8', font: { size: 10 } },
+                  grid: { drawOnChartArea: false },
+                  title: { display: true, text: '% Acerto', color: '#38bdf8', font: { size: 10 } }
+                }
+              },
+              plugins: {
+                legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+              }
+            }
           });
         },
 
@@ -1482,7 +1794,6 @@
           this.timelinePeriod = mode;
         },
 
-        // NAVEGAÇÃO DE DATA (BOTÕES ANTERIOR E PRÓXIMO)
         changeSelectedDate(daysDelta) {
           if (!this.selectedDateFilter) return;
           let d = new Date(this.selectedDateFilter + 'T00:00:00');
@@ -1575,7 +1886,6 @@
           return cards;
         },
 
-        // EXIBIÇÃO DETALHADA NO CARD CENTRAL COM AGRUPAMENTO POR MATÉRIA
         getSelectedDayDetailCards() {
           if (!this.selectedDateFilter) return [];
           const items = this.questoes.filter(q => q.data === this.selectedDateFilter);
@@ -1591,7 +1901,6 @@
             };
           });
 
-          // Agrupamento por matéria no dia
           const materiaMap = {};
           processedItems.forEach(item => {
             const matName = item.materia || 'Geral';
