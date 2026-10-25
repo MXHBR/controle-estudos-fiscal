@@ -327,7 +327,8 @@
                     <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
                   </div>
 
-                  <div class="flex items-center justify-between text-sm font-bold text-slate-300 pt-1 border-t border-slate-800/60 font-mono">
+                  <!-- VALORES DESTACADOS EM FONTE MAIOR -->
+                  <div class="flex items-center justify-between text-sm font-bold text-slate-200 pt-1 border-t border-slate-800/60 font-mono">
                     <span x-text="`Questões: ${calcMatQuestions(mat)}`"></span>
                     <span x-text="`Acerto: ${calcMatAccuracy(mat)}%`" :class="calcMatAccuracy(mat) >= 70 ? 'text-emerald-400 font-extrabold' : (calcMatAccuracy(mat) >= 50 ? 'text-amber-400 font-extrabold' : 'text-rose-400 font-extrabold')"></span>
                   </div>
@@ -551,7 +552,8 @@
               </button>
               <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
 
-              <button @click="undoLastImport()" x-show="lastImportId" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+              <!-- BOTÃO DE DESFAZER A ÚLTIMA IMPORTAÇÃO -->
+              <button @click="undoLastImport()" x-show="lastImportId" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 <span>Desfazer Importação</span>
               </button>
@@ -644,7 +646,7 @@
             <template x-for="cardGroup in getSelectedDayDetailCards()" :key="cardGroup.date">
               <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 backdrop-blur-sm relative">
                 
-                <!-- Cabeçalho do Card Central com Totalizador Geral de Questões do Dia -->
+                <!-- Cabeçalho do Card Central com Totalizador de Questões do Dia -->
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <div class="flex items-center space-x-2">
                     <button @click="changeSelectedDate(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition" title="Dia Anterior">
@@ -661,7 +663,7 @@
                     </button>
                   </div>
 
-                  <!-- TOTAL DE QUESTÕES DO DIA COM DESTAQUE EM FONTE MAIOR -->
+                  <!-- TOTAL DE QUESTÕES E ACERTOS DO DIA COM FONTE DESTACADA -->
                   <div class="flex items-center space-x-3">
                     <div class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-500/30 px-3 py-1.5 rounded-xl">
                       <i data-lucide="target" class="w-4 h-4 text-indigo-400"></i>
@@ -870,7 +872,7 @@
 
   <!-- ==================== MODALS ==================== -->
   
-  <!-- MODAL DE ESTATÍSTICAS DETALHADAS COM OPÇÃO POR SEMANA, MATÉRIA E MÉTRICAS -->
+  <!-- MODAL DE ESTATÍSTICAS DETALHADAS -->
   <div x-show="showDetailedStatsModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-4xl space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
       
@@ -881,7 +883,7 @@
             <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-400"></i>
             <span>Estatísticas de Desempenho em Questões</span>
           </h3>
-          <p class="text-xs text-slate-400">Análise detalhada de evolução com agrupamento flexível e seleção por matéria.</p>
+          <p class="text-xs text-slate-400">Análise detalhada de evolução com agrupamento por dia ou semana e filtro por matéria.</p>
         </div>
 
         <!-- Filtro de Período -->
@@ -894,7 +896,7 @@
         </div>
       </div>
 
-      <!-- Filtro Personalizado de Datas e Seleção de Matéria -->
+      <!-- Filtros Avançados: Matéria, Métrica e Agrupamento Semanal -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-slate-850/80 p-3.5 rounded-xl border border-slate-800 text-xs">
         
         <!-- Dropdown de Filtro por Matéria -->
@@ -918,12 +920,12 @@
           </select>
         </div>
 
-        <!-- Agrupamento (Dia ou Semana) habilitado quando > 14 dias -->
+        <!-- Agrupamento por Semana (Habilitado para períodos > 14 dias) -->
         <div>
           <label class="text-slate-400 block mb-1 font-semibold">Agrupar por:</label>
           <div class="flex items-center space-x-1 bg-slate-950 border border-slate-800 p-1 rounded-lg">
             <button @click="statsGroupBy = 'day'; updateStatsCharts()" :class="statsGroupBy === 'day' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="flex-1 py-1 text-center rounded transition font-medium">Dia</button>
-            <button @click="statsGroupBy = 'week'; updateStatsCharts()" :disabled="!canGroupByWeek()" :class="[statsGroupBy === 'week' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200', !canGroupByWeek() && 'opacity-40 cursor-not-allowed']" class="flex-1 py-1 text-center rounded transition font-medium" :title="canGroupByWeek() ? 'Ver agrupado por semana' : 'Disponível apenas para períodos superiores a 14 dias'">
+            <button @click="statsGroupBy = 'week'; updateStatsCharts()" :disabled="!canGroupByWeek()" :class="[statsGroupBy === 'week' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200', !canGroupByWeek() && 'opacity-40 cursor-not-allowed']" class="flex-1 py-1 text-center rounded transition font-medium" :title="canGroupByWeek() ? 'Ver agrupado por semana' : 'Disponível para períodos superiores a 14 dias'">
               Semana
             </button>
           </div>
@@ -1334,8 +1336,8 @@
         statsStartDate: new Date().toISOString().split('T')[0],
         statsEndDate: new Date().toISOString().split('T')[0],
         statsSelectedMateria: 'ALL',
-        statsMetric: 'both', // 'both', 'questions', 'accuracy'
-        statsGroupBy: 'day', // 'day' ou 'week'
+        statsMetric: 'both',
+        statsGroupBy: 'day',
         evolutionChart: null,
 
         exams: [
@@ -1474,6 +1476,53 @@
           });
         },
 
+        // Normalização avançada de nomes de matérias para ignorar acentos, pontos, vírgulas e erros como PÚPLICA vs PÚBLICA
+        normalizeMateriaName(str) {
+          if (!str) return '';
+          let s = String(str)
+            .toUpperCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[.,]/g, "")
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          if (s.includes('CONT') && (s.includes('PUB') || s.includes('PUP'))) {
+            return 'CONT PUBLICA';
+          }
+          return s;
+        },
+
+        calcMatQuestions(mat) {
+          if (!mat || !mat.nome) return 0;
+          const targetNorm = this.normalizeMateriaName(mat.nome);
+          return this.questoes
+            .filter(q => {
+              if (!q.materia) return false;
+              const qNorm = this.normalizeMateriaName(q.materia);
+              return qNorm === targetNorm || qNorm.includes(targetNorm) || targetNorm.includes(qNorm);
+            })
+            .reduce((acc, q) => acc + (Number(q.total) || 0), 0);
+        },
+
+        calcMatRights(mat) {
+          if (!mat || !mat.nome) return 0;
+          const targetNorm = this.normalizeMateriaName(mat.nome);
+          return this.questoes
+            .filter(q => {
+              if (!q.materia) return false;
+              const qNorm = this.normalizeMateriaName(q.materia);
+              return qNorm === targetNorm || qNorm.includes(targetNorm) || targetNorm.includes(qNorm);
+            })
+            .reduce((acc, q) => acc + (Number(q.acertos) || 0), 0);
+        },
+
+        calcMatAccuracy(mat) {
+          const total = this.calcMatQuestions(mat);
+          if (total === 0) return 0;
+          return Math.round((this.calcMatRights(mat) / total) * 100);
+        },
+
         openDetailedStatsModal() {
           this.showDetailedStatsModal = true;
           this.$nextTick(() => {
@@ -1506,7 +1555,8 @@
           let list = this.questoes;
           
           if (this.statsSelectedMateria !== 'ALL') {
-            list = list.filter(q => q.materia === this.statsSelectedMateria);
+            const selectedNorm = this.normalizeMateriaName(this.statsSelectedMateria);
+            list = list.filter(q => this.normalizeMateriaName(q.materia) === selectedNorm);
           }
 
           if (this.statsPeriod === 'all') return list;
@@ -1541,8 +1591,8 @@
 
         getFilteredStatsSummary() {
           const list = this.getFilteredQuestionsByPeriod();
-          const total = list.reduce((acc, q) => acc + (q.total || 0), 0);
-          const acertos = list.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const total = list.reduce((acc, q) => acc + (Number(q.total) || 0), 0);
+          const acertos = list.reduce((acc, q) => acc + (Number(q.acertos) || 0), 0);
           const erros = Math.max(0, total - acertos);
           const pct = total > 0 ? Math.round((acertos / total) * 100) : 0;
           return { total, acertos, erros, pct };
@@ -1561,8 +1611,8 @@
             if (!map[mName]) {
               map[mName] = { materia: mName, cor: '#6366f1', total: 0, acertos: 0 };
             }
-            map[mName].total += (q.total || 0);
-            map[mName].acertos += (q.acertos || 0);
+            map[mName].total += (Number(q.total) || 0);
+            map[mName].acertos += (Number(q.acertos) || 0);
           });
 
           return Object.values(map)
@@ -1589,8 +1639,8 @@
             if (!aggregatedMap[groupKey]) {
               aggregatedMap[groupKey] = { total: 0, acertos: 0, rawDates: [] };
             }
-            aggregatedMap[groupKey].total += (q.total || 0);
-            aggregatedMap[groupKey].acertos += (q.acertos || 0);
+            aggregatedMap[groupKey].total += (Number(q.total) || 0);
+            aggregatedMap[groupKey].acertos += (Number(q.acertos) || 0);
             aggregatedMap[groupKey].rawDates.push(q.data);
           });
 
@@ -1600,7 +1650,6 @@
             if (this.statsGroupBy === 'week') {
               const dates = aggregatedMap[key].rawDates.sort();
               const minD = this.formatDate(dates[0]);
-              const maxD = this.formatDate(dates[dates.length - 1]);
               return `Sem ${key.split('-W')[1]} (${minD})`;
             } else {
               return this.formatDate(key);
@@ -1709,8 +1758,8 @@
                 materia: q.materia,
                 tipo: q.tipo || 'Resolução de Questões',
                 assunto: q.assunto || '',
-                total: q.total || 0,
-                acertos: q.acertos || 0,
+                total: Number(q.total) || 0,
+                acertos: Number(q.acertos) || 0,
                 anotacao: q.anotacao || '',
                 importId: q.importId || null
               });
@@ -1727,8 +1776,8 @@
                   materia: e.materia,
                   tipo: e.tipo || 'Estudo Teórico',
                   assunto: e.assunto || '',
-                  total: e.total || 0,
-                  acertos: e.acertos || 0,
+                  total: Number(e.total) || 0,
+                  acertos: Number(e.acertos) || 0,
                   anotacao: e.anotacao || '',
                   importId: e.importId || null
                 });
@@ -1868,36 +1917,6 @@
           this.draggedMateriaId = null;
         },
 
-        calcMatQuestions(mat) {
-          if (!mat || !mat.nome) return 0;
-          const targetName = String(mat.nome).trim().toUpperCase();
-          return this.questoes
-            .filter(q => {
-              if (!q.materia) return false;
-              const qMateria = String(q.materia).trim().toUpperCase();
-              return qMateria === targetName;
-            })
-            .reduce((acc, q) => acc + (Number(q.total) || 0), 0);
-        },
-
-        calcMatRights(mat) {
-          if (!mat || !mat.nome) return 0;
-          const targetName = String(mat.nome).trim().toUpperCase();
-          return this.questoes
-            .filter(q => {
-              if (!q.materia) return false;
-              const qMateria = String(q.materia).trim().toUpperCase();
-              return qMateria === targetName;
-            })
-            .reduce((acc, q) => acc + (Number(q.acertos) || 0), 0);
-        },
-
-        calcMatAccuracy(mat) {
-          const total = this.calcMatQuestions(mat);
-          if (total === 0) return 0;
-          return Math.round((this.calcMatRights(mat) / total) * 100);
-        },
-
         getMateriaColor(mName) {
           const m = this.materias.find(item => item.nome === mName);
           return m ? (m.cor || '#6366f1') : '#6366f1';
@@ -2014,8 +2033,8 @@
             };
           });
 
-          const dayTotalQuestions = processedItems.reduce((acc, q) => acc + (q.total || 0), 0);
-          const dayTotalRights = processedItems.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          const dayTotalQuestions = processedItems.reduce((acc, q) => acc + (Number(q.total) || 0), 0);
+          const dayTotalRights = processedItems.reduce((acc, q) => acc + (Number(q.acertos) || 0), 0);
           const dayAccuracy = dayTotalQuestions > 0 ? Math.round((dayTotalRights / dayTotalQuestions) * 100) : 0;
 
           const materiaMap = {};
@@ -2029,8 +2048,8 @@
                 items: []
               };
             }
-            materiaMap[matName].totalQuestoes += (item.total || 0);
-            materiaMap[matName].totalAcertos += (item.acertos || 0);
+            materiaMap[matName].totalQuestoes += (Number(item.total) || 0);
+            materiaMap[matName].totalAcertos += (Number(item.acertos) || 0);
             materiaMap[matName].items.push(item);
           });
 
@@ -2603,11 +2622,11 @@
         },
 
         calcTotalQuestions() {
-          return this.questoes.reduce((acc, q) => acc + (q.total || 0), 0);
+          return this.questoes.reduce((acc, q) => acc + (Number(q.total) || 0), 0);
         },
 
         calcTotalRights() {
-          return this.questoes.reduce((acc, q) => acc + (q.acertos || 0), 0);
+          return this.questoes.reduce((acc, q) => acc + (Number(q.acertos) || 0), 0);
         },
 
         calcOverallAccuracy() {
@@ -2804,15 +2823,24 @@
                   rowNormalized[k.trim().toLowerCase()] = row[k];
                 });
 
-                const rawDate = rowNormalized['data'];
+                const rawDate = rowNormalized['data'] || rowNormalized['date'];
                 const dataQ = parseExcelDate(rawDate);
 
-                const materiaQ = rowNormalized['materia'] || rowNormalized['matéria'] || (this.materias[0] ? this.materias[0].nome : 'Geral');
+                let rawMateria = rowNormalized['materia'] || rowNormalized['matéria'] || rowNormalized['disciplina'] || 'Geral';
+                let materiaQ = String(rawMateria).trim();
+                
+                // Tratamento específico de erro de digitação de Contabilidade Pública (PÚPLICA vs PÚBLICA)
+                const matUpper = materiaQ.toUpperCase();
+                if (matUpper.includes('CONT') && (matUpper.includes('PUB') || matUpper.includes('PUP'))) {
+                  materiaQ = 'CONT. PÚBLICA';
+                }
+
                 const tipoQ = rowNormalized['tipo'] || 'Resolução de Questões';
-                const assuntoQ = rowNormalized['assunto'] || '';
-                const totalQ = Number(rowNormalized['total'] || 0);
-                const acertosQ = Number(rowNormalized['acertos'] || 0);
-                const anotacaoQ = rowNormalized['anotacao'] || rowNormalized['anotação'] || '';
+                const assuntoQ = rowNormalized['assunto'] || rowNormalized['tópico'] || rowNormalized['topico'] || '';
+                
+                const totalQ = Number(rowNormalized['total']) || 0;
+                const acertosQ = Number(rowNormalized['acertos']) || 0;
+                const anotacaoQ = rowNormalized['anotacao'] || rowNormalized['anotação'] || rowNormalized['observação'] || rowNormalized['observacao'] || '';
 
                 const newQId = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
