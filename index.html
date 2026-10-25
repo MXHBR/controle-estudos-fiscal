@@ -1869,16 +1869,18 @@
         },
 
         calcMatQuestions(mat) {
-          if (!mat) return 0;
+          if (!mat || !mat.nome) return 0;
+          const targetName = mat.nome.trim().toUpperCase();
           return this.questoes
-            .filter(q => q.materia === mat.nome)
+            .filter(q => q.materia && q.materia.trim().toUpperCase() === targetName)
             .reduce((acc, q) => acc + (q.total || 0), 0);
         },
 
         calcMatRights(mat) {
-          if (!mat) return 0;
+          if (!mat || !mat.nome) return 0;
+          const targetName = mat.nome.trim().toUpperCase();
           return this.questoes
-            .filter(q => q.materia === mat.nome)
+            .filter(q => q.materia && q.materia.trim().toUpperCase() === targetName)
             .reduce((acc, q) => acc + (q.acertos || 0), 0);
         },
 
