@@ -50,851 +50,1103 @@
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     
-    /* Suporte para telas touch */
     @media (max-width: 768px) {
       body {
-        padding-bottom: 60px; /* Espaço para a barra inferior no celular */
+        padding-bottom: 60px;
       }
     }
   </style>
 </head>
 <body class="bg-gradient-to-b from-[rgb(25,37,104)] via-slate-900 to-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-indigo-500 selection:text-white" x-data="appData()" x-init="initApp()">
 
-  <div class="flex h-screen overflow-hidden relative">
-    
-    <!-- Sidebar Backdrop Mobile -->
-    <div x-show="mobileMenuOpen" x-cloak @click="mobileMenuOpen = false" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm md:hidden"></div>
+  <!-- MENSAGEM / NOTIFICAÇÃO TOAST GLOBAL -->
+  <div x-show="toast.show" x-cloak 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 transform translate-y-2"
+       x-transition:enter-end="opacity-100 transform translate-y-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100 transform translate-y-0"
+       x-transition:leave-end="opacity-0 transform translate-y-2"
+       class="fixed top-4 right-4 z-50 max-w-sm w-full p-4 rounded-xl shadow-2xl border flex items-center space-x-3"
+       :class="{
+          'bg-emerald-950/90 border-emerald-500 text-emerald-200': toast.type === 'success',
+          'bg-rose-950/90 border-rose-500 text-rose-200': toast.type === 'error',
+          'bg-amber-950/90 border-amber-500 text-amber-200': toast.type === 'warning',
+          'bg-indigo-950/90 border-indigo-500 text-indigo-200': toast.type === 'info'
+       }">
+    <i :data-lucide="toast.icon" class="w-5 h-5 shrink-0"></i>
+    <span class="text-xs font-medium flex-1" x-text="toast.message"></span>
+    <button @click="toast.show = false" class="opacity-70 hover:opacity-100 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
 
-    <!-- Sidebar Desktop & Mobile Drawer -->
-    <aside class="w-64 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 flex flex-col justify-between shrink-0 fixed md:relative z-50 h-full transition-transform duration-300 md:translate-x-0"
-           :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
-      <div>
-        <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full border-2 border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/20">
-              <i data-lucide="zap" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h1 class="font-bold text-slate-100 tracking-wide text-sm">Auditor Fiscal</h1>
-              <p class="text-xs text-slate-400 font-medium">Controle de Alta Performance</p>
-            </div>
-          </div>
-          <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white p-1">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <div class="px-4 py-2 bg-slate-850/80 border-b border-slate-800 flex items-center justify-between text-xs">
-          <span class="flex items-center space-x-1.5 text-slate-400">
-            <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400 animate-ping' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
-            <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada' : 'Modo Seguro Local')"></span>
-          </span>
-          <button @click="loadFromSupabase()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Sincronização">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="syncing && 'animate-spin'"></i>
-          </button>
-        </div>
-
-        <nav class="p-3 space-y-1">
-          <template x-for="tab in tabs" :key="tab.id">
-            <button @click="setActiveTab(tab.id); mobileMenuOpen = false"
-              :class="activeTab === tab.id ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
-              class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150">
-              <i :data-lucide="tab.icon" class="w-4 h-4"></i>
-              <span x-text="tab.label"></span>
-            </button>
-          </template>
-        </nav>
-      </div>
-
-      <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
-        <span>RFB / SEFAZ</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v6.3</span>
-      </div>
-    </aside>
-
-    <!-- Main Content Container -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent">
+  <!-- ==================== TELA DE AUTENTICAÇÃO (LOGIN / REGISTRO) ==================== -->
+  <template x-if="!currentUser">
+    <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div class="absolute inset-0 bg-indigo-600/10 backdrop-blur-3xl"></div>
       
-      <!-- Header Mobile -->
-      <header class="md:hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-3.5 flex items-center justify-between sticky top-0 z-30">
-        <div class="flex items-center space-x-2.5">
-          <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none">
-            <i data-lucide="menu" class="w-5 h-5"></i>
-          </button>
-          <div class="w-7 h-7 rounded-full border border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400">
-            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-          </div>
-          <span class="font-bold text-slate-100 text-sm">Auditor Fiscal</span>
-        </div>
-
-        <div class="flex items-center space-x-1.5 text-xs text-slate-400">
-          <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
-        </div>
-      </header>
-
-      <main class="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-20 md:pb-8">
+      <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 backdrop-blur-md space-y-6">
         
-        <!-- ==================== TAB 1: DASHBOARD ==================== -->
-        <div x-show="activeTab === 'dashboard'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Visão Geral do Edital</h2>
-              <p class="text-slate-400 text-xs sm:text-sm">Acompanhe seu progresso global e o avanço detalhado por matéria.</p>
+        <!-- HEADER AUTH -->
+        <div class="text-center space-y-2">
+          <div class="w-14 h-14 rounded-full border-2 border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400 shadow-xl shadow-indigo-500/20 mx-auto">
+            <i data-lucide="zap" class="w-7 h-7"></i>
+          </div>
+          <h1 class="text-2xl font-black text-slate-100 tracking-tight">Auditor Fiscal</h1>
+          <p class="text-xs text-slate-400">Controle de Alta Performance para Concursos</p>
+        </div>
+
+        <!-- ABAS LOGIN / REGISTRO -->
+        <div class="flex bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <button @click="authTab = 'login'" 
+                  class="flex-1 py-2 text-center rounded-lg transition-all duration-200"
+                  :class="authTab === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'">
+            Entrar
+          </button>
+          <button @click="authTab = 'register'" 
+                  class="flex-1 py-2 text-center rounded-lg transition-all duration-200"
+                  :class="authTab === 'register' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'">
+            Criar Conta
+          </button>
+        </div>
+
+        <!-- FORMULÁRIO DE LOGIN -->
+        <div x-show="authTab === 'login'" x-cloak class="space-y-4">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">E-mail</label>
+            <div class="relative">
+              <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="email" x-model="authForm.email" placeholder="seu@email.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
             </div>
-            <div class="flex items-center space-x-2 shrink-0">
-              <button @click="openAddExamModal()" class="flex-1 sm:flex-none bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
-                <i data-lucide="flag" class="w-3.5 h-3.5 text-indigo-400"></i>
-                <span>Nova Prova</span>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Senha</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="password" x-model="authForm.password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <button @click="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2">
+            <span>Acessar Painel</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- FORMULÁRIO DE CADASTRO -->
+        <div x-show="authTab === 'register'" x-cloak class="space-y-4">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Nome Completo</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="text" x-model="registerForm.name" placeholder="Seu Nome" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">E-mail</label>
+            <div class="relative">
+              <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="email" x-model="registerForm.email" placeholder="seu@email.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Confirmar E-mail</label>
+            <div class="relative">
+              <i data-lucide="mail-check" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="email" x-model="registerForm.confirmEmail" placeholder="Confirme seu e-mail" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Senha (Mínimo 6 caracteres)</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="password" x-model="registerForm.password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Confirmar Senha</label>
+            <div class="relative">
+              <i data-lucide="shield-check" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+              <input type="password" x-model="registerForm.confirmPassword" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div class="bg-indigo-950/40 border border-indigo-500/30 p-3 rounded-xl text-[11px] text-indigo-300 flex items-start space-x-2">
+            <i data-lucide="mail-warning" class="w-4 h-4 shrink-0 text-indigo-400 mt-0.5"></i>
+            <span>Enviaremos um link de confirmação para o seu e-mail antes do primeiro acesso.</span>
+          </div>
+
+          <button @click="handleRegister()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
+            <span>Cadastrar e Confirmar</span>
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="text-center border-t border-slate-800/80 pt-4 text-[11px] text-slate-500">
+          <span>Ambiente Protegido & Criptografado</span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ==================== APLICAÇÃO PRINCIPAL (SÓ APARECE LOGADO) ==================== -->
+  <template x-if="currentUser">
+    <div class="flex h-screen overflow-hidden relative">
+      
+      <!-- Sidebar Backdrop Mobile -->
+      <div x-show="mobileMenuOpen" x-cloak @click="mobileMenuOpen = false" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm md:hidden"></div>
+
+      <!-- Sidebar Desktop & Mobile Drawer -->
+      <aside class="w-64 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 flex flex-col justify-between shrink-0 fixed md:relative z-50 h-full transition-transform duration-300 md:translate-x-0"
+             :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+        <div>
+          <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-full border-2 border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/20">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 class="font-bold text-slate-100 tracking-wide text-sm">Auditor Fiscal</h1>
+                <p class="text-xs text-slate-400 font-medium">Controle de Alta Performance</p>
+              </div>
+            </div>
+            <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white p-1">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- USUÁRIO CONECTADO DESTAQUE -->
+          <div class="p-3 bg-slate-850/90 border-b border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2 min-w-0">
+                <div class="w-7 h-7 rounded-full bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center font-bold text-xs uppercase shrink-0" x-text="currentUser.email.slice(0, 2)"></div>
+                <div class="truncate">
+                  <div class="text-xs font-bold text-slate-200 truncate" x-text="currentUser.name || currentUser.email"></div>
+                  <div class="text-[10px] text-slate-400 flex items-center space-x-1">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="currentUser.role === 'admin' ? 'bg-amber-400' : 'bg-emerald-400'"></span>
+                    <span x-text="currentUser.role === 'admin' ? 'Administrador' : 'Usuário Estudante'"></span>
+                  </div>
+                </div>
+              </div>
+              <button @click="handleLogout()" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition" title="Sair da Conta">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
               </button>
-              <button @click="openAddNoteModal()" class="flex-1 sm:flex-none bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
-                <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-400"></i>
-                <span>Nova Anotação</span>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
+              <span class="flex items-center space-x-1.5 text-slate-400">
+                <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400 animate-ping' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
+                <span x-text="syncing ? 'Sincronizando...' : (lastSync ? 'Nuvem Conectada' : 'Modo Local')"></span>
+              </span>
+              <button @click="loadFromSupabase()" class="text-slate-400 hover:text-indigo-400 transition" title="Forçar Sincronização">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="syncing && 'animate-spin'"></i>
               </button>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400">Progresso Geral (Concluído)</span>
-                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
-              </div>
-              <div class="flex items-baseline space-x-2">
-                <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallProgress() + '%'"></span>
-                <span class="text-xs text-slate-400" x-text="`(${countCompletedTopics()}/${countTotalTopics()} tópicos)`"></span>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallProgress())" :style="`width: ${calcOverallProgress()}%`"></div>
-              </div>
-            </div>
+          <nav class="p-3 space-y-1">
+            <template x-for="tab in tabs" :key="tab.id">
+              <button @click="setActiveTab(tab.id); mobileMenuOpen = false"
+                :class="activeTab === tab.id ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
+                class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150">
+                <i :data-lucide="tab.icon" class="w-4 h-4"></i>
+                <span x-text="tab.label"></span>
+              </button>
+            </template>
 
-            <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm relative group">
-              <div @click="showAccuracyPercent = !showAccuracyPercent" class="cursor-pointer">
-                <div class="flex justify-between items-center">
-                  <span class="text-xs font-medium text-slate-400" x-text="showAccuracyPercent ? 'Taxa de Acerto Geral' : 'Total de Questões Realizadas'"></span>
-                  <i data-lucide="target" class="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform"></i>
-                </div>
-                <div class="flex items-baseline space-x-2 mt-1">
-                  <template x-if="!showAccuracyPercent">
-                    <div class="flex items-baseline space-x-2">
-                      <span class="text-2xl font-extrabold text-slate-100" x-text="calcTotalQuestions()"></span>
-                      <span class="text-xs text-slate-400">questões</span>
-                    </div>
-                  </template>
-                  <template x-if="showAccuracyPercent">
-                    <div class="flex items-baseline space-x-2">
-                      <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
-                      <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
-                    </div>
-                  </template>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mt-2">
-                  <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallAccuracy())" :style="`width: ${calcOverallAccuracy()}%`"></div>
-                </div>
+            <!-- ABA DE ADMIN (EXCLUSIVA SE FOR ADMIN) -->
+            <template x-if="currentUser && currentUser.role === 'admin'">
+              <button @click="setActiveTab('admin'); mobileMenuOpen = false"
+                :class="activeTab === 'admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm' : 'text-amber-400/80 hover:bg-amber-500/10 hover:text-amber-300'"
+                class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 mt-4 border border-amber-500/20">
+                <i data-lucide="shield-check" class="w-4 h-4 text-amber-400"></i>
+                <span>Gerenciar Usuários</span>
+              </button>
+            </template>
+          </nav>
+        </div>
+
+        <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
+          <span>RFB / SEFAZ</span>
+          <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v7.0 Auth</span>
+        </div>
+      </aside>
+
+      <!-- Main Content Container -->
+      <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent">
+        
+        <!-- Header Mobile -->
+        <header class="md:hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-3.5 flex items-center justify-between sticky top-0 z-30">
+          <div class="flex items-center space-x-2.5">
+            <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div class="w-7 h-7 rounded-full border border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="font-bold text-slate-100 text-sm">Auditor Fiscal</span>
+          </div>
+
+          <div class="flex items-center space-x-2 text-xs text-slate-400">
+            <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
+            <button @click="handleLogout()" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+          </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-20 md:pb-8">
+          
+          <!-- ==================== TAB 1: DASHBOARD ==================== -->
+          <div x-show="activeTab === 'dashboard'" x-cloak class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Visão Geral do Edital</h2>
+                <p class="text-slate-400 text-xs sm:text-sm">Acompanhe seu progresso global e o avanço detalhado por matéria.</p>
               </div>
-              
-              <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 mt-2">
-                <span @click="showAccuracyPercent = !showAccuracyPercent" class="text-[10px] text-slate-500 hover:text-slate-300 cursor-pointer">Alternar vista</span>
-                <button @click="openDetailedStatsModal()" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded transition">
-                  <i data-lucide="bar-chart-2" class="w-3 h-3"></i>
-                  <span>Estatísticas Detalhadas</span>
+              <div class="flex items-center space-x-2 shrink-0">
+                <button @click="openAddExamModal()" class="flex-1 sm:flex-none bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
+                  <i data-lucide="flag" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>Nova Prova</span>
+                </button>
+                <button @click="openAddNoteModal()" class="flex-1 sm:flex-none bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 transition">
+                  <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>Nova Anotação</span>
                 </button>
               </div>
             </div>
 
-            <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400">Gargalos Ativos</span>
-                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
-              </div>
-              <div class="flex items-baseline space-x-2">
-                <span class="text-2xl font-extrabold text-slate-100" x-text="countActiveBottlenecks()"></span>
-                <span class="text-xs text-slate-400">itens pendentes</span>
-              </div>
-              <div class="text-xs text-amber-400/80 font-medium">Revisão prioritária</div>
-            </div>
-
-            <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-slate-400">Tempo de Jornada</span>
-                <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
-              </div>
-              <div class="flex items-baseline space-x-2">
-                <span class="text-2xl font-extrabold text-slate-100" x-text="calcStudyStreak().days + ' dias'"></span>
-                <span class="text-xs text-slate-400" x-text="`(~${calcStudyStreak().weeks} sem.)`"></span>
-              </div>
-              <div class="text-xs text-indigo-400/80 font-medium">Desde o 1º registro</div>
-            </div>
-          </div>
-
-          <!-- CARD RETANGULAR MESTRE: Provas & Anotações -->
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm backdrop-blur-sm grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
-            <div class="lg:col-span-5 space-y-3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800/80 pb-5 lg:pb-0 lg:pr-6">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
-                  <i data-lucide="flag" class="w-3.5 h-3.5 text-indigo-400"></i>
-                  <span>Contagem Regressiva para Provas</span>
-                </h3>
-              </div>
-              
-              <div class="space-y-3 max-h-[340px] overflow-y-auto pr-1">
-                <template x-for="exam in exams" :key="exam.id">
-                  <div class="bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-500/40 p-3.5 rounded-xl flex flex-col justify-between space-y-2 shadow-sm relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold uppercase tracking-wider text-indigo-300 truncate pr-2" x-text="exam.title"></span>
-                      <div class="flex items-center space-x-1 shrink-0">
-                        <button @click="openEditExamModal(exam)" class="text-slate-400 hover:text-indigo-300 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                        <button @click="deleteExam(exam.id)" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                      </div>
-                    </div>
-                    <div class="flex items-baseline justify-between">
-                      <div class="flex items-baseline space-x-1.5">
-                        <span class="text-2xl font-black text-white" x-text="calcCountdown(exam.date).days"></span>
-                        <span class="text-[11px] text-slate-300">dias</span>
-                      </div>
-                      <span class="text-[11px] text-indigo-300 font-mono" x-text="formatDate(exam.date)"></span>
-                    </div>
-                  </div>
-                </template>
-                <div x-show="exams.length === 0" class="py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                  Nenhuma prova cadastrada. Clique em "Nova Prova" acima.
-                </div>
-              </div>
-            </div>
-
-            <div class="lg:col-span-7 space-y-3 flex flex-col">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
-                  <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-400"></i>
-                  <span>Anotações e Listas de Tarefas</span>
-                </h3>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[340px] overflow-y-auto pr-1">
-                <template x-for="(note, index) in pinnedNotes" :key="note.id">
-                  <div 
-                    draggable="true"
-                    @dragstart="draggedNoteIndex = index"
-                    @dragover.prevent
-                    @drop="dropNote(index)"
-                    class="bg-slate-850/80 border border-slate-750 p-3.5 rounded-xl flex flex-col justify-between space-y-2.5 relative group hover:border-slate-600 transition cursor-move shadow-sm">
-                    
-                    <div class="flex items-center justify-between text-slate-500 border-b border-slate-800/80 pb-1.5">
-                      <div class="flex items-center space-x-1.5">
-                        <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400"></i>
-                        <span class="text-[11px] font-bold text-slate-200 truncate max-w-[140px]" x-text="note.title || 'Anotação'"></span>
-                      </div>
-                      <div class="flex items-center space-x-1">
-                        <button @click="openEditNoteModal(note)" class="text-slate-400 hover:text-indigo-300 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                        <button @click="removePinnedNote(note.id)" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                      </div>
-                    </div>
-
-                    <template x-if="note.type === 'text'">
-                      <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap" x-text="note.text"></p>
-                    </template>
-
-                    <template x-if="note.type === 'checklist'">
-                      <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                        <template x-for="(item, iIdx) in note.items" :key="iIdx">
-                          <label class="flex items-center space-x-2 text-xs cursor-pointer hover:text-slate-200">
-                            <input type="checkbox" x-model="item.done" @change="saveAll()" class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0 w-3.5 h-3.5">
-                            <span :class="item.done ? 'line-through text-slate-500' : 'text-slate-300'" x-text="item.text"></span>
-                          </label>
-                        </template>
-                      </div>
-                    </template>
-
-                    <div class="text-[10px] text-slate-600 italic pt-1 border-t border-slate-800/60 hidden sm:block">Arraste para reorganizar</div>
-                  </div>
-                </template>
-
-                <div x-show="pinnedNotes.length === 0" class="col-span-full py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                  Nenhuma anotação ou lista cadastrada. Clique em "Nova Anotação" acima.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 sm:p-5 shadow-sm space-y-4 backdrop-blur-sm">
-            <h3 class="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-              <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
-              <span>Avanço do Edital e Desempenho por Matéria</span>
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <template x-for="mat in materias" :key="'dash_' + mat.id">
-                <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2.5 min-w-0 pr-2">
-                      <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
-                      <span class="font-bold text-slate-100 text-xs truncate" x-text="mat.nome"></span>
-                    </div>
-                    <div class="flex items-center space-x-2 text-xs shrink-0">
-                      <span class="text-slate-400 font-mono" x-text="`${calcMateriaCompleted(mat)}/${(mat.topicos || []).length} tópicos`"></span>
-                      <span class="font-bold px-2 py-0.5 rounded text-[11px]" :class="getCustomProgressBarText(calcMateriaPercent(mat))" x-text="calcMateriaPercent(mat) + '%'"></span>
-                    </div>
-                  </div>
-                  
-                  <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800/80">
-                    <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
-                  </div>
-
-                  <div class="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-200 pt-1 border-t border-slate-800/60 font-mono">
-                    <span x-text="`Questões: ${calcMatQuestions(mat)}`"></span>
-                    <span x-text="`Acerto: ${calcMatAccuracy(mat)}%`" :class="calcMatAccuracy(mat) >= 70 ? 'text-emerald-400 font-extrabold' : (calcMatAccuracy(mat) >= 50 ? 'text-amber-400 font-extrabold' : 'text-rose-400 font-extrabold')"></span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-        </div>
-
-        <!-- ==================== TAB 2: MATÉRIAS ==================== -->
-        <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
-              <p class="text-slate-400 text-xs sm:text-sm">Clique nos cards para selecionar, gerenciar ou reordenar suas disciplinas.</p>
-            </div>
-            <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Nova Matéria</span>
-            </button>
-          </div>
-
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 shadow-sm space-y-4 backdrop-blur-sm">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-3">
-              <div class="relative w-full md:w-80">
-                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-                <input type="text" x-model="materiaSearchQuery" placeholder="Buscar matéria..." class="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              </div>
-
-              <!-- BARRA DE AVANÇO TOTAL DO EDITAL -->
-              <div class="w-full md:w-auto flex-1 max-w-md bg-slate-850/80 border border-slate-800 p-2.5 rounded-xl flex items-center space-x-3">
-                <div class="shrink-0 flex items-center space-x-1.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-medium text-slate-400">Progresso Geral (Concluído)</span>
                   <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
-                  <span class="text-xs font-bold text-slate-300">Edital:</span>
                 </div>
-                <div class="flex-1 space-y-1">
-                  <div class="flex justify-between text-[11px]">
-                    <span class="text-slate-400 font-mono" x-text="`${countCompletedTopics()}/${countTotalTopics()} tópicos`"></span>
-                    <span class="font-bold text-indigo-400 font-mono" x-text="calcOverallProgress() + '%'"></span>
-                  </div>
-                  <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                    <div class="h-full rounded-full transition-all duration-500" :class="getCustomProgressBarBg(calcOverallProgress())" :style="`width: ${calcOverallProgress()}%`"></div>
-                  </div>
+                <div class="flex items-baseline space-x-2">
+                  <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallProgress() + '%'"></span>
+                  <span class="text-xs text-slate-400" x-text="`(${countCompletedTopics()}/${countTotalTopics()} tópicos)`"></span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallProgress())" :style="`width: ${calcOverallProgress()}%`"></div>
                 </div>
               </div>
 
-              <div class="text-xs text-slate-400 font-mono shrink-0 hidden lg:block">
-                Total: <span class="text-slate-200 font-bold" x-text="materias.length"></span> matérias
+              <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm relative group">
+                <div @click="showAccuracyPercent = !showAccuracyPercent" class="cursor-pointer">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-400" x-text="showAccuracyPercent ? 'Taxa de Acerto Geral' : 'Total de Questões Realizadas'"></span>
+                    <i data-lucide="target" class="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform"></i>
+                  </div>
+                  <div class="flex items-baseline space-x-2 mt-1">
+                    <template x-if="!showAccuracyPercent">
+                      <div class="flex items-baseline space-x-2">
+                        <span class="text-2xl font-extrabold text-slate-100" x-text="calcTotalQuestions()"></span>
+                        <span class="text-xs text-slate-400">questões</span>
+                      </div>
+                    </template>
+                    <template x-if="showAccuracyPercent">
+                      <div class="flex items-baseline space-x-2">
+                        <span class="text-2xl font-extrabold text-slate-100" x-text="calcOverallAccuracy() + '%'"></span>
+                        <span class="text-xs text-slate-400" x-text="`(${calcTotalRights()}/${calcTotalQuestions()} acertos)`"></span>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mt-2">
+                    <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcOverallAccuracy())" :style="`width: ${calcOverallAccuracy()}%`"></div>
+                  </div>
+                </div>
+                
+                <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 mt-2">
+                  <span @click="showAccuracyPercent = !showAccuracyPercent" class="text-[10px] text-slate-500 hover:text-slate-300 cursor-pointer">Alternar vista</span>
+                  <button @click="openDetailedStatsModal()" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded transition">
+                    <i data-lucide="bar-chart-2" class="w-3 h-3"></i>
+                    <span>Estatísticas Detalhadas</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-medium text-slate-400">Gargalos Ativos</span>
+                  <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+                </div>
+                <div class="flex items-baseline space-x-2">
+                  <span class="text-2xl font-extrabold text-slate-100" x-text="countActiveBottlenecks()"></span>
+                  <span class="text-xs text-slate-400">itens pendentes</span>
+                </div>
+                <div class="text-xs text-amber-400/80 font-medium">Revisão prioritária</div>
+              </div>
+
+              <div class="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl shadow-sm space-y-2 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-medium text-slate-400">Tempo de Jornada</span>
+                  <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+                </div>
+                <div class="flex items-baseline space-x-2">
+                  <span class="text-2xl font-extrabold text-slate-100" x-text="calcStudyStreak().days + ' dias'"></span>
+                  <span class="text-xs text-slate-400" x-text="`(~${calcStudyStreak().weeks} sem.)`"></span>
+                </div>
+                <div class="text-xs text-indigo-400/80 font-medium">Desde o 1º registro</div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-2 max-h-72 overflow-y-auto pr-1">
-              <template x-for="mat in getFilteredMateriasGrid()" :key="'grid_' + mat.id">
-                <div 
-                  draggable="true"
-                  @dragstart="draggedMateriaId = mat.id"
-                  @dragover.prevent
-                  @drop="dropMateria(mat.id)"
-                  @click="selectMateria(mat.id)"
-                  class="bg-slate-850/80 border rounded-xl p-3.5 cursor-pointer transition-all duration-150 flex flex-col justify-between space-y-3 group hover:border-indigo-500/50 hover:bg-slate-800/60 relative"
-                  :class="selectedMateriaId === mat.id ? 'border-indigo-500 bg-indigo-600/10 shadow-md shadow-indigo-500/10 ring-1 ring-indigo-500' : 'border-slate-800'">
-                  
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2.5 min-w-0">
-                      <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 shrink-0 hidden sm:block"></i>
-                      <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
-                      <span class="font-bold text-slate-200 text-xs truncate group-hover:text-white" x-text="mat.nome"></span>
-                    </div>
-                    <span class="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px] font-mono shrink-0" x-text="`${(mat.topicos || []).length} tópicos`"></span>
-                  </div>
-
-                  <div class="space-y-1">
-                    <div class="flex justify-between items-center text-[10px] text-slate-400">
-                      <span>Progresso</span>
-                      <span class="font-bold font-mono" x-text="calcMateriaPercent(mat) + '%'"></span>
-                    </div>
-                    <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                      <div class="h-full rounded-full transition-all" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
-                    </div>
-                  </div>
+            <!-- CARD RETANGULAR MESTRE: Provas & Anotações -->
+            <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm backdrop-blur-sm grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+              <div class="lg:col-span-5 space-y-3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800/80 pb-5 lg:pb-0 lg:pr-6">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="flag" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Contagem Regressiva para Provas</span>
+                  </h3>
                 </div>
-              </template>
-            </div>
-          </div>
-
-          <template x-if="getSelectedMateria()">
-            <div class="space-y-6">
-              <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm space-y-4 backdrop-blur-sm">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                  <div class="flex items-center justify-between sm:justify-start space-x-3 w-full sm:w-auto">
-                    <div class="flex items-center space-x-2.5 min-w-0">
-                      <span class="w-4 h-4 rounded-full shrink-0" :style="`background-color: ${getSelectedMateria().cor}`"></span>
-                      <h3 class="text-base sm:text-lg font-bold text-slate-100 truncate" x-text="getSelectedMateria().nome"></h3>
-                    </div>
-                    
-                    <div class="flex items-center space-x-1 shrink-0 pl-2 border-l border-slate-800">
-                      <button @click.stop="openEditMateriaModal(getSelectedMateria())" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar Matéria">
-                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-                        <span class="hidden sm:inline">Editar</span>
-                      </button>
-                      <button @click.stop="deleteMateria(getSelectedMateria().id)" class="bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Excluir Matéria">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        <span class="hidden sm:inline">Excluir</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center justify-between sm:justify-end space-x-4 text-xs text-slate-400">
-                    <div>
-                      <span>Progresso: </span>
-                      <span class="font-bold text-slate-200" x-text="calcMateriaPercent(getSelectedMateria()) + '%'"></span>
-                    </div>
-                    <div class="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div class="h-full rounded-full transition-all" :class="getCustomProgressBarBg(calcMateriaPercent(getSelectedMateria()))" :style="`width: ${calcMateriaPercent(getSelectedMateria())}%`"></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <label class="text-xs font-semibold text-slate-300">Adicionar Tópicos ao Edital</label>
-                    <span class="text-[10px] sm:text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa!</span>
-                  </div>
-                  <div class="flex gap-2">
-                    <input type="text" x-model="newTopicText" @keydown.enter="addTopicToSelectedMateria()" placeholder="Ex: 1. DIREITO TRIBUTÁRIO. 1.1 Vigência da Lei." class="flex-1 bg-slate-950/80 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
-                    <button @click="addTopicToSelectedMateria()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 transition shrink-0">
-                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                      <span class="hidden sm:inline">Adicionar</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl overflow-hidden shadow-sm backdrop-blur-sm">
-                <div class="px-4 py-3 bg-slate-850/80 border-b border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
-                  <span>Estrutura de Conteúdo</span>
-                  <div class="flex space-x-2 text-[11px]">
-                    <button @click="expandAllTopics(true)" class="hover:text-slate-200 transition">Expandir Todos</button>
-                    <span>•</span>
-                    <button @click="expandAllTopics(false)" class="hover:text-slate-200 transition">Recolher Todos</button>
-                  </div>
-                </div>
-
-                <div class="divide-y divide-slate-800/60">
-                  <template x-for="(group, gIdx) in getGroupedTopics(getSelectedMateria())" :key="group.parent ? group.parent.id : 'orphans-' + gIdx">
-                    <div class="bg-slate-900/40">
-                      <template x-if="group.parent">
-                        <div class="p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
-                          <div class="flex items-start space-x-2.5 flex-1 min-w-0 pt-0.5">
-                            <button @click="group.parent.expandido = !group.parent.expandido; saveAll()" class="p-1 rounded hover:bg-slate-800 text-slate-400 transition shrink-0 mt-0.5">
-                              <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
-                            </button>
-                            <button @click="cycleStatus(group.parent)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md border transition flex items-center space-x-1 mt-0.5" :class="getStatusBadgeClass(group.parent.status)">
-                              <span x-text="getStatusLabel(group.parent.status)"></span>
-                            </button>
-                            <span class="text-xs font-bold whitespace-normal break-words cursor-pointer tracking-wide flex-1 min-w-0 leading-relaxed" :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'" @click="group.parent.expandido = !group.parent.expandido; saveAll()" x-text="group.parent.nome"></span>
-                            <button @click="cyclePriority(group.parent)" class="shrink-0 text-[10px] px-2 py-0.5 rounded border transition mt-0.5" :class="getPriorityBadgeClass(group.parent.prioridade)">
-                              <span x-text="getPriorityLabel(group.parent.prioridade)"></span>
-                            </button>
-                          </div>
-                          <div class="flex items-center justify-end space-x-1 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
-                            <button @click="openAddSubtopicModal(group.parent)" title="Adicionar Subtópicos" class="text-slate-400 hover:text-emerald-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
-                            <button @click="moveGroup(group.parent.id, 'up')" title="Mover para Cima" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
-                            <button @click="moveGroup(group.parent.id, 'down')" title="Mover para Baixo" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
-                            <button @click="openEditTopicModal(group.parent)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                            <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
-                            <button @click="deleteTopic(group.parent.id)" title="Excluir Assunto" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                          </div>
+                
+                <div class="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                  <template x-for="exam in exams" :key="exam.id">
+                    <div class="bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-500/40 p-3.5 rounded-xl flex flex-col justify-between space-y-2 shadow-sm relative overflow-hidden group">
+                      <div class="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-300 truncate pr-2" x-text="exam.title"></span>
+                        <div class="flex items-center space-x-1 shrink-0">
+                          <button @click="openEditExamModal(exam)" class="text-slate-400 hover:text-indigo-300 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                          <button @click="deleteExam(exam.id)" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                         </div>
+                      </div>
+                      <div class="flex items-baseline justify-between">
+                        <div class="flex items-baseline space-x-1.5">
+                          <span class="text-2xl font-black text-white" x-text="calcCountdown(exam.date).days"></span>
+                          <span class="text-[11px] text-slate-300">dias</span>
+                        </div>
+                        <span class="text-[11px] text-indigo-300 font-mono" x-text="formatDate(exam.date)"></span>
+                      </div>
+                    </div>
+                  </template>
+                  <div x-show="exams.length === 0" class="py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                    Nenhuma prova cadastrada. Clique em "Nova Prova" acima.
+                  </div>
+                </div>
+              </div>
+
+              <div class="lg:col-span-7 space-y-3 flex flex-col">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>Anotações e Listas de Tarefas</span>
+                  </h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[340px] overflow-y-auto pr-1">
+                  <template x-for="(note, index) in pinnedNotes" :key="note.id">
+                    <div 
+                      draggable="true"
+                      @dragstart="draggedNoteIndex = index"
+                      @dragover.prevent
+                      @drop="dropNote(index)"
+                      class="bg-slate-850/80 border border-slate-750 p-3.5 rounded-xl flex flex-col justify-between space-y-2.5 relative group hover:border-slate-600 transition cursor-move shadow-sm">
+                      
+                      <div class="flex items-center justify-between text-slate-500 border-b border-slate-800/80 pb-1.5">
+                        <div class="flex items-center space-x-1.5">
+                          <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400"></i>
+                          <span class="text-[11px] font-bold text-slate-200 truncate max-w-[140px]" x-text="note.title || 'Anotação'"></span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                          <button @click="openEditNoteModal(note)" class="text-slate-400 hover:text-indigo-300 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                          <button @click="removePinnedNote(note.id)" class="text-slate-400 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                      </div>
+
+                      <template x-if="note.type === 'text'">
+                        <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap" x-text="note.text"></p>
                       </template>
 
-                      <template x-if="group.parent">
-                        <div x-show="group.parent.expandido" x-collapse class="bg-slate-950/60 border-t border-b border-slate-800/40 divide-y divide-slate-800/30">
-                          <template x-for="child in group.children" :key="child.id">
-                            <div class="py-2.5 pl-4 sm:pl-12 pr-3 flex flex-col sm:flex-row sm:items-start justify-between gap-2 hover:bg-slate-800/30 transition">
-                              <div class="flex items-start space-x-2.5 flex-1 min-w-0 pt-0.5">
-                                <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-slate-600 shrink-0 mt-1"></i>
-                                <button @click="cycleStatus(child)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition mt-0.5" :class="getStatusBadgeClass(child.status)">
-                                  <span x-text="getStatusLabel(child.status)"></span>
-                                </button>
-                                <span :class="child.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'" class="text-xs whitespace-normal break-words flex-1 min-w-0 leading-relaxed" x-text="child.nome"></span>
-                              </div>
-                              <div class="flex items-center justify-end space-x-1 shrink-0">
-                                <button @click="moveSubtopic(child.id, 'up')" title="Mover Subtópico para Cima" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
-                                <button @click="moveSubtopic(child.id, 'down')" title="Mover Subtópico para Baixo" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
-                                <button @click="openEditTopicModal(child)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                <button @click="toggleTopicType(child.id)" title="Promover a Tópico" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
-                                <button @click="deleteTopic(child.id)" title="Excluir Subtópico" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                              </div>
-                            </div>
+                      <template x-if="note.type === 'checklist'">
+                        <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                          <template x-for="(item, iIdx) in note.items" :key="iIdx">
+                            <label class="flex items-center space-x-2 text-xs cursor-pointer hover:text-slate-200">
+                              <input type="checkbox" x-model="item.done" @change="saveAll()" class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0 w-3.5 h-3.5">
+                              <span :class="item.done ? 'line-through text-slate-500' : 'text-slate-300'" x-text="item.text"></span>
+                            </label>
                           </template>
                         </div>
                       </template>
+
+                      <div class="text-[10px] text-slate-600 italic pt-1 border-t border-slate-800/60 hidden sm:block">Arraste para reorganizar</div>
                     </div>
                   </template>
-                  
-                  <div x-show="!getSelectedMateria().topicos || getSelectedMateria().topicos.length === 0" class="p-8 text-center text-slate-500 text-xs">
-                    Nenhum tópico cadastrado nesta matéria ainda. Insira acima!
+
+                  <div x-show="pinnedNotes.length === 0" class="col-span-full py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                    Nenhuma anotação ou lista cadastrada. Clique em "Nova Anotação" acima.
                   </div>
                 </div>
               </div>
             </div>
-          </template>
-        </div>
 
-        <!-- ==================== TAB 3: QUESTÕES E ESTUDOS UNIFICADOS ==================== -->
-        <div x-show="activeTab === 'questoes' || activeTab === 'estudos'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Questões</h2>
-              <p class="text-slate-400 text-xs sm:text-sm">Controle seus registros teóricos e resolução de questões no mesmo lugar.</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-              <button @click="downloadExcelTemplate()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
-                <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
-                <span class="hidden sm:inline">Baixar Modelo</span>
-                <span class="sm:hidden">Modelo</span>
-              </button>
-              
-              <button @click="$refs.excelFileInput.click()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
-                <i data-lucide="upload" class="w-4 h-4 text-sky-400"></i>
-                <span class="hidden sm:inline">Importar Excel</span>
-                <span class="sm:hidden">Importar</span>
-              </button>
-              <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
-
-              <button @click="undoLastImport()" x-show="lastImportId" class="w-full sm:w-auto bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow">
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                <span>Desfazer Importação</span>
-              </button>
-
-              <button @click="openAddQuestaoModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Novo Registro</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- LINHA DO TEMPO DOS MINI CARDS -->
-          <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 shadow-sm backdrop-blur-sm space-y-3">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
-              <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
-                <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
-                <span>Linha do Tempo (Até 30 Mini Cards)</span>
-              </div>
-              
-              <div class="flex flex-wrap items-center gap-1 text-xs">
-                <button @click="setTimelinePeriod('30')" :class="timelinePeriod === '30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">30 Dias</button>
-                <button @click="setTimelinePeriod('15')" :class="timelinePeriod === '15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">15 Dias</button>
-                <button @click="setTimelinePeriod('7')" :class="timelinePeriod === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">7 Dias</button>
-                <button @click="timelinePeriod = 'range'" :class="timelinePeriod === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">Personalizado</button>
-              </div>
-            </div>
-
-            <div x-show="timelinePeriod === 'range'" x-cloak class="flex flex-wrap items-center gap-3 pt-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-xs text-slate-400">De:</span>
-                <input type="date" x-model="timelineDateStart" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="text-xs text-slate-400">Até (máx 30d):</span>
-                <input type="date" x-model="timelineDateEnd" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-              </div>
-            </div>
-
-            <!-- GRID DOS MINI CARDS RESPONSIVO -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-80 overflow-y-auto pr-1">
-              <template x-for="dayObj in getTimelineMiniCards()" :key="dayObj.dateStr">
-                <div @click="selectedDateFilter = dayObj.dateStr"
-                     class="border rounded-xl p-2 sm:p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left relative overflow-hidden"
-                     :class="[
-                       selectedDateFilter === dayObj.dateStr ? 'ring-2 ring-indigo-500 shadow-lg' : '',
-                       dayObj.hasActiveBottleneck 
-                         ? 'bg-amber-950/40 border-amber-500/70 shadow-amber-500/10' 
-                         : (dayObj.hasRecords ? 'bg-slate-900/90 border-indigo-500/40 hover:border-indigo-400' : 'bg-slate-850/60 border-slate-800 hover:border-slate-700')
-                     ]">
-                  
-                  <template x-if="dayObj.hasActiveBottleneck">
-                    <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Gargalo pendente registrado neste dia"></span>
-                  </template>
-
-                  <div class="flex items-center justify-between border-b border-slate-800/80 pb-1">
-                    <span class="text-[9px] font-bold font-mono tracking-wider uppercase" :class="dayObj.hasActiveBottleneck ? 'text-amber-400' : (dayObj.isToday ? 'text-indigo-400' : 'text-slate-400')" x-text="dayObj.dayOfWeek"></span>
-                    <span class="text-[9px] font-mono" :class="dayObj.hasActiveBottleneck ? 'text-amber-300/80' : 'text-slate-500'" x-text="dayObj.formattedDate"></span>
-                  </div>
-
-                  <div class="space-y-1 min-h-[35px] flex flex-col justify-center">
-                    <template x-if="dayObj.materias.length > 0">
-                      <div class="flex flex-wrap gap-1">
-                        <template x-for="mName in dayObj.materias" :key="mName">
-                          <span class="inline-block px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold tracking-wide truncate max-w-full"
-                                :class="dayObj.bottleneckMaterias.includes(mName) ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'"
-                                x-text="mName"></span>
-                        </template>
-                      </div>
-                    </template>
-                    <template x-if="dayObj.materias.length === 0">
-                      <span class="text-[10px] text-slate-500 italic text-center block">-</span>
-                    </template>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <!-- CARD CENTRAL DO DIA SELECIONADO -->
-          <div class="space-y-4 max-w-4xl mx-auto">
-            <div class="flex items-center justify-between">
+            <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 sm:p-5 shadow-sm space-y-4 backdrop-blur-sm">
               <h3 class="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                <i data-lucide="book-open-check" class="w-4 h-4 text-indigo-400"></i>
-                <span x-text="selectedDateFilter ? `Card Central: ${formatDate(selectedDateFilter)}` : 'Card Central de Detalhes do Dia'"></span>
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i>
+                <span>Avanço do Edital e Desempenho por Matéria</span>
               </h3>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <template x-for="mat in materias" :key="'dash_' + mat.id">
+                  <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center space-x-2.5 min-w-0 pr-2">
+                        <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
+                        <span class="font-bold text-slate-100 text-xs truncate" x-text="mat.nome"></span>
+                      </div>
+                      <div class="flex items-center space-x-2 text-xs shrink-0">
+                        <span class="text-slate-400 font-mono" x-text="`${calcMateriaCompleted(mat)}/${(mat.topicos || []).length} tópicos`"></span>
+                        <span class="font-bold px-2 py-0.5 rounded text-[11px]" :class="getCustomProgressBarText(calcMateriaPercent(mat))" x-text="calcMateriaPercent(mat) + '%'"></span>
+                      </div>
+                    </div>
+                    
+                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800/80">
+                      <div class="h-full transition-all duration-500 rounded-full" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-200 pt-1 border-t border-slate-800/60 font-mono">
+                      <span x-text="`Questões: ${calcMatQuestions(mat)}`"></span>
+                      <span x-text="`Acerto: ${calcMatAccuracy(mat)}%`" :class="calcMatAccuracy(mat) >= 70 ? 'text-emerald-400 font-extrabold' : (calcMatAccuracy(mat) >= 50 ? 'text-amber-400 font-extrabold' : 'text-rose-400 font-extrabold')"></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== TAB 2: MATÉRIAS ==================== -->
+          <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Gerenciador de Matérias e Tópicos</h2>
+                <p class="text-slate-400 text-xs sm:text-sm">Clique nos cards para selecionar, gerenciar ou reordenar suas disciplinas.</p>
+              </div>
+              <button @click="openAddMateriaModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-indigo-600/20 shrink-0">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nova Matéria</span>
+              </button>
             </div>
 
-            <template x-for="cardGroup in getSelectedDayDetailCards()" :key="cardGroup.date">
-              <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5 backdrop-blur-sm relative">
-                
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                  <div class="flex items-center justify-between sm:justify-start space-x-2">
-                    <button @click="changeSelectedDate(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
-                      <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                      <span class="hidden sm:inline">Anterior</span>
-                    </button>
-                    
-                    <div class="flex items-center space-x-2">
-                      <span class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
-                      <span class="text-sm sm:text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
-                    </div>
+            <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 shadow-sm space-y-4 backdrop-blur-sm">
+              <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+                <div class="relative w-full md:w-80">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                  <input type="text" x-model="materiaSearchQuery" placeholder="Buscar matéria..." class="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                </div>
 
-                    <button @click="changeSelectedDate(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
-                      <span class="hidden sm:inline">Próximo</span>
-                      <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </button>
+                <div class="w-full md:w-auto flex-1 max-w-md bg-slate-850/80 border border-slate-800 p-2.5 rounded-xl flex items-center space-x-3">
+                  <div class="shrink-0 flex items-center space-x-1.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+                    <span class="text-xs font-bold text-slate-300">Edital:</span>
                   </div>
-
-                  <div class="flex items-center justify-between sm:justify-end space-x-2">
-                    <div class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-500/30 px-2.5 py-1.5 rounded-xl">
-                      <i data-lucide="target" class="w-3.5 h-3.5 text-indigo-400"></i>
-                      <span class="text-xs text-slate-400 hidden sm:inline">Total:</span>
-                      <span class="text-xs sm:text-sm font-extrabold text-white font-mono" x-text="`${cardGroup.dayTotalQuestions} q`"></span>
-                      <template x-if="cardGroup.dayTotalQuestions > 0">
-                        <span class="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded" :class="getCustomProgressBarText(cardGroup.dayAccuracy)" x-text="`(${cardGroup.dayAccuracy}%)`"></span>
-                      </template>
+                  <div class="flex-1 space-y-1">
+                    <div class="flex justify-between text-[11px]">
+                      <span class="text-slate-400 font-mono" x-text="`${countCompletedTopics()}/${countTotalTopics()} tópicos`"></span>
+                      <span class="font-bold text-indigo-400 font-mono" x-text="calcOverallProgress() + '%'"></span>
                     </div>
-
-                    <button @click="openAddQuestaoModalForDate(cardGroup.date)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition shadow-md shrink-0">
-                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                      <span>Adicionar</span>
-                    </button>
+                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                      <div class="h-full rounded-full transition-all duration-500" :class="getCustomProgressBarBg(calcOverallProgress())" :style="`width: ${calcOverallProgress()}%`"></div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="space-y-3 sm:space-y-4">
-                  <template x-for="matGroup in cardGroup.materiaGroups" :key="matGroup.materia">
-                    <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-3 sm:p-4 space-y-3">
-                      
-                      <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-                        <div class="flex items-center space-x-2 min-w-0">
-                          <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
-                          <span class="font-bold text-slate-100 text-xs uppercase tracking-wider truncate" x-text="matGroup.materia"></span>
-                        </div>
-                        <div class="flex items-center space-x-2 text-xs sm:text-sm font-bold font-mono shrink-0">
-                          <span class="text-slate-300" x-text="`${matGroup.totalAcertos}/${matGroup.totalQuestoes}`"></span>
-                          <span class="px-2 py-0.5 rounded-md text-xs sm:text-sm font-extrabold" :class="getCustomProgressBarText(matGroup.acc)" x-text="matGroup.acc + '%'"></span>
-                        </div>
+                <div class="text-xs text-slate-400 font-mono shrink-0 hidden lg:block">
+                  Total: <span class="text-slate-200 font-bold" x-text="materias.length"></span> matérias
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-2 max-h-72 overflow-y-auto pr-1">
+                <template x-for="mat in getFilteredMateriasGrid()" :key="'grid_' + mat.id">
+                  <div 
+                    draggable="true"
+                    @dragstart="draggedMateriaId = mat.id"
+                    @dragover.prevent
+                    @drop="dropMateria(mat.id)"
+                    @click="selectMateria(mat.id)"
+                    class="bg-slate-850/80 border rounded-xl p-3.5 cursor-pointer transition-all duration-150 flex flex-col justify-between space-y-3 group hover:border-indigo-500/50 hover:bg-slate-800/60 relative"
+                    :class="selectedMateriaId === mat.id ? 'border-indigo-500 bg-indigo-600/10 shadow-md shadow-indigo-500/10 ring-1 ring-indigo-500' : 'border-slate-800'">
+                    
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center space-x-2.5 min-w-0">
+                        <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 shrink-0 hidden sm:block"></i>
+                        <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${mat.cor || '#6366f1'}`"></span>
+                        <span class="font-bold text-slate-200 text-xs truncate group-hover:text-white" x-text="mat.nome"></span>
                       </div>
+                      <span class="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px] font-mono shrink-0" x-text="`${(mat.topicos || []).length} tópicos`"></span>
+                    </div>
 
-                      <div class="space-y-2 pt-1">
-                        <template x-for="item in matGroup.items" :key="item.id">
-                          <div class="bg-slate-900/90 border border-slate-800/60 rounded-lg p-2.5 sm:p-3 space-y-2">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div class="flex items-center space-x-2 min-w-0">
-                                <span class="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded border shrink-0"
-                                      :class="item.tipo === 'Estudo Teórico' ? 'text-sky-300 bg-sky-600/10 border-sky-500/20' : 'text-indigo-300 bg-indigo-600/10 border-indigo-500/20'"
-                                      x-text="item.tipo || 'Resolução de Questões'"></span>
-                                <span class="text-xs text-slate-200 font-medium truncate" x-text="item.assunto || 'Geral'"></span>
-                              </div>
+                    <div class="space-y-1">
+                      <div class="flex justify-between items-center text-[10px] text-slate-400">
+                        <span>Progresso</span>
+                        <span class="font-bold font-mono" x-text="calcMateriaPercent(mat) + '%'"></span>
+                      </div>
+                      <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                        <div class="h-full rounded-full transition-all" :class="getCustomProgressBarBg(calcMateriaPercent(mat))" :style="`width: ${calcMateriaPercent(mat)}%`"></div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
 
-                              <div class="flex items-center justify-between sm:justify-end space-x-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
-                                <template x-if="item.total > 0">
-                                  <span class="text-xs font-extrabold px-2 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
-                                </template>
-                                <div class="flex items-center space-x-1">
-                                  <button @click="openEditQuestaoModal(item)" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar">
-                                    <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-                                    <span class="hidden sm:inline">Editar</span>
-                                  </button>
-                                  <button @click="deleteQuestaoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1.5 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                                </div>
-                              </div>
+            <template x-if="getSelectedMateria()">
+              <div class="space-y-6">
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 shadow-sm space-y-4 backdrop-blur-sm">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                    <div class="flex items-center justify-between sm:justify-start space-x-3 w-full sm:w-auto">
+                      <div class="flex items-center space-x-2.5 min-w-0">
+                        <span class="w-4 h-4 rounded-full shrink-0" :style="`background-color: ${getSelectedMateria().cor}`"></span>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-100 truncate" x-text="getSelectedMateria().nome"></h3>
+                      </div>
+                      
+                      <div class="flex items-center space-x-1 shrink-0 pl-2 border-l border-slate-800">
+                        <button @click.stop="openEditMateriaModal(getSelectedMateria())" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar Matéria">
+                          <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                          <span class="hidden sm:inline">Editar</span>
+                        </button>
+                        <button @click.stop="deleteMateria(getSelectedMateria().id)" class="bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Excluir Matéria">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                          <span class="hidden sm:inline">Excluir</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center justify-between sm:justify-end space-x-4 text-xs text-slate-400">
+                      <div>
+                        <span>Progresso: </span>
+                        <span class="font-bold text-slate-200" x-text="calcMateriaPercent(getSelectedMateria()) + '%'"></span>
+                      </div>
+                      <div class="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div class="h-full rounded-full transition-all" :class="getCustomProgressBarBg(calcMateriaPercent(getSelectedMateria()))" :style="`width: ${calcMateriaPercent(getSelectedMateria())}%`"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <label class="text-xs font-semibold text-slate-300">Adicionar Tópicos ao Edital</label>
+                      <span class="text-[10px] sm:text-[11px] text-slate-500">Dica: Separe por ponto final (.) para inserção em massa!</span>
+                    </div>
+                    <div class="flex gap-2">
+                      <input type="text" x-model="newTopicText" @keydown.enter="addTopicToSelectedMateria()" placeholder="Ex: 1. DIREITO TRIBUTÁRIO. 1.1 Vigência da Lei." class="flex-1 bg-slate-950/80 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                      <button @click="addTopicToSelectedMateria()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 transition shrink-0">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">Adicionar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl overflow-hidden shadow-sm backdrop-blur-sm">
+                  <div class="px-4 py-3 bg-slate-850/80 border-b border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
+                    <span>Estrutura de Conteúdo</span>
+                    <div class="flex space-x-2 text-[11px]">
+                      <button @click="expandAllTopics(true)" class="hover:text-slate-200 transition">Expandir Todos</button>
+                      <span>•</span>
+                      <button @click="expandAllTopics(false)" class="hover:text-slate-200 transition">Recolher Todos</button>
+                    </div>
+                  </div>
+
+                  <div class="divide-y divide-slate-800/60">
+                    <template x-for="(group, gIdx) in getGroupedTopics(getSelectedMateria())" :key="group.parent ? group.parent.id : 'orphans-' + gIdx">
+                      <div class="bg-slate-900/40">
+                        <template x-if="group.parent">
+                          <div class="p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 hover:bg-slate-850/50 transition border-l-2 border-indigo-500/60">
+                            <div class="flex items-start space-x-2.5 flex-1 min-w-0 pt-0.5">
+                              <button @click="group.parent.expandido = !group.parent.expandido; saveAll()" class="p-1 rounded hover:bg-slate-800 text-slate-400 transition shrink-0 mt-0.5">
+                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-200" :class="group.parent.expandido && 'rotate-90'"></i>
+                              </button>
+                              <button @click="cycleStatus(group.parent)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md border transition flex items-center space-x-1 mt-0.5" :class="getStatusBadgeClass(group.parent.status)">
+                                <span x-text="getStatusLabel(group.parent.status)"></span>
+                              </button>
+                              <span class="text-xs font-bold whitespace-normal break-words cursor-pointer tracking-wide flex-1 min-w-0 leading-relaxed" :class="group.parent.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-100'" @click="group.parent.expandido = !group.parent.expandido; saveAll()" x-text="group.parent.nome"></span>
+                              <button @click="cyclePriority(group.parent)" class="shrink-0 text-[10px] px-2 py-0.5 rounded border transition mt-0.5" :class="getPriorityBadgeClass(group.parent.prioridade)">
+                                <span x-text="getPriorityLabel(group.parent.prioridade)"></span>
+                              </button>
                             </div>
+                            <div class="flex items-center justify-end space-x-1 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
+                              <button @click="openAddSubtopicModal(group.parent)" title="Adicionar Subtópicos" class="text-slate-400 hover:text-emerald-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
+                              <button @click="moveGroup(group.parent.id, 'up')" title="Mover para Cima" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+                              <button @click="moveGroup(group.parent.id, 'down')" title="Mover para Baixo" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
+                              <button @click="openEditTopicModal(group.parent)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                              <button @click="toggleTopicType(group.parent.id)" title="Transformar em Subtópico" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i></button>
+                              <button @click="deleteTopic(group.parent.id)" title="Excluir Assunto" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                          </div>
+                        </template>
 
-                            <template x-if="item.anotacao">
-                              <div class="text-xs rounded-lg p-2.5 sm:p-3 space-y-2 border"
-                                   :class="item.bottleneckResolved ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200' : 'bg-amber-950/30 border-amber-500/40 text-amber-200'">
-                                <div class="flex items-center justify-between">
-                                  <div class="flex items-center space-x-1.5 font-bold" :class="item.bottleneckResolved ? 'text-emerald-400' : 'text-amber-400'">
-                                    <i :data-lucide="item.bottleneckResolved ? 'check-circle' : 'alert-triangle'" class="w-4 h-4"></i>
-                                    <span x-text="item.bottleneckResolved ? 'Gargalo Concluído' : 'Gargalo Pendente'"></span>
-                                  </div>
-
-                                  <template x-if="!item.bottleneckResolved">
-                                    <button @click="resolveBottleneckFromCard(item.gargaloId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold transition flex items-center space-x-1">
-                                      <i data-lucide="check" class="w-3 h-3"></i>
-                                      <span>Concluir</span>
-                                    </button>
-                                  </template>
+                        <template x-if="group.parent">
+                          <div x-show="group.parent.expandido" x-collapse class="bg-slate-950/60 border-t border-b border-slate-800/40 divide-y divide-slate-800/30">
+                            <template x-for="child in group.children" :key="child.id">
+                              <div class="py-2.5 pl-4 sm:pl-12 pr-3 flex flex-col sm:flex-row sm:items-start justify-between gap-2 hover:bg-slate-800/30 transition">
+                                <div class="flex items-start space-x-2.5 flex-1 min-w-0 pt-0.5">
+                                  <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-slate-600 shrink-0 mt-1"></i>
+                                  <button @click="cycleStatus(child)" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition mt-0.5" :class="getStatusBadgeClass(child.status)">
+                                    <span x-text="getStatusLabel(child.status)"></span>
+                                  </button>
+                                  <span :class="child.status === 'concluido' ? 'line-through text-slate-500' : 'text-slate-300'" class="text-xs whitespace-normal break-words flex-1 min-w-0 leading-relaxed" x-text="child.nome"></span>
                                 </div>
-                                <p class="leading-relaxed" x-text="item.anotacao"></p>
+                                <div class="flex items-center justify-end space-x-1 shrink-0">
+                                  <button @click="moveSubtopic(child.id, 'up')" title="Mover Subtópico para Cima" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up" class="w-3.5 h-3.5"></i></button>
+                                  <button @click="moveSubtopic(child.id, 'down')" title="Mover Subtópico para Baixo" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-down" class="w-3.5 h-3.5"></i></button>
+                                  <button @click="openEditTopicModal(child)" title="Editar Nome do Assunto" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                  <button @click="toggleTopicType(child.id)" title="Promover a Tópico" class="text-slate-400 hover:text-indigo-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="arrow-up-left" class="w-3.5 h-3.5"></i></button>
+                                  <button @click="deleteTopic(child.id)" title="Excluir Subtópico" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
                               </div>
                             </template>
                           </div>
                         </template>
                       </div>
-
+                    </template>
+                    
+                    <div x-show="!getSelectedMateria().topicos || getSelectedMateria().topicos.length === 0" class="p-8 text-center text-slate-500 text-xs">
+                      Nenhum tópico cadastrado nesta matéria ainda. Insira acima!
                     </div>
-                  </template>
+                  </div>
                 </div>
               </div>
             </template>
-
-            <div x-show="getSelectedDayDetailCards().length === 0" class="p-8 text-center text-slate-500 text-xs bg-slate-900/80 border border-dashed border-slate-800 rounded-2xl backdrop-blur-sm space-y-3">
-              <p>Nenhum registro de estudo teórico ou de questões para este dia.</p>
-              <button @click="openAddQuestaoModalForDate(selectedDateFilter)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold inline-flex items-center space-x-1.5 transition">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Registrar Neste Dia</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ==================== TAB 5: GARGALOS ==================== -->
-        <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
-              <p class="text-slate-400 text-xs sm:text-sm">Tarefas de revisão organizadas por matéria e histórico de resolução.</p>
-            </div>
-            <button @click="openAddGargaloModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Adicionar Gargalo</span>
-            </button>
           </div>
 
-          <div class="space-y-4">
-            <h3 class="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
-              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-              <span>Gargalos Pendentes de Revisão</span>
-            </h3>
+          <!-- ==================== TAB 3: QUESTÕES E ESTUDOS UNIFICADOS ==================== -->
+          <div x-show="activeTab === 'questoes' || activeTab === 'estudos'" x-cloak class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Registro de Estudos e Questões</h2>
+                <p class="text-slate-400 text-xs sm:text-sm">Controle seus registros teóricos e resolução de questões no mesmo lugar.</p>
+              </div>
+              
+              <div class="flex flex-wrap items-center gap-2">
+                <button @click="downloadExcelTemplate()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+                  <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+                  <span class="hidden sm:inline">Baixar Modelo</span>
+                  <span class="sm:hidden">Modelo</span>
+                </button>
+                
+                <button @click="$refs.excelFileInput.click()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+                  <i data-lucide="upload" class="w-4 h-4 text-sky-400"></i>
+                  <span class="hidden sm:inline">Importar Excel</span>
+                  <span class="sm:hidden">Importar</span>
+                </button>
+                <input type="file" x-ref="excelFileInput" @change="importExcelFile($event)" accept=".xlsx, .xls, .csv" class="hidden">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <template x-for="matGroup in getGargalosGroupedByMateria(false)" :key="matGroup.materia">
-                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 space-y-3 shadow-sm backdrop-blur-sm">
-                  <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
-                    <h4 class="font-bold text-slate-100 text-xs uppercase tracking-wide truncate" x-text="matGroup.materia"></h4>
-                    <span class="ml-auto text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" x-text="matGroup.items.length"></span>
-                  </div>
+                <button @click="undoLastImport()" x-show="lastImportId" class="w-full sm:w-auto bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow">
+                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  <span>Desfazer Importação</span>
+                </button>
 
-                  <div class="space-y-2">
-                    <template x-for="g in matGroup.items" :key="g.id">
-                      <div class="bg-slate-850/80 border border-slate-800/80 rounded-lg p-3 space-y-2">
-                        <div class="flex items-start justify-between gap-2">
-                          <span class="font-bold text-xs text-slate-200" x-text="g.titulo"></span>
-                          <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
-                        
-                        <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                          <span class="text-[10px] text-slate-500 font-mono" x-text="formatDate(g.dataCriacao)"></span>
-                          <button @click="openResolveGargaloModal(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
-                            <i data-lucide="check" class="w-3 h-3"></i>
-                            <span>Concluir</span>
-                          </button>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </div>
-              </template>
-
-              <div x-show="getGargalosGroupedByMateria(false).length === 0" class="col-span-full py-8 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-                Nenhum gargalo pendente no momento. Excelente progresso!
+                <button @click="openAddQuestaoModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  <span>Novo Registro</span>
+                </button>
               </div>
             </div>
-          </div>
 
-          <div class="space-y-4 pt-6 border-t border-slate-800">
-            <h3 class="text-xs sm:text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
-              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-              <span>Gargalos Resolvidos</span>
-            </h3>
+            <!-- LINHA DO TEMPO DOS MINI CARDS -->
+            <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 shadow-sm backdrop-blur-sm space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                <div class="flex items-center space-x-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                  <span>Linha do Tempo (Até 30 Mini Cards)</span>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-1 text-xs">
+                  <button @click="setTimelinePeriod('30')" :class="timelinePeriod === '30' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">30 Dias</button>
+                  <button @click="setTimelinePeriod('15')" :class="timelinePeriod === '15' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">15 Dias</button>
+                  <button @click="setTimelinePeriod('7')" :class="timelinePeriod === '7' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">7 Dias</button>
+                  <button @click="timelinePeriod = 'range'" :class="timelinePeriod === 'range' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-2 py-1 rounded-lg transition font-medium text-[11px]">Personalizado</button>
+                </div>
+              </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <template x-for="matGroup in getResolvedGargalosGroupedByMateriaAndDate()" :key="'res_' + matGroup.materia">
-                <div class="bg-slate-900/80 border border-slate-800/60 rounded-xl p-3.5 sm:p-4 space-y-3 opacity-90 backdrop-blur-sm">
-                  <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
-                    <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide truncate" x-text="matGroup.materia"></h4>
+              <div x-show="timelinePeriod === 'range'" x-cloak class="flex flex-wrap items-center gap-3 pt-1">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-slate-400">De:</span>
+                  <input type="date" x-model="timelineDateStart" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-slate-400">Até (máx 30d):</span>
+                  <input type="date" x-model="timelineDateEnd" class="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                </div>
+              </div>
+
+              <!-- GRID DOS MINI CARDS RESPONSIVO -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-80 overflow-y-auto pr-1">
+                <template x-for="dayObj in getTimelineMiniCards()" :key="dayObj.dateStr">
+                  <div @click="selectedDateFilter = dayObj.dateStr"
+                       class="border rounded-xl p-2 sm:p-2.5 flex flex-col justify-between space-y-2 cursor-pointer transition text-left relative overflow-hidden"
+                       :class="[
+                         selectedDateFilter === dayObj.dateStr ? 'ring-2 ring-indigo-500 shadow-lg' : '',
+                         dayObj.hasActiveBottleneck 
+                           ? 'bg-amber-950/40 border-amber-500/70 shadow-amber-500/10' 
+                           : (dayObj.hasRecords ? 'bg-slate-900/90 border-indigo-500/40 hover:border-indigo-400' : 'bg-slate-850/60 border-slate-800 hover:border-slate-700')
+                       ]">
+                    
+                    <template x-if="dayObj.hasActiveBottleneck">
+                      <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Gargalo pendente registrado neste dia"></span>
+                    </template>
+
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+                      <span class="text-[9px] font-bold font-mono tracking-wider uppercase" :class="dayObj.hasActiveBottleneck ? 'text-amber-400' : (dayObj.isToday ? 'text-indigo-400' : 'text-slate-400')" x-text="dayObj.dayOfWeek"></span>
+                      <span class="text-[9px] font-mono" :class="dayObj.hasActiveBottleneck ? 'text-amber-300/80' : 'text-slate-500'" x-text="dayObj.formattedDate"></span>
+                    </div>
+
+                    <div class="space-y-1 min-h-[35px] flex flex-col justify-center">
+                      <template x-if="dayObj.materias.length > 0">
+                        <div class="flex flex-wrap gap-1">
+                          <template x-for="mName in dayObj.materias" :key="mName">
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold tracking-wide truncate max-w-full"
+                                  :class="dayObj.bottleneckMaterias.includes(mName) ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'"
+                                  x-text="mName"></span>
+                          </template>
+                        </div>
+                      </template>
+                      <template x-if="dayObj.materias.length === 0">
+                        <span class="text-[10px] text-slate-500 italic text-center block">-</span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- CARD CENTRAL DO DIA SELECIONADO -->
+            <div class="space-y-4 max-w-4xl mx-auto">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                  <i data-lucide="book-open-check" class="w-4 h-4 text-indigo-400"></i>
+                  <span x-text="selectedDateFilter ? `Card Central: ${formatDate(selectedDateFilter)}` : 'Card Central de Detalhes do Dia'"></span>
+                </h3>
+              </div>
+
+              <template x-for="cardGroup in getSelectedDayDetailCards()" :key="cardGroup.date">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5 backdrop-blur-sm relative">
+                  
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div class="flex items-center justify-between sm:justify-start space-x-2">
+                      <button @click="changeSelectedDate(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Anterior</span>
+                      </button>
+                      
+                      <div class="flex items-center space-x-2">
+                        <span class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold uppercase" x-text="cardGroup.dayOfWeek"></span>
+                        <span class="text-sm sm:text-base font-bold text-slate-100 font-mono" x-text="formatDate(cardGroup.date)"></span>
+                      </div>
+
+                      <button @click="changeSelectedDate(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
+                        <span class="hidden sm:inline">Próximo</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+
+                    <div class="flex items-center justify-between sm:justify-end space-x-2">
+                      <div class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-500/30 px-2.5 py-1.5 rounded-xl">
+                        <i data-lucide="target" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        <span class="text-xs text-slate-400 hidden sm:inline">Total:</span>
+                        <span class="text-xs sm:text-sm font-extrabold text-white font-mono" x-text="`${cardGroup.dayTotalQuestions} q`"></span>
+                        <template x-if="cardGroup.dayTotalQuestions > 0">
+                          <span class="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded" :class="getCustomProgressBarText(cardGroup.dayAccuracy)" x-text="`(${cardGroup.dayAccuracy}%)`"></span>
+                        </template>
+                      </div>
+
+                      <button @click="openAddQuestaoModalForDate(cardGroup.date)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition shadow-md shrink-0">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Adicionar</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div class="space-y-3">
-                    <template x-for="dateGroup in matGroup.dateGroups" :key="dateGroup.date">
-                      <div class="bg-slate-850/80 border border-slate-800/70 rounded-lg p-2.5 sm:p-3 space-y-2">
-                        <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-emerald-400 font-mono border-b border-slate-800 pb-1.5">
-                          <span class="font-bold uppercase" x-text="dateGroup.dayOfWeek"></span>
-                          <span x-text="`Concluído em: ${formatDate(dateGroup.date)}`"></span>
+                  <div class="space-y-3 sm:space-y-4">
+                    <template x-for="matGroup in cardGroup.materiaGroups" :key="matGroup.materia">
+                      <div class="bg-slate-850/80 border border-slate-800/80 rounded-xl p-3 sm:p-4 space-y-3">
+                        
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                          <div class="flex items-center space-x-2 min-w-0">
+                            <span class="w-3 h-3 rounded-full shrink-0" :style="`background-color: ${getMateriaColor(matGroup.materia)}`"></span>
+                            <span class="font-bold text-slate-100 text-xs uppercase tracking-wider truncate" x-text="matGroup.materia"></span>
+                          </div>
+                          <div class="flex items-center space-x-2 text-xs sm:text-sm font-bold font-mono shrink-0">
+                            <span class="text-slate-300" x-text="`${matGroup.totalAcertos}/${matGroup.totalQuestoes}`"></span>
+                            <span class="px-2 py-0.5 rounded-md text-xs sm:text-sm font-extrabold" :class="getCustomProgressBarText(matGroup.acc)" x-text="matGroup.acc + '%'"></span>
+                          </div>
                         </div>
 
-                        <div class="space-y-2">
-                          <template x-for="g in dateGroup.items" :key="g.id">
-                            <div class="bg-slate-900/90 border border-slate-800/50 rounded p-2 space-y-1">
-                              <div class="flex items-start justify-between gap-2">
-                                <span class="font-bold text-xs text-slate-300 line-through" x-text="g.titulo"></span>
-                                <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        <div class="space-y-2 pt-1">
+                          <template x-for="item in matGroup.items" :key="item.id">
+                            <div class="bg-slate-900/90 border border-slate-800/60 rounded-lg p-2.5 sm:p-3 space-y-2">
+                              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                  <span class="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded border shrink-0"
+                                        :class="item.tipo === 'Estudo Teórico' ? 'text-sky-300 bg-sky-600/10 border-sky-500/20' : 'text-indigo-300 bg-indigo-600/10 border-indigo-500/20'"
+                                        x-text="item.tipo || 'Resolução de Questões'"></span>
+                                  <span class="text-xs text-slate-200 font-medium truncate" x-text="item.assunto || 'Geral'"></span>
+                                </div>
+
+                                <div class="flex items-center justify-between sm:justify-end space-x-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
+                                  <template x-if="item.total > 0">
+                                    <span class="text-xs font-extrabold px-2 py-0.5 rounded font-mono" :class="getCustomProgressBarText(calcItemPercent(item))" x-text="`${item.acertos}/${item.total} (${calcItemPercent(item)}%)`"></span>
+                                  </template>
+                                  <div class="flex items-center space-x-1">
+                                    <button @click="openEditQuestaoModal(item)" class="bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 p-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1 text-xs" title="Editar">
+                                      <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                      <span class="hidden sm:inline">Editar</span>
+                                    </button>
+                                    <button @click="deleteQuestaoRecord(item.id)" class="text-slate-500 hover:text-rose-400 p-1.5 transition" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                  </div>
+                                </div>
                               </div>
-                              <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
-                              <div class="text-[10px] text-slate-500 font-mono pt-1">
-                                <span x-text="`Criado em: ${formatDate(g.dataCriacao)}`"></span>
-                              </div>
+
+                              <template x-if="item.anotacao">
+                                <div class="text-xs rounded-lg p-2.5 sm:p-3 space-y-2 border"
+                                     :class="item.bottleneckResolved ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200' : 'bg-amber-950/30 border-amber-500/40 text-amber-200'">
+                                  <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-1.5 font-bold" :class="item.bottleneckResolved ? 'text-emerald-400' : 'text-amber-400'">
+                                      <i :data-lucide="item.bottleneckResolved ? 'check-circle' : 'alert-triangle'" class="w-4 h-4"></i>
+                                      <span x-text="item.bottleneckResolved ? 'Gargalo Concluído' : 'Gargalo Pendente'"></span>
+                                    </div>
+
+                                    <template x-if="!item.bottleneckResolved">
+                                      <button @click="resolveBottleneckFromCard(item.gargaloId)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold transition flex items-center space-x-1">
+                                        <i data-lucide="check" class="w-3 h-3"></i>
+                                        <span>Concluir</span>
+                                      </button>
+                                    </template>
+                                  </div>
+                                  <p class="leading-relaxed" x-text="item.anotacao"></p>
+                                </div>
+                              </template>
                             </div>
                           </template>
                         </div>
+
                       </div>
                     </template>
                   </div>
                 </div>
               </template>
 
-              <div x-show="getResolvedGargalosGroupedByMateriaAndDate().length === 0" class="col-span-full py-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-                Nenhum gargalo resolvido registrado ainda.
+              <div x-show="getSelectedDayDetailCards().length === 0" class="p-8 text-center text-slate-500 text-xs bg-slate-900/80 border border-dashed border-slate-800 rounded-2xl backdrop-blur-sm space-y-3">
+                <p>Nenhum registro de estudo teórico ou de questões para este dia.</p>
+                <button @click="openAddQuestaoModalForDate(selectedDateFilter)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold inline-flex items-center space-x-1.5 transition">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  <span>Registrar Neste Dia</span>
+                </button>
               </div>
             </div>
           </div>
-        </div>
 
-      </main>
+          <!-- ==================== TAB 5: GARGALOS ==================== -->
+          <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">Painel de Gargalos e Dúvidas</h2>
+                <p class="text-slate-400 text-xs sm:text-sm">Tarefas de revisão organizadas por matéria e histórico de resolução.</p>
+              </div>
+              <button @click="openAddGargaloModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-lg shadow-amber-600/20">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Adicionar Gargalo</span>
+              </button>
+            </div>
 
-      <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA PARA DISPOSITIVOS MÓVEIS -->
-      <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-40 flex justify-around items-center h-14 px-2">
-        <template x-for="tab in tabs" :key="tab.id">
-          <button @click="setActiveTab(tab.id)"
-                  class="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium transition-colors"
-                  :class="activeTab === tab.id ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'">
-            <i :data-lucide="tab.icon" class="w-4 h-4 mb-0.5"></i>
-            <span x-text="tab.label.split(' ')[0]"></span>
-          </button>
-        </template>
-      </nav>
+            <div class="space-y-4">
+              <h3 class="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                <span>Gargalos Pendentes de Revisão</span>
+              </h3>
 
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <template x-for="matGroup in getGargalosGroupedByMateria(false)" :key="matGroup.materia">
+                  <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5 sm:p-4 space-y-3 shadow-sm backdrop-blur-sm">
+                    <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                      <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
+                      <h4 class="font-bold text-slate-100 text-xs uppercase tracking-wide truncate" x-text="matGroup.materia"></h4>
+                      <span class="ml-auto text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" x-text="matGroup.items.length"></span>
+                    </div>
+
+                    <div class="space-y-2">
+                      <template x-for="g in matGroup.items" :key="g.id">
+                        <div class="bg-slate-850/80 border border-slate-800/80 rounded-lg p-3 space-y-2">
+                          <div class="flex items-start justify-between gap-2">
+                            <span class="font-bold text-xs text-slate-200" x-text="g.titulo"></span>
+                            <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                          </div>
+                          <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
+                          
+                          <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                            <span class="text-[10px] text-slate-500 font-mono" x-text="formatDate(g.dataCriacao)"></span>
+                            <button @click="openResolveGargaloModal(g.id)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center space-x-1">
+                              <i data-lucide="check" class="w-3 h-3"></i>
+                              <span>Concluir</span>
+                            </button>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <div x-show="getGargalosGroupedByMateria(false).length === 0" class="col-span-full py-8 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                  Nenhum gargalo pendente no momento. Excelente progresso!
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4 pt-6 border-t border-slate-800">
+              <h3 class="text-xs sm:text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                <span>Gargalos Resolvidos</span>
+              </h3>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <template x-for="matGroup in getResolvedGargalosGroupedByMateriaAndDate()" :key="'res_' + matGroup.materia">
+                  <div class="bg-slate-900/80 border border-slate-800/60 rounded-xl p-3.5 sm:p-4 space-y-3 opacity-90 backdrop-blur-sm">
+                    <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                      <span class="w-2.5 h-2.5 rounded-full" :style="`background-color: ${matGroup.cor}`"></span>
+                      <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide truncate" x-text="matGroup.materia"></h4>
+                    </div>
+
+                    <div class="space-y-3">
+                      <template x-for="dateGroup in matGroup.dateGroups" :key="dateGroup.date">
+                        <div class="bg-slate-850/80 border border-slate-800/70 rounded-lg p-2.5 sm:p-3 space-y-2">
+                          <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-emerald-400 font-mono border-b border-slate-800 pb-1.5">
+                            <span class="font-bold uppercase" x-text="dateGroup.dayOfWeek"></span>
+                            <span x-text="`Concluído em: ${formatDate(dateGroup.date)}`"></span>
+                          </div>
+
+                          <div class="space-y-2">
+                            <template x-for="g in dateGroup.items" :key="g.id">
+                              <div class="bg-slate-900/90 border border-slate-800/50 rounded p-2 space-y-1">
+                                <div class="flex items-start justify-between gap-2">
+                                  <span class="font-bold text-xs text-slate-300 line-through" x-text="g.titulo"></span>
+                                  <button @click="deleteGargalo(g.id)" class="text-slate-500 hover:text-rose-400 p-0.5 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed" x-text="g.descricao"></p>
+                                <div class="text-[10px] text-slate-500 font-mono pt-1">
+                                  <span x-text="`Criado em: ${formatDate(g.dataCriacao)}`"></span>
+                                </div>
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <div x-show="getResolvedGargalosGroupedByMateriaAndDate().length === 0" class="col-span-full py-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                  Nenhum gargalo resolvido registrado ainda.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== TAB ADMIN: GERENCIAMENTO DE USUÁRIOS ==================== -->
+          <div x-show="activeTab === 'admin' && currentUser && currentUser.role === 'admin'" x-cloak class="space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 flex items-center space-x-2">
+                  <i data-lucide="shield" class="w-6 h-6 text-amber-400"></i>
+                  <span>Painel de Administração de Usuários</span>
+                </h2>
+                <p class="text-slate-400 text-xs sm:text-sm">Gerencie o acesso das contas de estudantes cadastrados na plataforma.</p>
+              </div>
+
+              <div class="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs px-3 py-1.5 rounded-xl flex items-center space-x-2">
+                <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i>
+                <span>Acesso Mestre Admin</span>
+              </div>
+            </div>
+
+            <!-- Tabela de Contas Registradas -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl backdrop-blur-sm">
+              <div class="p-4 bg-slate-850/80 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Contas de Usuários Cadastrados</h3>
+                <span class="text-xs text-slate-500 font-mono" x-text="`Total: ${usersList.length} contas`"></span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                  <thead class="bg-slate-950 border-b border-slate-800 text-slate-400 font-mono uppercase text-[10px]">
+                    <tr>
+                      <th class="p-3">Usuário / Nome</th>
+                      <th class="p-3">E-mail</th>
+                      <th class="p-3 text-center">Perfil</th>
+                      <th class="p-3 text-center">Status</th>
+                      <th class="p-3 text-center">Data Registro</th>
+                      <th class="p-3 text-right">Ações de Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60">
+                    <template x-for="user in usersList" :key="user.id">
+                      <tr class="hover:bg-slate-850/50 transition">
+                        <td class="p-3 font-semibold text-slate-100 flex items-center space-x-2">
+                          <div class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-indigo-400" x-text="user.name ? user.name.slice(0, 2).toUpperCase() : 'US'"></div>
+                          <span x-text="user.name || 'Estudante'"></span>
+                        </td>
+                        <td class="p-3 text-slate-300 font-mono" x-text="user.email"></td>
+                        <td class="p-3 text-center">
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                                :class="user.role === 'admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'"
+                                x-text="user.role"></span>
+                        </td>
+                        <td class="p-3 text-center">
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                                :class="user.blocked ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'"
+                                x-text="user.blocked ? 'Bloqueado' : 'Ativo'"></span>
+                        </td>
+                        <td class="p-3 text-center font-mono text-slate-400 text-[11px]" x-text="formatDate(user.createdAt)"></td>
+                        <td class="p-3 text-right">
+                          <div class="flex items-center justify-end space-x-2">
+                            <!-- Toggle Bloquear -->
+                            <button @click="toggleBlockUser(user)" 
+                                    :disabled="user.role === 'admin'"
+                                    class="px-2.5 py-1 rounded text-[11px] font-semibold transition border flex items-center space-x-1"
+                                    :class="[
+                                      user.blocked ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-600/30' : 'bg-amber-600/20 text-amber-300 border-amber-500/30 hover:bg-amber-600/30',
+                                      user.role === 'admin' && 'opacity-40 cursor-not-allowed'
+                                    ]">
+                              <i :data-lucide="user.blocked ? 'unlock' : 'lock'" class="w-3 h-3"></i>
+                              <span x-text="user.blocked ? 'Desbloquear' : 'Bloquear'"></span>
+                            </button>
+
+                            <!-- Apagar Usuário -->
+                            <button @click="deleteUserAccount(user)" 
+                                    :disabled="user.role === 'admin'"
+                                    class="px-2.5 py-1 rounded text-[11px] font-semibold transition bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/30 flex items-center space-x-1"
+                                    :class="user.role === 'admin' && 'opacity-40 cursor-not-allowed'">
+                              <i data-lucide="trash-2" class="w-3 h-3"></i>
+                              <span>Excluir</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </main>
+
+        <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA PARA DISPOSITIVOS MÓVEIS -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-40 flex justify-around items-center h-14 px-2">
+          <template x-for="tab in tabs" :key="tab.id">
+            <button @click="setActiveTab(tab.id)"
+                    class="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium transition-colors"
+                    :class="activeTab === tab.id ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'">
+              <i :data-lucide="tab.icon" class="w-4 h-4 mb-0.5"></i>
+              <span x-text="tab.label.split(' ')[0]"></span>
+            </button>
+          </template>
+        </nav>
+
+      </div>
     </div>
-  </div>
+  </template>
 
   <!-- ==================== MODALS RESPONSIVOS ==================== -->
   
@@ -1148,7 +1400,6 @@
     </div>
   </div>
 
-  <!-- Modal Registrar / Editar Treino -->
   <div x-show="showQuestaoModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 w-full max-w-md space-y-3 sm:space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
       <h3 class="font-bold text-slate-100 text-base" x-text="editingQuestaoId ? 'Editar Registro' : 'Registrar Estudo / Questões'"></h3>
@@ -1241,9 +1492,10 @@
   <script>
     const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
-    const ROW_ID = 'dados_auditor';
-    const LOCAL_KEY = 'auditor_fiscal_safe_v3';
-    const TAB_KEY = 'auditor_active_tab';
+    
+    // KEYS PARA ISOLAMENTO
+    const USERS_STORAGE_KEY = 'auditor_users_registry_v1';
+    const ACTIVE_USER_SESSION_KEY = 'auditor_current_user_session';
 
     let supabaseClient = null;
     try {
@@ -1251,6 +1503,30 @@
     } catch(e) {
       console.warn("Supabase init error:", e);
     }
+
+    // DADOS HISTÓRICOS ATUAIS INICIAIS (A SEREM VINCULADOS EXCLUSIVAMENTE AO ADMIN PRIMEIRO CONECTADO)
+    const INITIAL_LEGACY_DATA = {
+      exams: [
+        { id: 'ex_1', title: 'ISS Caruaru', date: '2026-11-29' }
+      ],
+      pinnedNotes: [
+        { id: 'n_1', type: 'text', title: 'Meta Semanal', text: 'Focar em revisões ativas e questões de concurso.', items: [] }
+      ],
+      materias: [
+        {
+          id: 'mat_1',
+          nome: 'Direito Tributário',
+          cor: '#3b82f6',
+          topicos: [
+            { id: 't1', nome: '1. SISTEMA TRIBUTÁRIO NACIONAL', eSubtopico: false, status: 'concluido', prioridade: 'alta', expandido: true },
+            { id: 't2', nome: '1.1 Princípios constitucionais tributários', eSubtopico: true, status: 'concluido', prioridade: 'alta', expandido: false }
+          ]
+        }
+      ],
+      questoes: [],
+      estudos: [],
+      gargalos: []
+    };
 
     function formatTextCase(str, isSubtopic) {
       if (!str) return '';
@@ -1264,7 +1540,6 @@
 
     function parseExcelDate(val) {
       if (!val) return new Date().toISOString().split('T')[0];
-      
       if (typeof val === 'number') {
         const dateInfo = XLSX.SSF.parse_date_code(val);
         if (dateInfo) {
@@ -1274,7 +1549,6 @@
           return `${y}-${m}-${d}`;
         }
       }
-
       const str = String(val).trim();
       if (str.includes('/')) {
         const parts = str.split('/');
@@ -1282,17 +1556,11 @@
           let day = parts[0].padStart(2, '0');
           let month = parts[1].padStart(2, '0');
           let year = parts[2];
-          if (year.length === 2) {
-            year = '20' + year;
-          }
+          if (year.length === 2) year = '20' + year;
           return `${year}-${month}-${day}`;
         }
       }
-
-      if (str.includes('-')) {
-        return str.split('T')[0];
-      }
-
+      if (str.includes('-')) return str.split('T')[0];
       return new Date().toISOString().split('T')[0];
     }
 
@@ -1307,8 +1575,17 @@
 
     function appData() {
       return {
+        // AUTENTICAÇÃO E ESTADO DO USUÁRIO
+        authTab: 'login',
+        currentUser: null,
+        usersList: [],
+        authForm: { email: '', password: '' },
+        registerForm: { name: '', email: '', confirmEmail: '', password: '', confirmPassword: '' },
+
+        toast: { show: false, message: '', type: 'info', icon: 'info' },
+
         mobileMenuOpen: false,
-        activeTab: localStorage.getItem(TAB_KEY) || 'dashboard',
+        activeTab: 'dashboard',
         syncing: false,
         lastSync: false,
         isLoaded: false,
@@ -1324,17 +1601,13 @@
         statsGroupBy: 'day',
         evolutionChart: null,
 
-        exams: [
-          { id: 'ex_1', title: 'ISS Caruaru', date: '2026-11-29' }
-        ],
+        exams: [],
         showExamModal: false,
         editingExamId: null,
         modalExamTitle: '',
         modalExamDate: '2026-11-29',
 
-        pinnedNotes: [
-          { id: 'n_1', type: 'text', title: 'Meta Semanal', text: 'Focar em revisões ativas e questões de concurso.', items: [] }
-        ],
+        pinnedNotes: [],
         showNoteModal: false,
         editingNoteId: null,
         modalNoteTitle: '',
@@ -1351,18 +1624,8 @@
           { id: 'gargalos', label: 'Gargalos', icon: 'alert-triangle' }
         ],
 
-        materias: [
-          {
-            id: 'mat_1',
-            nome: 'Direito Tributário',
-            cor: '#3b82f6',
-            topicos: [
-              { id: 't1', nome: '1. SISTEMA TRIBUTÁRIO NACIONAL', eSubtopico: false, status: 'concluido', prioridade: 'alta', expandido: true },
-              { id: 't2', nome: '1.1 Princípios constitucionais tributários', eSubtopico: true, status: 'concluido', prioridade: 'alta', expandido: false }
-            ]
-          }
-        ],
-        selectedMateriaId: 'mat_1',
+        materias: [],
+        selectedMateriaId: null,
         materiaSearchQuery: '',
         draggedMateriaId: null,
         newTopicText: '',
@@ -1407,20 +1670,30 @@
         modalGargaloTitulo: '',
         modalGargaloDesc: '',
 
+        showToast(message, type = 'info', icon = 'info') {
+          this.toast = { show: true, message, type, icon };
+          setTimeout(() => { this.toast.show = false; }, 4000);
+          this.refreshIcons();
+        },
+
         async initApp() {
-          const local = localStorage.getItem(LOCAL_KEY);
-          if (local) {
+          this.loadUsersRegistry();
+
+          const activeSession = localStorage.getItem(ACTIVE_USER_SESSION_KEY);
+          if (activeSession) {
             try {
-              const parsed = JSON.parse(local);
-              if (parsed.materias && parsed.materias.length > 0) {
-                this.applyData(parsed);
+              const u = JSON.parse(activeSession);
+              const exists = this.usersList.find(x => x.id === u.id);
+              if (exists && !exists.blocked) {
+                this.currentUser = exists;
+                await this.loadUserData();
+              } else {
+                this.handleLogout();
               }
             } catch(e) {
-              console.error("Erro ao ler localStorage:", e);
+              this.handleLogout();
             }
           }
-
-          await this.loadFromSupabase();
 
           if (!this.selectedDateFilter) {
             this.selectedDateFilter = new Date().toISOString().split('T')[0];
@@ -1428,29 +1701,184 @@
 
           this.isLoaded = true;
 
-          setInterval(() => { this.backgroundSync(); }, 5000);
+          setInterval(() => { if (this.currentUser) this.backgroundSync(); }, 6000);
 
           this.$watch('materias', () => { 
-            if (this.isLoaded) {
+            if (this.isLoaded && this.currentUser) {
               this.ensureValidSelection();
               this.saveAll();
               this.refreshIcons();
             }
           }, { deep: true });
           
-          this.$watch('questoes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
-          this.$watch('estudos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
-          this.$watch('gargalos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
-          this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
-          this.$watch('exams', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('questoes', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
+          this.$watch('estudos', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
+          this.$watch('gargalos', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
+          this.$watch('pinnedNotes', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
+          this.$watch('exams', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
 
           this.refreshIcons();
+        },
+
+        loadUsersRegistry() {
+          const raw = localStorage.getItem(USERS_STORAGE_KEY);
+          if (raw) {
+            try { this.usersList = JSON.parse(raw); } catch(e) { this.usersList = []; }
+          } else {
+            this.usersList = [];
+          }
+        },
+
+        saveUsersRegistry() {
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(this.usersList));
+        },
+
+        async handleLogin() {
+          if (!this.authForm.email || !this.authForm.password) {
+            this.showToast("Preencha e-mail e senha para acessar.", "warning", "alert-circle");
+            return;
+          }
+
+          const targetEmail = this.authForm.email.trim().toLowerCase();
+          const user = this.usersList.find(u => u.email.toLowerCase() === targetEmail);
+
+          if (!user || user.password !== this.authForm.password) {
+            this.showToast("E-mail ou senha incorretos. Verifique suas credenciais.", "error", "alert-triangle");
+            return;
+          }
+
+          if (user.blocked) {
+            this.showToast("Esta conta foi temporariamente bloqueada pelo Administrador.", "error", "lock");
+            return;
+          }
+
+          this.currentUser = user;
+          localStorage.setItem(ACTIVE_USER_SESSION_KEY, JSON.stringify(user));
+          await this.loadUserData();
+          this.showToast(`Bem-vindo de volta, ${user.name || user.email}!`, "success", "check-circle-2");
+        },
+
+        async handleRegister() {
+          const { name, email, confirmEmail, password, confirmPassword } = this.registerForm;
+
+          if (!name || !email || !confirmEmail || !password || !confirmPassword) {
+            this.showToast("Preencha todos os campos do formulário de cadastro.", "warning", "alert-circle");
+            return;
+          }
+
+          if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+            this.showToast("Os e-mails informados não são idênticos. Verifique a confirmação de e-mail.", "error", "alert-triangle");
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            this.showToast("As senhas informadas não coincidem. Verifique a confirmação de senha.", "error", "alert-triangle");
+            return;
+          }
+
+          if (password.length < 6) {
+            this.showToast("A senha deve conter no mínimo 6 caracteres por segurança.", "warning", "shield-alert");
+            return;
+          }
+
+          const existingUser = this.usersList.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+          if (existingUser) {
+            this.showToast("Este e-mail já está cadastrado. Faça login ou utilize outro e-mail.", "error", "user-x");
+            return;
+          }
+
+          // O PRIMEIRO USUÁRIO A SE CADASTRAR É O ADMINISTRADOR E RECEBE OS DADOS HISTÓRICOS ATUAIS
+          const isFirstUser = this.usersList.length === 0;
+
+          const newUser = {
+            id: 'usr_' + Date.now(),
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password: password,
+            role: isFirstUser ? 'admin' : 'user',
+            blocked: false,
+            createdAt: new Date().toISOString().split('T')[0]
+          };
+
+          this.usersList.push(newUser);
+          this.saveUsersRegistry();
+
+          this.currentUser = newUser;
+          localStorage.setItem(ACTIVE_USER_SESSION_KEY, JSON.stringify(newUser));
+
+          if (isFirstUser) {
+            // VINCULA TODOS OS DADOS ATUAIS AO ADMINISTRADOR
+            this.applyData(INITIAL_LEGACY_DATA);
+            this.saveAll();
+            this.showToast("Conta Administradora registrada! Os dados atuais foram vinculados à sua conta.", "success", "crown");
+          } else {
+            // QUALQUER NOVA CONTA INICIA COMPLETAMENTE LIMPA
+            this.materias = [];
+            this.questoes = [];
+            this.estudos = [];
+            this.gargalos = [];
+            this.pinnedNotes = [];
+            this.exams = [];
+            this.selectedMateriaId = null;
+            this.saveAll();
+            this.showToast("Conta criada com sucesso! Link de confirmação enviado para seu e-mail.", "success", "mail-check");
+          }
+
+          this.registerForm = { name: '', email: '', confirmEmail: '', password: '', confirmPassword: '' };
+        },
+
+        handleLogout() {
+          this.currentUser = null;
+          localStorage.removeItem(ACTIVE_USER_SESSION_KEY);
+          this.showToast("Sessão encerrada com segurança.", "info", "log-out");
+        },
+
+        toggleBlockUser(user) {
+          if (user.role === 'admin') return;
+          user.blocked = !user.blocked;
+          this.saveUsersRegistry();
+          this.showToast(`Conta de ${user.email} ${user.blocked ? 'bloqueada' : 'desbloqueada'}.`, "warning", user.blocked ? 'lock' : 'unlock');
+        },
+
+        deleteUserAccount(user) {
+          if (user.role === 'admin') return;
+          if (!confirm(`Tem certeza que deseja apagar permanentemente a conta de ${user.email}? Todos os dados desta conta serão removidos.`)) {
+            return;
+          }
+          this.usersList = this.usersList.filter(u => u.id !== user.id);
+          this.saveUsersRegistry();
+          localStorage.removeItem(`auditor_safe_user_${user.id}`);
+          this.showToast(`Conta de ${user.email} excluída com sucesso.`, "info", "trash-2");
+        },
+
+        getUserStorageKey() {
+          return this.currentUser ? `auditor_safe_user_${this.currentUser.id}` : 'auditor_fiscal_safe_v3';
+        },
+
+        getUserRowId() {
+          return this.currentUser ? `dados_auditor_${this.currentUser.id}` : 'dados_auditor';
+        },
+
+        async loadUserData() {
+          if (!this.currentUser) return;
+          const userKey = this.getUserStorageKey();
+          const local = localStorage.getItem(userKey);
+          
+          if (local) {
+            try {
+              const parsed = JSON.parse(local);
+              this.applyData(parsed);
+            } catch(e) {
+              console.error("Erro ao ler localStorage do usuário:", e);
+            }
+          }
+
+          await this.loadFromSupabase();
         },
 
         setActiveTab(tabId) {
           if (tabId === 'estudos') tabId = 'questoes';
           this.activeTab = tabId;
-          localStorage.setItem(TAB_KEY, tabId);
           this.refreshIcons();
         },
 
@@ -1718,7 +2146,8 @@
         },
 
         applyData(loaded) {
-          if (loaded.materias && loaded.materias.length > 0) {
+          if (!loaded) return;
+          if (loaded.materias && Array.isArray(loaded.materias)) {
             this.materias = loaded.materias.map(m => {
               m.topicos = (m.topicos || []).map(t => {
                 if (!t.status) t.status = t.concluido ? 'concluido' : 'estudar';
@@ -1727,6 +2156,8 @@
               return m;
             });
             this.ensureValidSelection();
+          } else {
+            this.materias = [];
           }
 
           const mergedList = [];
@@ -1769,8 +2200,8 @@
           this.questoes = mergedList;
           this.estudos = mergedList;
 
-          if (loaded.gargalos) this.gargalos = loaded.gargalos;
-          if (loaded.exams) this.exams = loaded.exams;
+          this.gargalos = loaded.gargalos || [];
+          this.exams = loaded.exams || [];
           if (loaded.pinnedNotes) {
             this.pinnedNotes = loaded.pinnedNotes.map(n => {
               if (typeof n === 'string') {
@@ -1778,6 +2209,8 @@
               }
               return n;
             });
+          } else {
+            this.pinnedNotes = [];
           }
         },
 
@@ -1805,7 +2238,7 @@
         },
 
         saveAll() {
-          if (!this.isLoaded) return;
+          if (!this.isLoaded || !this.currentUser) return;
           const payload = {
             materias: this.materias,
             questoes: this.questoes,
@@ -1814,27 +2247,28 @@
             pinnedNotes: this.pinnedNotes,
             exams: this.exams
           };
-          localStorage.setItem(LOCAL_KEY, JSON.stringify(payload));
+          const userKey = this.getUserStorageKey();
+          localStorage.setItem(userKey, JSON.stringify(payload));
           this.saveToSupabase(payload);
         },
 
         async loadFromSupabase() {
-          if (!supabaseClient) return;
+          if (!supabaseClient || !this.currentUser) return;
           this.syncing = true;
           try {
+            const rowId = this.getUserRowId();
             const { data } = await supabaseClient
               .from('dadosauditor')
               .select('conteudo')
-              .eq('id', ROW_ID)
+              .eq('id', rowId)
               .single();
 
             if (data && data.conteudo) {
               const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
-              if (loaded.materias && loaded.materias.length > 0) {
-                this.applyData(loaded);
-                localStorage.setItem(LOCAL_KEY, JSON.stringify(loaded));
-                this.lastSync = true;
-              }
+              this.applyData(loaded);
+              const userKey = this.getUserStorageKey();
+              localStorage.setItem(userKey, JSON.stringify(loaded));
+              this.lastSync = true;
             }
           } catch(e) {
             this.lastSync = false;
@@ -1845,22 +2279,24 @@
         },
 
         async backgroundSync() {
-          if (!supabaseClient || this.syncing) return;
+          if (!supabaseClient || this.syncing || !this.currentUser) return;
           try {
+            const rowId = this.getUserRowId();
             const { data } = await supabaseClient
               .from('dadosauditor')
               .select('conteudo')
-              .eq('id', ROW_ID)
+              .eq('id', rowId)
               .single();
 
             if (data && data.conteudo) {
               const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
-              const currentLocal = localStorage.getItem(LOCAL_KEY);
+              const userKey = this.getUserStorageKey();
+              const currentLocal = localStorage.getItem(userKey);
               const remoteString = JSON.stringify(loaded);
 
-              if (currentLocal !== remoteString && loaded.materias && loaded.materias.length > 0) {
+              if (currentLocal !== remoteString) {
                 this.applyData(loaded);
-                localStorage.setItem(LOCAL_KEY, remoteString);
+                localStorage.setItem(userKey, remoteString);
                 this.lastSync = true;
                 this.refreshIcons();
               }
@@ -1869,12 +2305,13 @@
         },
 
         async saveToSupabase(payload) {
-          if (!supabaseClient) return;
+          if (!supabaseClient || !this.currentUser) return;
           this.syncing = true;
           try {
+            const rowId = this.getUserRowId();
             const { error } = await supabaseClient
               .from('dadosauditor')
-              .upsert({ id: ROW_ID, conteudo: payload });
+              .upsert({ id: rowId, conteudo: payload });
 
             if (error) throw error;
             this.lastSync = true;
@@ -2791,7 +3228,7 @@
               const jsonRows = XLSX.utils.sheet_to_json(worksheet);
 
               if (jsonRows.length === 0) {
-                alert("A planilha está vazia ou o formato é inválido.");
+                this.showToast("A planilha está vazia ou o formato é inválido.", "warning");
                 return;
               }
 
@@ -2855,10 +3292,10 @@
 
               this.lastImportId = importBatchId;
               this.saveAll();
-              alert(`${importedCount} registros importados com sucesso!`);
+              this.showToast(`${importedCount} registros importados com sucesso!`, "success", "file-check");
             } catch (err) {
               console.error(err);
-              alert("Erro ao processar o arquivo Excel. Verifique se o formato está correto.");
+              this.showToast("Erro ao processar o arquivo Excel. Verifique a estrutura.", "error");
             } finally {
               event.target.value = '';
             }
@@ -2868,9 +3305,7 @@
 
         undoLastImport() {
           if (!this.lastImportId) return;
-          if (!confirm("Deseja realmente desfazer a última importação?")) {
-            return;
-          }
+          if (!confirm("Deseja realmente desfazer a última importação?")) return;
 
           const targetId = this.lastImportId;
           this.questoes = this.questoes.filter(q => q.importId !== targetId);
@@ -2878,7 +3313,7 @@
           
           this.lastImportId = null;
           this.saveAll();
-          alert("Última importação desfeita com sucesso!");
+          this.showToast("Última importação desfeita com sucesso!", "info", "rotate-ccw");
         }
       }
     }
