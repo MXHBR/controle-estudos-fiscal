@@ -1929,73 +1929,74 @@
           const activeGargalos = this.gargalos.filter(g => !g.resolvido);
 
           if (this.timelinePeriod !== 'range') {
-            for (let i = limitDays - 1; i >= 0; i--) {
-              const d = new Date();
-              d.setDate(today.getDate() - i);
-              const ano = d.getFullYear();
-              const mes = String(d.getMonth() + 1).padStart(2, '0');
-              const dia = String(d.getDate()).padStart(2, '0');
-              const dateStr = `${ano}-${mes}-${dia}`;
-              const isToday = i === 0;
-              const dayOfWeek = this.getDayOfWeekShort(dateStr);
-              const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
+  for (let i = 0; i < limitDays; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${ano}-${mes}-${dia}`;
+    const isToday = i === 0;
+    const dayOfWeek = this.getDayOfWeekShort(dateStr);
+    const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
 
-              const matchedQ = this.questoes.filter(q => q.data === dateStr);
-              const materiasSet = [...new Set(matchedQ.map(q => q.materia))];
+    const matchedQ = this.questoes.filter(q => q.data === dateStr);
+    const materiasSet = [...new Set(matchedQ.map(q => q.materia))];
 
-              const dayActiveGargalos = activeGargalos.filter(g => g.dataCriacao === dateStr);
-              const hasActiveBottleneck = dayActiveGargalos.length > 0;
-              const bottleneckMaterias = [...new Set(dayActiveGargalos.map(g => g.materia))];
+    const dayActiveGargalos = activeGargalos.filter(g => g.dataCriacao === dateStr);
+    const hasActiveBottleneck = dayActiveGargalos.length > 0;
+    const bottleneckMaterias = [...new Set(dayActiveGargalos.map(g => g.materia))];
 
-              cards.push({
-                dateStr,
-                dayOfWeek,
-                formattedDate,
-                isToday,
-                hasRecords: materiasSet.length > 0,
-                materias: materiasSet,
-                hasActiveBottleneck,
-                bottleneckMaterias
-              });
-            }
-          } else {
-            if (!this.timelineDateStart) this.timelineDateStart = new Date().toISOString().split('T')[0];
-            if (!this.timelineDateEnd) this.timelineDateEnd = this.timelineDateStart;
+    cards.push({
+      dateStr,
+      dayOfWeek,
+      formattedDate,
+      isToday,
+      hasRecords: materiasSet.length > 0,
+      materias: materiasSet,
+      hasActiveBottleneck,
+      bottleneckMaterias
+    });
+  }
+} else {
+  if (!this.timelineDateStart) this.timelineDateStart = new Date().toISOString().split('T')[0];
+  if (!this.timelineDateEnd) this.timelineDateEnd = this.timelineDateStart;
 
-            let curr = new Date(this.timelineDateStart);
-            const limit = new Date(this.timelineDateEnd);
-            let count = 0;
+  // Começa da data final (mais recente) e anda para trás até a data inicial
+  let curr = new Date(this.timelineDateEnd + 'T00:00:00');
+  const limit = new Date(this.timelineDateStart + 'T00:00:00');
+  let count = 0;
 
-            while (curr <= limit && count < 30) {
-              const ano = curr.getFullYear();
-              const mes = String(curr.getMonth() + 1).padStart(2, '0');
-              const dia = String(curr.getDate()).padStart(2, '0');
-              const dateStr = `${ano}-${mes}-${dia}`;
-              const dayOfWeek = this.getDayOfWeekShort(dateStr);
-              const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
+  while (curr >= limit && count < 30) {
+    const ano = curr.getFullYear();
+    const mes = String(curr.getMonth() + 1).padStart(2, '0');
+    const dia = String(curr.getDate()).padStart(2, '0');
+    const dateStr = `${ano}-${mes}-${dia}`;
+    const dayOfWeek = this.getDayOfWeekShort(dateStr);
+    const formattedDate = `${dia}/${mes}/${String(ano).slice(-2)}`;
 
-              const matchedQ = this.questoes.filter(q => q.data === dateStr);
-              const materiasSet = [...new Set(matchedQ.map(q => q.materia))];
+    const matchedQ = this.questoes.filter(q => q.data === dateStr);
+    const materiasSet = [...new Set(matchedQ.map(q => q.materia))];
 
-              const dayActiveGargalos = activeGargalos.filter(g => g.dataCriacao === dateStr);
-              const hasActiveBottleneck = dayActiveGargalos.length > 0;
-              const bottleneckMaterias = [...new Set(dayActiveGargalos.map(g => g.materia))];
+    const dayActiveGargalos = activeGargalos.filter(g => g.dataCriacao === dateStr);
+    const hasActiveBottleneck = dayActiveGargalos.length > 0;
+    const bottleneckMaterias = [...new Set(dayActiveGargalos.map(g => g.materia))];
 
-              cards.push({
-                dateStr,
-                dayOfWeek,
-                formattedDate,
-                isToday: false,
-                hasRecords: materiasSet.length > 0,
-                materias: materiasSet,
-                hasActiveBottleneck,
-                bottleneckMaterias
-              });
+    cards.push({
+      dateStr,
+      dayOfWeek,
+      formattedDate,
+      isToday: false,
+      hasRecords: materiasSet.length > 0,
+      materias: materiasSet,
+      hasActiveBottleneck,
+      bottleneckMaterias
+    });
 
-              curr.setDate(curr.getDate() + 1);
-              count++;
-            }
-          }
+    curr.setDate(curr.getDate() - 1);
+    count++;
+  }
+}
           return cards;
         },
 
