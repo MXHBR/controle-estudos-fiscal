@@ -50,82 +50,17 @@
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     
+    /* Suporte para telas touch */
     @media (max-width: 768px) {
       body {
-        padding-bottom: 60px;
+        padding-bottom: 60px; /* Espaço para a barra inferior no celular */
       }
     }
   </style>
 </head>
 <body class="bg-gradient-to-b from-[rgb(25,37,104)] via-slate-900 to-slate-950 text-slate-100 font-sans min-h-screen antialiased selection:bg-indigo-500 selection:text-white" x-data="appData()" x-init="initApp()">
 
-  <!-- TELA DE AUTENTICAÇÃO (LOGIN / REGISTRO) -->
-  <div x-show="!currentUser && authInitialized" x-cloak class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 via-slate-900 to-[rgb(15,23,42)]">
-    <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl backdrop-blur-md space-y-6">
-      
-      <div class="text-center space-y-2">
-        <div class="w-14 h-14 rounded-full border-2 border-indigo-400 bg-indigo-600/20 flex items-center justify-center text-indigo-400 mx-auto shadow-lg shadow-indigo-500/30">
-          <i data-lucide="shield-check" class="w-8 h-8"></i>
-        </div>
-        <h1 class="text-2xl font-black text-slate-100 tracking-tight">Auditor Fiscal</h1>
-        <p class="text-xs text-slate-400">Acesse sua conta para proteger seus dados de estudos</p>
-      </div>
-
-      <!-- Abas Login / Cadastro -->
-      <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-        <button @click="authMode = 'login'; authError = ''; authSuccess = ''" 
-                :class="authMode === 'login' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
-                class="flex-1 py-2 rounded-lg transition text-center">Entrar</button>
-        <button @click="authMode = 'register'; authError = ''; authSuccess = ''" 
-                :class="authMode === 'register' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
-                class="flex-1 py-2 rounded-lg transition text-center">Criar Conta</button>
-      </div>
-
-      <!-- Mensagens de Alerta -->
-      <template x-if="authError">
-        <div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs flex items-start space-x-2">
-          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
-          <span x-text="authError"></span>
-        </div>
-      </template>
-
-      <template x-if="authSuccess">
-        <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs flex items-start space-x-2">
-          <i data-lucide="check-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
-          <span x-text="authSuccess"></span>
-        </div>
-      </template>
-
-      <!-- Formulário -->
-      <form @submit.prevent="handleAuthSubmit()" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">E-mail</label>
-          <div class="relative">
-            <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
-            <input type="email" x-model="authEmail" required placeholder="seuemail@exemplo.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Senha</label>
-          <div class="relative">
-            <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
-            <input type="password" x-model="authPassword" required placeholder="••••••••" minlength="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
-          </div>
-        </div>
-
-        <button type="submit" :disabled="authLoading" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-xs transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 disabled:opacity-50">
-          <template x-if="authLoading">
-            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
-          </template>
-          <span x-text="authLoading ? 'Processando...' : (authMode === 'login' ? 'Entrar no Sistema' : 'Cadastrar Minha Conta')"></span>
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- APLICAÇÃO PRINCIPAL (EXIBIDA APENAS COM USUÁRIO AUTENTICADO) -->
-  <div x-show="currentUser && authInitialized" x-cloak class="flex h-screen overflow-hidden relative">
+  <div class="flex h-screen overflow-hidden relative">
     
     <!-- Sidebar Backdrop Mobile -->
     <div x-show="mobileMenuOpen" x-cloak @click="mobileMenuOpen = false" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm md:hidden"></div>
@@ -141,7 +76,7 @@
             </div>
             <div>
               <h1 class="font-bold text-slate-100 tracking-wide text-sm">Auditor Fiscal</h1>
-              <p class="text-xs text-slate-400 font-medium truncate max-w-[120px]" x-text="currentUser ? currentUser.email : ''"></p>
+              <p class="text-xs text-slate-400 font-medium">Controle de Alta Performance</p>
             </div>
           </div>
           <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white p-1">
@@ -172,11 +107,8 @@
       </div>
 
       <div class="p-4 border-t border-slate-800/80 text-xs text-slate-500 flex items-center justify-between">
-        <button @click="logout()" class="text-rose-400 hover:text-rose-300 flex items-center space-x-1.5 font-semibold transition">
-          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-          <span>Sair da Conta</span>
-        </button>
-        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v6.4</span>
+        <span>RFB / SEFAZ</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono text-[10px]">v6.3</span>
       </div>
     </aside>
 
@@ -195,17 +127,14 @@
           <span class="font-bold text-slate-100 text-sm">Auditor Fiscal</span>
         </div>
 
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5 text-xs text-slate-400">
           <span class="w-2 h-2 rounded-full" :class="syncing ? 'bg-amber-400' : (lastSync ? 'bg-emerald-400' : 'bg-rose-500')"></span>
-          <button @click="logout()" class="text-slate-400 hover:text-rose-400 p-1" title="Sair">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-          </button>
         </div>
       </header>
 
       <main class="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-20 md:pb-8">
         
-        <!-- TAB 1: DASHBOARD -->
+        <!-- ==================== TAB 1: DASHBOARD ==================== -->
         <div x-show="activeTab === 'dashboard'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -422,7 +351,7 @@
           </div>
         </div>
 
-        <!-- TAB 2: MATÉRIAS -->
+        <!-- ==================== TAB 2: MATÉRIAS ==================== -->
         <div x-show="activeTab === 'materias'" x-cloak class="space-y-6">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
@@ -618,7 +547,7 @@
           </template>
         </div>
 
-        <!-- TAB 3: QUESTÕES E ESTUDOS UNIFICADOS -->
+        <!-- ==================== TAB 3: QUESTÕES E ESTUDOS UNIFICADOS ==================== -->
         <div x-show="activeTab === 'questoes' || activeTab === 'estudos'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -679,7 +608,7 @@
               </div>
             </div>
 
-            <!-- GRID DOS MINI CARDS -->
+            <!-- GRID DOS MINI CARDS RESPONSIVO -->
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 pt-1 max-h-80 overflow-y-auto pr-1">
               <template x-for="dayObj in getTimelineMiniCards()" :key="dayObj.dateStr">
                 <div @click="selectedDateFilter = dayObj.dateStr"
@@ -845,7 +774,7 @@
           </div>
         </div>
 
-        <!-- TAB 5: GARGALOS -->
+        <!-- ==================== TAB 5: GARGALOS ==================== -->
         <div x-show="activeTab === 'gargalos'" x-cloak class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -967,7 +896,7 @@
     </div>
   </div>
 
-  <!-- MODALS RESPONSIVOS -->
+  <!-- ==================== MODALS RESPONSIVOS ==================== -->
   
   <!-- MODAL ESTATÍSTICAS DETALHADAS -->
   <div x-show="showDetailedStatsModal" x-cloak class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
@@ -1312,7 +1241,8 @@
   <script>
     const SUPABASE_URL = 'https://niyvnlrjbwcjglohlwwb.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_AYwAeFRkt4LPW9LFniYJbQ_qlMeHCrq';
-    const BASE_LOCAL_KEY = 'auditor_fiscal_safe_v4';
+    const ROW_ID = 'dados_auditor';
+    const LOCAL_KEY = 'auditor_fiscal_safe_v3';
     const TAB_KEY = 'auditor_active_tab';
 
     let supabaseClient = null;
@@ -1377,17 +1307,6 @@
 
     function appData() {
       return {
-        // Autenticação
-        authInitialized: false,
-        currentUser: null,
-        authMode: 'login', // 'login' ou 'register'
-        authEmail: '',
-        authPassword: '',
-        authError: '',
-        authSuccess: '',
-        authLoading: false,
-
-        // Estado do App
         mobileMenuOpen: false,
         activeTab: localStorage.getItem(TAB_KEY) || 'dashboard',
         syncing: false,
@@ -1488,110 +1407,8 @@
         modalGargaloTitulo: '',
         modalGargaloDesc: '',
 
-        get UserRowId() {
-          return this.currentUser ? `dados_auditor_${this.currentUser.id}` : null;
-        },
-
-        get UserLocalKey() {
-          return this.currentUser ? `${BASE_LOCAL_KEY}_${this.currentUser.id}` : BASE_LOCAL_KEY;
-        },
-
         async initApp() {
-          if (supabaseClient) {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
-              this.currentUser = session.user;
-              await this.loadUserData();
-            }
-            this.authInitialized = true;
-
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-              if (session && session.user) {
-                this.currentUser = session.user;
-                await this.loadUserData();
-              } else {
-                this.currentUser = null;
-                this.isLoaded = false;
-              }
-              this.authInitialized = true;
-              this.refreshIcons();
-            });
-          } else {
-            this.authInitialized = true;
-          }
-
-          if (!this.selectedDateFilter) {
-            this.selectedDateFilter = new Date().toISOString().split('T')[0];
-          }
-
-          setInterval(() => { 
-            if (this.currentUser) this.backgroundSync(); 
-          }, 5000);
-
-          this.$watch('materias', () => { 
-            if (this.isLoaded && this.currentUser) {
-              this.ensureValidSelection();
-              this.saveAll();
-              this.refreshIcons();
-            }
-          }, { deep: true });
-          
-          this.$watch('questoes', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
-          this.$watch('estudos', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
-          this.$watch('gargalos', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
-          this.$watch('pinnedNotes', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
-          this.$watch('exams', () => { if (this.isLoaded && this.currentUser) this.saveAll(); }, { deep: true });
-
-          this.refreshIcons();
-        },
-
-        async handleAuthSubmit() {
-          this.authError = '';
-          this.authSuccess = '';
-          this.authLoading = true;
-
-          try {
-            if (this.authMode === 'login') {
-              const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: this.authEmail,
-                password: this.authPassword
-              });
-              if (error) throw error;
-              this.currentUser = data.user;
-              await this.loadUserData();
-            } else {
-              const { data, error } = await supabaseClient.auth.signUp({
-                email: this.authEmail,
-                password: this.authPassword
-              });
-              if (error) throw error;
-              if (data.user) {
-                this.currentUser = data.user;
-                this.authSuccess = 'Conta criada com sucesso!';
-                await this.loadUserData();
-              }
-            }
-          } catch(err) {
-            this.authError = err.message || 'Erro durante a autenticação. Verifique os dados.';
-          } finally {
-            this.authLoading = false;
-            this.refreshIcons();
-          }
-        },
-
-        async logout() {
-          if (supabaseClient) {
-            await supabaseClient.auth.signOut();
-          }
-          this.currentUser = null;
-          this.isLoaded = false;
-          this.authEmail = '';
-          this.authPassword = '';
-          this.refreshIcons();
-        },
-
-        async loadUserData() {
-          const local = localStorage.getItem(this.UserLocalKey);
+          const local = localStorage.getItem(LOCAL_KEY);
           if (local) {
             try {
               const parsed = JSON.parse(local);
@@ -1599,12 +1416,35 @@
                 this.applyData(parsed);
               }
             } catch(e) {
-              console.error("Erro ao ler dados locais do usuário:", e);
+              console.error("Erro ao ler localStorage:", e);
             }
           }
 
           await this.loadFromSupabase();
+
+          if (!this.selectedDateFilter) {
+            this.selectedDateFilter = new Date().toISOString().split('T')[0];
+          }
+
           this.isLoaded = true;
+
+          setInterval(() => { this.backgroundSync(); }, 5000);
+
+          this.$watch('materias', () => { 
+            if (this.isLoaded) {
+              this.ensureValidSelection();
+              this.saveAll();
+              this.refreshIcons();
+            }
+          }, { deep: true });
+          
+          this.$watch('questoes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('estudos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('gargalos', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('pinnedNotes', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+          this.$watch('exams', () => { if (this.isLoaded) this.saveAll(); }, { deep: true });
+
+          this.refreshIcons();
         },
 
         setActiveTab(tabId) {
@@ -1965,7 +1805,7 @@
         },
 
         saveAll() {
-          if (!this.isLoaded || !this.currentUser) return;
+          if (!this.isLoaded) return;
           const payload = {
             materias: this.materias,
             questoes: this.questoes,
@@ -1974,25 +1814,25 @@
             pinnedNotes: this.pinnedNotes,
             exams: this.exams
           };
-          localStorage.setItem(this.UserLocalKey, JSON.stringify(payload));
+          localStorage.setItem(LOCAL_KEY, JSON.stringify(payload));
           this.saveToSupabase(payload);
         },
 
         async loadFromSupabase() {
-          if (!supabaseClient || !this.currentUser) return;
+          if (!supabaseClient) return;
           this.syncing = true;
           try {
             const { data } = await supabaseClient
               .from('dadosauditor')
               .select('conteudo')
-              .eq('id', this.UserRowId)
+              .eq('id', ROW_ID)
               .single();
 
             if (data && data.conteudo) {
               const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
               if (loaded.materias && loaded.materias.length > 0) {
                 this.applyData(loaded);
-                localStorage.setItem(this.UserLocalKey, JSON.stringify(loaded));
+                localStorage.setItem(LOCAL_KEY, JSON.stringify(loaded));
                 this.lastSync = true;
               }
             }
@@ -2005,22 +1845,22 @@
         },
 
         async backgroundSync() {
-          if (!supabaseClient || !this.currentUser || this.syncing) return;
+          if (!supabaseClient || this.syncing) return;
           try {
             const { data } = await supabaseClient
               .from('dadosauditor')
               .select('conteudo')
-              .eq('id', this.UserRowId)
+              .eq('id', ROW_ID)
               .single();
 
             if (data && data.conteudo) {
               const loaded = typeof data.conteudo === 'string' ? JSON.parse(data.conteudo) : data.conteudo;
-              const currentLocal = localStorage.getItem(this.UserLocalKey);
+              const currentLocal = localStorage.getItem(LOCAL_KEY);
               const remoteString = JSON.stringify(loaded);
 
               if (currentLocal !== remoteString && loaded.materias && loaded.materias.length > 0) {
                 this.applyData(loaded);
-                localStorage.setItem(this.UserLocalKey, remoteString);
+                localStorage.setItem(LOCAL_KEY, remoteString);
                 this.lastSync = true;
                 this.refreshIcons();
               }
@@ -2029,12 +1869,12 @@
         },
 
         async saveToSupabase(payload) {
-          if (!supabaseClient || !this.currentUser) return;
+          if (!supabaseClient) return;
           this.syncing = true;
           try {
             const { error } = await supabaseClient
               .from('dadosauditor')
-              .upsert({ id: this.UserRowId, conteudo: payload });
+              .upsert({ id: ROW_ID, conteudo: payload });
 
             if (error) throw error;
             this.lastSync = true;
